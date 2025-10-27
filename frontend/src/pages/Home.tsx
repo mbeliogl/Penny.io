@@ -104,7 +104,6 @@ function Home() {
       <div className="typing-cta-section">
         <div className="typing-cta-container">
           <div className="typing-text-box">
-            <span className="typing-prefix">Penny.io:</span>
             <span className="typing-text">
               {displayText}
               <span className="cursor">|</span>

@@ -1,5 +1,6 @@
 import { Link } from 'react-router-dom';
-import {House, LayoutDashboard, PenTool } from 'lucide-react';
+import { House, LayoutDashboard, PenTool } from 'lucide-react';
+import { ConnectButton } from '@rainbow-me/rainbowkit';
 
 function Header() {
   return (
@@ -12,7 +13,7 @@ function Header() {
           <Link to="/" className="nav-link"><House size={16}/>Home</Link>
           <Link to="/write" className="nav-link"><PenTool size={16}/>Write</Link>
           <Link to="/dashboard" className="nav-link"><LayoutDashboard size={16}/>Dashboard</Link>
-          <button className="connect-wallet-btn">Connect Wallet</button>
+          <ConnectButton />
         </nav>
       </div>
     </header>

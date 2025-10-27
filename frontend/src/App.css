@@ -99,20 +99,25 @@
   background-color: #f8f9fa;
 }
 
-.connect-wallet-btn {
-  background-color: #1a1a1a;
-  color: white;
-  border: none;
-  padding: 10px 20px;
-  border-radius: 24px;
-  font-weight: 600;
-  cursor: pointer;
-  transition: background-color 0.2s ease;
-  font-size: 14px;
+/* RainbowKit Custom Styling */
+[data-rk] {
+  --rk-fonts-body: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen',
+    'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue', sans-serif;
 }
 
-.connect-wallet-btn:hover {
-  background-color: #2a2a2a;
+/* Custom button styling to match our design */
+button[data-testid="rk-connect-button"] {
+  background-color: #1a1a1a !important;
+  border-radius: 6px !important;
+  font-weight: 500 !important;
+  font-size: 14px !important;
+  padding: 10px 16px !important;
+  transition: all 0.2s ease !important;
+}
+
+button[data-testid="rk-connect-button"]:hover {
+  background-color: #2a2a2a !important;
+  transform: translateY(-1px) !important;
 }
 
 /* Main Content */
@@ -164,27 +169,26 @@ main {
 }
 
 .typing-cta-container {
-  max-width: 600px;
+  max-width: 500px;
   margin: 0 auto;
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 24px;
+  gap: 20px;
   background: #f8f9fa;
   border-radius: 8px;
-  padding: 16px 24px;
+  padding: 12px 20px;
   border: 1px solid #e1e8ed;
 }
 
 .typing-text-box {
   flex: 1;
-  font-size: 1.125rem;
+  font-size: 1rem;
   font-weight: 500;
   color: #1a1a1a;
-  min-height: 32px;
+  min-height: 28px;
   display: flex;
   align-items: center;
-  gap: 8px;
 }
 
 .typing-prefix {
@@ -318,6 +322,92 @@ main {
 .read-time {
   color: #8b98a5;
   font-size: 0.875rem;
+}
+
+/* Dashboard Styles */
+.connect-prompt {
+  text-align: center;
+  padding: 80px 20px;
+  max-width: 500px;
+  margin: 0 auto;
+}
+
+.connect-prompt h1 {
+  font-size: 2rem;
+  margin-bottom: 16px;
+  color: #1a1a1a;
+}
+
+.connect-prompt p {
+  font-size: 1.125rem;
+  color: #536471;
+  margin-bottom: 32px;
+  line-height: 1.6;
+}
+
+.dashboard-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 32px;
+  padding-bottom: 24px;
+  border-bottom: 1px solid #e1e8ed;
+}
+
+.wallet-info {
+  text-align: right;
+  font-size: 0.875rem;
+  color: #536471;
+}
+
+.wallet-info p {
+  margin: 4px 0;
+}
+
+.stats-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 24px;
+  margin-bottom: 40px;
+}
+
+.stat-card {
+  background: white;
+  border: 1px solid #e1e8ed;
+  border-radius: 12px;
+  padding: 24px;
+  text-align: center;
+}
+
+.stat-card h3 {
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: #536471;
+  margin-bottom: 8px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.stat-value {
+  font-size: 2rem;
+  font-weight: 700;
+  color: #1a1a1a;
+  margin: 0;
+}
+
+.articles-section h2 {
+  font-size: 1.5rem;
+  font-weight: 700;
+  margin-bottom: 24px;
+  color: #1a1a1a;
+}
+
+.articles-list {
+  background: #f8f9fa;
+  border-radius: 8px;
+  padding: 40px 20px;
+  text-align: center;
+  color: #536471;
 }
 
 /* Footer Styles */
