@@ -1,7 +1,7 @@
-import { useState, FormEvent } from 'react';
+import { useState, useEffect, FormEvent } from 'react';
 import { useWallet } from '../contexts/WalletContext';
 import { ConnectButton } from '@rainbow-me/rainbowkit';
-import { Bold, Italic, Code, List, Hash, Eye, EyeOff, Save, Send } from 'lucide-react';
+import { Bold, Italic, Code, List, Hash, Eye, EyeOff, Save, Send, Book, Feather } from 'lucide-react';
 import { getCurrentDateString } from '../utils/dateUtils';
 import { apiService } from '../services/api';
 
@@ -15,6 +15,23 @@ function Write() {
   const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
   const [submitError, setSubmitError] = useState<string>('');
   const [submitSuccess, setSubmitSuccess] = useState<boolean>(false);
+  
+  // Typing animation state
+  const [displayText, setDisplayText] = useState<string>('');
+  const [hasTyped, setHasTyped] = useState<boolean>(false);
+  const fullText = "Your words can change the world.";
+
+  // Typing animation effect
+  useEffect(() => {
+    if (!hasTyped && displayText.length < fullText.length) {
+      const timeout = setTimeout(() => {
+        setDisplayText(fullText.slice(0, displayText.length + 1));
+      }, 100);
+      return () => clearTimeout(timeout);
+    } else if (displayText.length === fullText.length && !hasTyped) {
+      setHasTyped(true);
+    }
+  }, [displayText, hasTyped, fullText]);
 
   const handleSubmit = async (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault();
@@ -113,32 +130,38 @@ function Write() {
       <div className="write-container">
         {/* Header */}
         <div className="write-header">
-          <div className="write-header-left">
-            <h1>Write New Article</h1>
-            <div className="write-stats">
-              <span>{wordCount} words</span>
-              <span>•</span>
-              <span>{charCount} characters</span>
-            </div>
+          <div className="write-header-main">
+            <h1 className="typing-title">
+              <div className="typing-icon">
+                <Feather size={28} />
+              </div>
+              <span className="typing-text">
+                {displayText}
+                <span className="cursor">|</span>
+              </span>
+            </h1>
           </div>
           <div className="write-header-right">
-            <button 
-              type="button" 
-              onClick={() => setShowPreview(!showPreview)}
-              className="preview-toggle"
-            >
-              {showPreview ? <EyeOff size={18} /> : <Eye size={18} />}
-              {showPreview ? 'Hide Preview' : 'Show Preview'}
-            </button>
-            <button 
-              type="button" 
-              onClick={saveDraft}
-              className="save-draft-btn"
-              disabled={isDraft}
-            >
-              <Save size={18} />
-              {isDraft ? 'Saved!' : 'Save Draft'}
-            </button>
+            <p className="write-subtitle">*Advanced markdown features supported. <br></br>*Image file size limited to 'X mb'</p>
+            <div className="write-header-actions">
+              <button 
+                type="button" 
+                onClick={() => setShowPreview(!showPreview)}
+                className="preview-toggle"
+              >
+                {showPreview ? <EyeOff size={18} /> : <Eye size={18} />}
+                {showPreview ? 'Hide Preview' : 'Show Preview'}
+              </button>
+              <button 
+                type="button" 
+                onClick={saveDraft}
+                className="save-draft-btn"
+                disabled={isDraft}
+              >
+                <Save size={18} />
+                {isDraft ? 'Saved!' : 'Save Draft'}
+              </button>
+            </div>
           </div>
         </div>
 
@@ -225,6 +248,14 @@ function Write() {
 
               {/* Content Textarea */}
               <div className="form-group">
+                <div className="content-header">
+                  <label htmlFor="content">Article Content</label>
+                  <div className="write-stats">
+                    <span>{wordCount} words</span>
+                    <span>•</span>
+                    <span>{charCount} characters</span>
+                  </div>
+                </div>
                 <textarea
                   id="content"
                   value={content}

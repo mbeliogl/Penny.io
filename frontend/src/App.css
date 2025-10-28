@@ -1599,13 +1599,102 @@ main {
   margin: 0 -20px;
   padding-left: 20px;
   padding-right: 20px;
+  min-height: 120px;
 }
 
-.write-header-left h1 {
+.write-header-main h1 {
   font-size: 1.75rem;
   font-weight: 700;
   color: #1a1a1a;
   margin: 0 0 8px 0;
+}
+
+.typing-title {
+  min-height: 2.1rem;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.typing-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 48px;
+  height: 48px;
+  background: linear-gradient(135deg, #1a1a1a 0%, #3b3b3b 100%);
+  border-radius: 12px;
+  color: white;
+  animation: iconPulse 2s ease-in-out infinite;
+  flex-shrink: 0;
+}
+
+.typing-text {
+  display: flex;
+  align-items: center;
+}
+
+.typing-title .cursor {
+  animation: blink 1s infinite;
+  margin-left: 2px;
+}
+
+@keyframes iconPulse {
+  0%, 100% {
+    transform: scale(1);
+    box-shadow: 0 4px 12px rgba(26, 26, 26, 0.2);
+  }
+  50% {
+    transform: scale(1.05);
+    box-shadow: 0 6px 20px rgba(26, 26, 26, 0.3);
+  }
+}
+
+@keyframes blink {
+  0%, 50% {
+    opacity: 1;
+  }
+  51%, 100% {
+    opacity: 0;
+  }
+}
+
+.write-header-right {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 20px;
+  text-align: right;
+  height: 100%;
+  align-self: stretch;
+}
+
+.write-subtitle {
+  font-size: .8rem;
+  color: #6b7280;
+  margin: -8px 0 0 0;
+  line-height: 1.5;
+}
+
+.write-header-actions {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.content-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 8px;
+  margin-top: 24px;
+}
+
+.content-header label {
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: #374151;
 }
 
 .write-stats {
@@ -1614,12 +1703,6 @@ main {
   gap: 8px;
   font-size: 0.875rem;
   color: #8b98a5;
-}
-
-.write-header-right {
-  display: flex;
-  align-items: center;
-  gap: 12px;
 }
 
 .preview-toggle, .save-draft-btn {
@@ -1751,7 +1834,6 @@ main {
   background-color: #f8f9fa;
   border: 1px solid #e1e8ed;
   border-radius: 8px 8px 0 0;
-  border-bottom: none;
 }
 
 .toolbar-btn {
