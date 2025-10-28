@@ -10,6 +10,7 @@ import Article from './pages/Article';
 import About from './pages/About';
 import HowItWorks from './pages/HowItWorks';
 import Pricing from './pages/Pricing';
+import Resources from './pages/Resources';
 import './App.css'
 
 function App() {
@@ -28,6 +29,7 @@ function App() {
               <Route path="/about" element={<About />} />
               <Route path="/how-it-works" element={<HowItWorks />} />
               <Route path="/pricing" element={<Pricing />} />
+              <Route path="/resources" element={<Resources />} />
             </Routes>
           </main>
           <Footer />
