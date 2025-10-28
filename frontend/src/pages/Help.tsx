@@ -86,29 +86,35 @@ function Help() {
           
           <div className="contact-options">
             <div className="contact-item">
-              <div className="contact-icon">
-                <BookOpen size={24} />
+              <div className="contact-text">
+                <div className="contact-icon">
+                  <BookOpen size={24} />
+                </div>
+                <h3>Documentation</h3>
+                <p>Check our comprehensive guides and technical documentation.</p>
               </div>
-              <h3>Documentation</h3>
-              <p>Check our comprehensive guides and technical documentation.</p>
               <a href="/resources" className="contact-link">View Resources</a>
             </div>
             
             <div className="contact-item">
-              <div className="contact-icon">
-                <Users size={24} />
+              <div className="contact-text">
+                <div className="contact-icon">
+                  <Users size={24} />
+                </div>
+                <h3>Community</h3>
+                <p>Join our community for help from other users and updates.</p>
               </div>
-              <h3>Community</h3>
-              <p>Join our community for help from other users and updates.</p>
               <a href="#" className="contact-link">Join Community</a>
             </div>
             
             <div className="contact-item">
-              <div className="contact-icon">
-                <Mail size={24} />
+              <div className="contact-text">
+                <div className="contact-icon">
+                  <Mail size={24} />
+                </div>
+                <h3>Email Support</h3>
+                <p>Contact our support team for personalized assistance.</p>
               </div>
-              <h3>Email Support</h3>
-              <p>Contact our support team for personalized assistance.</p>
               <a href="mailto:support@penny.io" className="contact-link">support@penny.io</a>
             </div>
           </div>
