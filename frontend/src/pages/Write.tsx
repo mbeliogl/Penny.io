@@ -14,6 +14,8 @@ function Write() {
   const [isDraft, setIsDraft] = useState<boolean>(false);
   const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
   const [submitError, setSubmitError] = useState<string>('');
+  const [validationErrors, setValidationErrors] = useState<string[]>([]);
+  const [showValidation, setShowValidation] = useState<boolean>(false);
   
   // Content limits
   const MAX_TITLE_LENGTH = 200;
@@ -37,23 +39,32 @@ function Write() {
     }
   }, [displayText, hasTyped, fullText]);
 
+  // Real-time validation (only update errors, don't show them yet)
+  useEffect(() => {
+    const errors = validateForm();
+    setValidationErrors(errors);
+    // Clear submit error when validation changes and no errors
+    if (submitError && errors.length === 0 && showValidation) {
+      setSubmitError('');
+    }
+  }, [title, content, price, submitError, showValidation]);
+
 
   const handleSubmit = async (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault();
+    
+    // Show validation from now on
+    setShowValidation(true);
     
     if (!address) {
       setSubmitError('Please connect your wallet first');
       return;
     }
 
-    // Validate content length
-    if (title.length > MAX_TITLE_LENGTH) {
-      setSubmitError(`Title must be ${MAX_TITLE_LENGTH} characters or less`);
-      return;
-    }
-
-    if (content.length > MAX_CONTENT_LENGTH) {
-      setSubmitError(`Article content must be ${MAX_CONTENT_LENGTH} characters or less`);
+    // Check for validation errors
+    const errors = validateForm();
+    if (errors.length > 0) {
+      setSubmitError('Please fix the validation errors above before publishing');
       return;
     }
 
@@ -88,6 +99,43 @@ function Write() {
     }
   };
 
+  // Validation helper
+  const validateForm = () => {
+    const errors: string[] = [];
+    
+    if (!title.trim()) {
+      errors.push('Article title is required');
+    }
+    
+    if (!content.trim()) {
+      errors.push('Article content is required');
+    }
+    
+    if (!price || parseFloat(price) <= 0) {
+      errors.push('Valid price is required');
+    }
+    
+    if (title.length > MAX_TITLE_LENGTH) {
+      errors.push(`Title must be ${MAX_TITLE_LENGTH} characters or less`);
+    }
+    
+    if (content.length > MAX_CONTENT_LENGTH) {
+      errors.push(`Content must be ${MAX_CONTENT_LENGTH} characters or less`);
+    }
+    
+    const priceNum = parseFloat(price);
+    if (price && priceNum < 0.01) {
+      errors.push('Article price must be at least $0.01');
+    }
+    
+    if (price && priceNum > 1.00) {
+      errors.push('Article price cannot exceed $1.00');
+    }
+    
+    return errors;
+  };
+
+
   const saveDraft = () => {
     setIsDraft(true);
     console.log('Draft saved:', { title, content, price });
@@ -115,27 +163,6 @@ function Write() {
   return (
     <div className="write">
       <div className="write-container">
-        {/* Floating Action Buttons */}
-        <div className="floating-actions">
-          <button 
-            type="button" 
-            onClick={saveDraft}
-            className="floating-btn save-floating"
-            disabled={isDraft}
-            title={isDraft ? 'Saved!' : 'Save Draft'}
-          >
-            <Save size={18} />
-          </button>
-          <button 
-            type="submit" 
-            form="write-form"
-            className="floating-btn publish-floating"
-            disabled={isSubmitting}
-            title={isSubmitting ? 'Publishing...' : 'Publish Article'}
-          >
-            <Send size={18} />
-          </button>
-        </div>
 
         {/* Main Content */}
         <div className="write-layout">
@@ -188,6 +215,27 @@ function Write() {
                   />
                 </div>
               </div>
+            </div>
+
+            {/* Action Buttons */}
+            <div className="article-actions">
+              <button 
+                type="button" 
+                onClick={saveDraft}
+                className="action-btn save-btn"
+                disabled={isDraft}
+              >
+                <Save size={18} />
+                {isDraft ? 'Saved!' : 'Save Draft'}
+              </button>
+              <button 
+                type="submit" 
+                className="action-btn publish-btn"
+                disabled={isSubmitting}
+              >
+                <Send size={18} />
+                {isSubmitting ? 'Publishing...' : 'Publish Article'}
+              </button>
             </div>
 
             {/* Content Editor */}
@@ -245,8 +293,27 @@ function Write() {
               </div>
             </div>
 
-            {/* Error Message */}
-            {submitError && (
+            {/* Validation Status - only show after publish attempt */}
+            {showValidation && (
+              validationErrors.length > 0 ? (
+                <div className="validation-errors">
+                  <h4>Please fix the following issues:</h4>
+                  <ul>
+                    {validationErrors.map((error, index) => (
+                      <li key={index}>{error}</li>
+                    ))}
+                  </ul>
+                </div>
+              ) : (
+                <div className="validation-success">
+                  <h4>✅ Ready to publish!</h4>
+                  <p>Your article looks good and is ready to be published.</p>
+                </div>
+              )
+            )}
+
+            {/* Submit Error Message */}
+            {submitError && validationErrors.length === 0 && (
               <div className="submit-error">
                 {submitError}
               </div>

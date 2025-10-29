@@ -1610,9 +1610,15 @@ main {
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
 }
 
-.floating-btn:hover {
+.floating-btn:hover:not(:disabled) {
   transform: translateY(-2px);
   box-shadow: 0 6px 20px rgba(0, 0, 0, 0.2);
+}
+
+.floating-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  transform: none !important;
 }
 
 .save-floating {
@@ -1764,6 +1770,105 @@ main {
   font-size: 0.75rem;
   color: #8b98a5;
   margin-top: 4px;
+}
+
+.validation-errors {
+  background: #fef2f2;
+  border: 1px solid #fecaca;
+  border-radius: 8px;
+  padding: 16px;
+  margin-bottom: 20px;
+}
+
+.validation-errors h4 {
+  color: #dc2626;
+  font-size: 0.875rem;
+  font-weight: 600;
+  margin: 0 0 8px 0;
+}
+
+.validation-errors ul {
+  margin: 0;
+  padding-left: 16px;
+  color: #b91c1c;
+  font-size: 0.875rem;
+}
+
+.validation-errors li {
+  margin-bottom: 4px;
+}
+
+.validation-success {
+  background: #f0fdf4;
+  border: 1px solid #bbf7d0;
+  border-radius: 8px;
+  padding: 16px;
+  margin-bottom: 20px;
+}
+
+.validation-success h4 {
+  color: #15803d;
+  font-size: 0.875rem;
+  font-weight: 600;
+  margin: 0 0 4px 0;
+}
+
+.validation-success p {
+  color: #166534;
+  font-size: 0.875rem;
+  margin: 0;
+}
+
+.article-actions {
+  display: flex;
+  justify-content: center;
+  gap: 12px;
+  margin: 24px 0;
+  padding: 20px 0;
+}
+
+.action-btn {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 12px 20px;
+  border-radius: 8px;
+  border: none;
+  font-weight: 500;
+  font-size: 0.875rem;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.save-btn {
+  background: #f8f9fa;
+  color: #6b7280;
+  border: 1px solid #e1e8ed;
+}
+
+.save-btn:hover:not(:disabled) {
+  background: #e9ecef;
+  color: #495057;
+}
+
+.save-btn:disabled {
+  opacity: 0.7;
+  cursor: not-allowed;
+}
+
+.publish-btn {
+  background: #1a1a1a;
+  color: white;
+}
+
+.publish-btn:hover:not(:disabled) {
+  background: #2a2a2a;
+  transform: translateY(-1px);
+}
+
+.publish-btn:disabled {
+  opacity: 0.7;
+  cursor: not-allowed;
 }
 
 .preview-toggle, .save-draft-btn {
@@ -2276,6 +2381,19 @@ main {
 
 .form-group {
   margin-bottom: 24px;
+}
+
+/* Mobile responsiveness for action buttons */
+@media (max-width: 768px) {
+  .article-actions {
+    flex-direction: column;
+    gap: 8px;
+  }
+  
+  .action-btn {
+    justify-content: center;
+    width: 100%;
+  }
 }
 
 /* Responsive Design */
