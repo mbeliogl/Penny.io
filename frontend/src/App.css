@@ -1733,7 +1733,7 @@ main {
 .content-header {
   display: flex;
   justify-content: space-between;
-  align-items: center;
+  align-items: baseline;
   margin-bottom: 8px;
   margin-top: 24px;
 }
@@ -1753,6 +1753,17 @@ main {
   gap: 8px;
   font-size: 0.875rem;
   color: #8b98a5;
+}
+
+.char-warning {
+  color: #f59e0b !important;
+  font-weight: 500;
+}
+
+.title-counter {
+  font-size: 0.75rem;
+  color: #8b98a5;
+  margin-top: 4px;
 }
 
 .preview-toggle, .save-draft-btn {

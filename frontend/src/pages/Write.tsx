@@ -14,6 +14,10 @@ function Write() {
   const [isDraft, setIsDraft] = useState<boolean>(false);
   const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
   const [submitError, setSubmitError] = useState<string>('');
+  
+  // Content limits
+  const MAX_TITLE_LENGTH = 200;
+  const MAX_CONTENT_LENGTH = 50000; // ~25-30 pages of text
   const [submitSuccess, setSubmitSuccess] = useState<boolean>(false);
   
   // Typing animation state
@@ -39,6 +43,17 @@ function Write() {
     
     if (!address) {
       setSubmitError('Please connect your wallet first');
+      return;
+    }
+
+    // Validate content length
+    if (title.length > MAX_TITLE_LENGTH) {
+      setSubmitError(`Title must be ${MAX_TITLE_LENGTH} characters or less`);
+      return;
+    }
+
+    if (content.length > MAX_CONTENT_LENGTH) {
+      setSubmitError(`Article content must be ${MAX_CONTENT_LENGTH} characters or less`);
       return;
     }
 
@@ -147,8 +162,14 @@ function Write() {
                   className="title-input-auto"
                   rows={1}
                   style={{ resize: 'none', overflow: 'hidden' }}
+                  maxLength={MAX_TITLE_LENGTH}
                   required
                 />
+                <div className="title-counter">
+                  <span className={title.length > MAX_TITLE_LENGTH * 0.9 ? 'char-warning' : ''}>
+                    {title.length}/{MAX_TITLE_LENGTH} characters
+                  </span>
+                </div>
               </div>
               <div className="price-section">
                 <label htmlFor="price" className="input-label">Price</label>
@@ -176,7 +197,9 @@ function Write() {
                 <div className="write-stats">
                   <span>{wordCount} words</span>
                   <span>•</span>
-                  <span>{charCount} characters</span>
+                  <span className={charCount > MAX_CONTENT_LENGTH * 0.9 ? 'char-warning' : ''}>
+                    {charCount.toLocaleString()}/{MAX_CONTENT_LENGTH.toLocaleString()} characters
+                  </span>
                 </div>
               </div>
               <div className="tinymce-wrapper">
