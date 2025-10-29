@@ -129,7 +129,7 @@ function Dashboard() {
         <div className="container">
           <div className="connect-prompt">
             <h1>Connect Your Wallet</h1>
-            <p>Connect your wallet to access your writer dashboard and start earning from your content.</p>
+            <p>Connect your wallet to access your writer dashboard.</p>
             <ConnectButton />
           </div>
         </div>

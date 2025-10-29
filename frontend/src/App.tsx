@@ -17,6 +17,7 @@ import Privacy from './pages/Privacy';
 import Terms from './pages/Terms';
 import Contact from './pages/Contact';
 import X402Test from './pages/X402Test';
+import Explore from './pages/Explore';
 import './App.css'
 
 function App() {
@@ -42,6 +43,7 @@ function App() {
               <Route path="/terms" element={<Terms />} />
               <Route path="/contact" element={<Contact />} />
               <Route path="/x402-test" element={<X402Test />} />
+              <Route path="/explore" element={<Explore />} />
             </Routes>
           </main>
           <Footer />

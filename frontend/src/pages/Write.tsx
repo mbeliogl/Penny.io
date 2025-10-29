@@ -290,7 +290,7 @@ function Write() {
         <div className="container">
           <div className="connect-prompt">
             <h1>Connect Your Wallet</h1>
-            <p>Connect your wallet to start writing and publishing articles on Penny.io.</p>
+            <p>Connect your wallet to start writing and publishing articles on Penny.io</p>
             <ConnectButton />
           </div>
         </div>

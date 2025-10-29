@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
-import { PenTool } from 'lucide-react';
+import { PenTool, BookOpen } from 'lucide-react';
 import { apiService, Article } from '../services/api';
 
 // We'll fetch real articles from the backend instead of using mock data
@@ -102,7 +102,7 @@ function Home() {
       </div>
       
       <div className="featured-articles">
-        <h2>Explore Articles</h2>
+        <h2>Featured Articles</h2>
         <div className="article-grid">
           {loading ? (
             <div className="loading-articles">
@@ -133,6 +133,14 @@ function Home() {
               </Link>
             </div>
           )}
+        </div>
+        
+        {/* Explore All Articles Button */}
+        <div className="explore-cta">
+          <Link to="/explore" className="explore-button">
+            <BookOpen size={20} />
+            Explore All Articles
+          </Link>
         </div>
       </div>
     </div>
