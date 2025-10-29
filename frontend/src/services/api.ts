@@ -42,6 +42,25 @@ export interface ApiResponse<T> {
   message?: string;
 }
 
+export interface Draft {
+  id: number;
+  title: string;
+  content: string;
+  price: number;
+  authorAddress: string;
+  createdAt: string;
+  updatedAt: string;
+  expiresAt: string;
+}
+
+export interface CreateDraftRequest {
+  title: string;
+  content: string;
+  price: number;
+  authorAddress: string;
+  isAutoSave?: boolean;
+}
+
 export interface GetArticlesQuery {
   authorAddress?: string;
   search?: string;
@@ -126,6 +145,25 @@ class ApiService {
   async incrementArticleViews(articleId: number): Promise<ApiResponse<void>> {
     return this.request<void>(`/articles/${articleId}/view`, {
       method: 'PUT'
+    });
+  }
+
+  // Draft endpoints
+  async saveDraft(draft: CreateDraftRequest): Promise<ApiResponse<Draft>> {
+    return this.request<Draft>('/drafts', {
+      method: 'POST',
+      body: JSON.stringify(draft),
+    });
+  }
+
+  async getDrafts(authorAddress: string): Promise<ApiResponse<Draft[]>> {
+    return this.request<Draft[]>(`/drafts/${authorAddress}`);
+  }
+
+  async deleteDraft(draftId: number, authorAddress: string): Promise<ApiResponse<{ message: string }>> {
+    return this.request<{ message: string }>(`/drafts/${draftId}`, {
+      method: 'DELETE',
+      body: JSON.stringify({ authorAddress }),
     });
   }
 

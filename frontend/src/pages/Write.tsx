@@ -1,9 +1,9 @@
 import { useState, useEffect, FormEvent } from 'react';
 import { useWallet } from '../contexts/WalletContext';
 import { ConnectButton } from '@rainbow-me/rainbowkit';
-import { Save, Send } from 'lucide-react';
+import { Save, Send, FileText, Clock } from 'lucide-react';
 import { getCurrentDateString } from '../utils/dateUtils';
-import { apiService } from '../services/api';
+import { apiService, Draft } from '../services/api';
 import { Editor } from '@tinymce/tinymce-react';
 
 function Write() {
@@ -16,6 +16,9 @@ function Write() {
   const [submitError, setSubmitError] = useState<string>('');
   const [validationErrors, setValidationErrors] = useState<string[]>([]);
   const [showValidation, setShowValidation] = useState<boolean>(false);
+  const [availableDrafts, setAvailableDrafts] = useState<Draft[]>([]);
+  const [showDrafts, setShowDrafts] = useState<boolean>(false);
+  const [loadingDrafts, setLoadingDrafts] = useState<boolean>(false);
   
   // Content limits
   const MAX_TITLE_LENGTH = 200;
@@ -48,6 +51,35 @@ function Write() {
       setSubmitError('');
     }
   }, [title, content, price, submitError, showValidation]);
+
+  // Auto-save functionality
+  useEffect(() => {
+    if (!address || (!title && !content)) return; // Don't auto-save empty content or when not connected
+    
+    const autoSaveTimer = setTimeout(async () => {
+      try {
+        await apiService.saveDraft({
+          title,
+          content,
+          price: parseFloat(price) || 0.05,
+          authorAddress: address,
+          isAutoSave: true
+        });
+      } catch (error) {
+        console.error('Auto-save failed:', error);
+      }
+    }, 5000); // Auto-save after 5 seconds of inactivity
+
+    return () => clearTimeout(autoSaveTimer);
+  }, [title, content, price, address]);
+
+  // Load available drafts when connected
+  useEffect(() => {
+    if (address) {
+      loadDrafts();
+    }
+  }, [address]);
+
 
 
   const handleSubmit = async (e: FormEvent<HTMLFormElement>) => {
@@ -84,9 +116,12 @@ function Write() {
 
       if (response.success) {
         setSubmitSuccess(true);
+        // Clear current form
         setTitle('');
         setContent('');
         setPrice('0.05');
+        setShowValidation(false);
+        // Note: Server will auto-cleanup expired drafts, but we keep the latest one
         setTimeout(() => setSubmitSuccess(false), 5000);
       } else {
         setSubmitError(response.error || 'Failed to create article');
@@ -136,10 +171,72 @@ function Write() {
   };
 
 
-  const saveDraft = () => {
-    setIsDraft(true);
-    console.log('Draft saved:', { title, content, price });
-    setTimeout(() => setIsDraft(false), 2000);
+  const saveDraft = async () => {
+    if (!address) return;
+
+    try {
+      setIsDraft(true);
+      const response = await apiService.saveDraft({
+        title,
+        content,
+        price: parseFloat(price) || 0.05,
+        authorAddress: address,
+        isAutoSave: false
+      });
+
+      if (response.success) {
+        console.log('Draft saved successfully');
+        setTimeout(() => setIsDraft(false), 2000);
+      } else {
+        setIsDraft(false);
+        setSubmitError('Failed to save draft');
+      }
+    } catch (error) {
+      setIsDraft(false);
+      setSubmitError('Failed to save draft');
+      console.error('Error saving draft:', error);
+    }
+  };
+
+  const loadDrafts = async () => {
+    if (!address) return;
+
+    try {
+      setLoadingDrafts(true);
+      const response = await apiService.getDrafts(address);
+      
+      if (response.success && response.data) {
+        setAvailableDrafts(response.data);
+      } else {
+        setAvailableDrafts([]);
+      }
+    } catch (error) {
+      console.error('Error loading drafts:', error);
+      setAvailableDrafts([]);
+    } finally {
+      setLoadingDrafts(false);
+    }
+  };
+
+  const loadDraft = (draft: Draft) => {
+    setTitle(draft.title);
+    setContent(draft.content);
+    setPrice(draft.price.toString());
+    setShowDrafts(false);
+    console.log('Loaded draft:', draft);
+  };
+
+  const deleteDraft = async (draftId: number) => {
+    if (!address) return;
+
+    try {
+      const response = await apiService.deleteDraft(draftId, address);
+      if (response.success) {
+        setAvailableDrafts(prev => prev.filter(d => d.id !== draftId));
+      }
+    } catch (error) {
+      console.error('Error deleting draft:', error);
+    }
   };
 
 
@@ -167,6 +264,101 @@ function Write() {
         {/* Main Content */}
         <div className="write-layout">
           <form id="write-form" onSubmit={handleSubmit} className="write-form">
+            {/* Action Buttons */}
+            <div className="article-actions">
+              <div className="draft-actions">
+                <button 
+                  type="button" 
+                  onClick={() => {
+                    if (showDrafts) {
+                      setShowDrafts(false);
+                    } else {
+                      loadDrafts();
+                      setShowDrafts(true);
+                    }
+                  }}
+                  className="action-btn draft-btn"
+                  disabled={loadingDrafts}
+                >
+                  <FileText size={18} />
+                  {loadingDrafts ? 'Loading...' : 'Load Draft'}
+                </button>
+                <button 
+                  type="button" 
+                  onClick={saveDraft}
+                  className="action-btn save-btn"
+                  disabled={isDraft}
+                >
+                  <Save size={18} />
+                  {isDraft ? 'Saved!' : 'Save Draft'}
+                </button>
+              </div>
+              <button 
+                type="submit" 
+                className="action-btn publish-btn"
+                disabled={isSubmitting}
+              >
+                <Send size={18} />
+                {isSubmitting ? 'Publishing...' : 'Publish Article'}
+              </button>
+            </div>
+
+            {/* Draft Selection Modal */}
+            {showDrafts && (
+              <div className="draft-modal">
+                <div className="draft-modal-header">
+                  <h3>Available Drafts</h3>
+                  <button 
+                    type="button" 
+                    onClick={() => setShowDrafts(false)}
+                    className="close-btn"
+                  >
+                    ×
+                  </button>
+                </div>
+                <p className="draft-info">We automatically save your work every 5 seconds. Drafts are kept for 7 days.</p>
+                <div className="draft-list">
+                  {availableDrafts.length === 0 ? (
+                    <p className="no-drafts">No drafts available</p>
+                  ) : (
+                    availableDrafts.map((draft) => (
+                      <div key={draft.id} className="draft-item">
+                        <div className="draft-info">
+                          <h4>{draft.title || 'Untitled Draft'}</h4>
+                          <p className="draft-preview">
+                            {draft.content ? draft.content.substring(0, 100) + '...' : 'No content'}
+                          </p>
+                          <div className="draft-meta">
+                            <span className="draft-date">
+                              <Clock size={14} />
+                              {new Date(draft.updatedAt).toLocaleDateString()}
+                            </span>
+                            <span className="draft-price">${draft.price.toFixed(2)}</span>
+                          </div>
+                        </div>
+                        <div className="draft-actions">
+                          <button 
+                            type="button"
+                            onClick={() => loadDraft(draft)}
+                            className="load-draft-btn"
+                          >
+                            Edit
+                          </button>
+                          <button 
+                            type="button"
+                            onClick={() => deleteDraft(draft.id)}
+                            className="delete-draft-btn"
+                          >
+                            Delete
+                          </button>
+                        </div>
+                      </div>
+                    ))
+                  )}
+                </div>
+              </div>
+            )}
+
             {/* Article Details */}
             <div className="article-inputs">
               <div className="title-section">
@@ -215,27 +407,6 @@ function Write() {
                   />
                 </div>
               </div>
-            </div>
-
-            {/* Action Buttons */}
-            <div className="article-actions">
-              <button 
-                type="button" 
-                onClick={saveDraft}
-                className="action-btn save-btn"
-                disabled={isDraft}
-              >
-                <Save size={18} />
-                {isDraft ? 'Saved!' : 'Save Draft'}
-              </button>
-              <button 
-                type="submit" 
-                className="action-btn publish-btn"
-                disabled={isSubmitting}
-              >
-                <Send size={18} />
-                {isSubmitting ? 'Publishing...' : 'Publish Article'}
-              </button>
             </div>
 
             {/* Content Editor */}
