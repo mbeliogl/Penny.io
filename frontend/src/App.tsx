@@ -7,6 +7,7 @@ import Home from './pages/Home';
 import Write from './pages/Write';
 import Dashboard from './pages/Dashboard';
 import Article from './pages/Article';
+import EditArticle from './pages/EditArticle';
 import About from './pages/About';
 import HowItWorks from './pages/HowItWorks';
 import Pricing from './pages/Pricing';
@@ -29,6 +30,7 @@ function App() {
               <Route path="/" element={<Home />} />
               <Route path="/write" element={<Write />} />
               <Route path="/dashboard" element={<Dashboard />} />
+              <Route path="/edit/:id" element={<EditArticle />} />
               <Route path="/article/:id" element={<Article />} />
               <Route path="/about" element={<About />} />
               <Route path="/how-it-works" element={<HowItWorks />} />

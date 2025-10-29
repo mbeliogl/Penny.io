@@ -5657,7 +5657,7 @@ main {
   justify-content: center;
 }
 
-.action-btn {
+.table-cell.actions .action-btn {
   display: inline-flex;
   align-items: center;
   justify-content: center;
@@ -5673,18 +5673,18 @@ main {
   font-size: 0;
 }
 
-.action-btn:hover {
+.table-cell.actions .action-btn:hover {
   background: #f7f9fa;
   color: #1d9bf0;
   border-color: #1d9bf0;
 }
 
-.edit-btn:hover {
+.table-cell.actions .edit-btn:hover {
   color: #1d9bf0;
   border-color: #1d9bf0;
 }
 
-.delete-btn:hover {
+.table-cell.actions .delete-btn:hover {
   color: #f4212e;
   border-color: #f4212e;
   background: #fef1f2;
@@ -5700,10 +5700,69 @@ main {
 }
 
 /* Delete Confirmation Modal */
+.modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+  padding: 20px;
+}
+
+.confirm-modal {
+  background: white;
+  border-radius: 12px;
+  box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+  max-width: 450px;
+  width: 100%;
+  padding: 24px;
+}
+
+.confirm-modal h3 {
+  margin: 0 0 16px 0;
+  font-size: 1.25rem;
+  font-weight: 600;
+  color: #1a1a1a;
+}
+
+.confirm-modal p {
+  margin: 0 0 12px 0;
+  color: #536471;
+  line-height: 1.5;
+}
+
 .warning-text {
   color: #f4212e;
   font-size: 0.9rem;
-  margin: 8px 0 20px;
+  font-weight: 500;
+  margin: 8px 0 24px 0;
+}
+
+.modal-actions {
+  display: flex;
+  gap: 12px;
+  justify-content: flex-end;
+}
+
+.secondary-btn {
+  background: #f7f9fa;
+  color: #536471;
+  border: 1px solid #e1e8ed;
+  padding: 10px 20px;
+  border-radius: 6px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.secondary-btn:hover:not(:disabled) {
+  background: #e1e8ed;
+  color: #1a1a1a;
 }
 
 .delete-confirm-btn {
@@ -5726,6 +5785,11 @@ main {
   cursor: not-allowed;
 }
 
+.secondary-btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
 /* Wide container for articles table */
 .articles-wide-container {
   width: 100%;
@@ -5741,7 +5805,7 @@ main {
     gap: 4px;
   }
   
-  .action-btn {
+  .table-cell.actions .action-btn {
     width: 28px;
     height: 28px;
   }
