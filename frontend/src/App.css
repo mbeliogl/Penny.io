@@ -358,6 +358,9 @@ main {
 }
 .connect-prompt {
   text-align: center;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
   padding: 80px 20px;
   max-width: 500px;
   margin: 0 auto;
@@ -916,16 +919,15 @@ main {
   background: white;
   border: 1px solid #e1e8ed;
   border-radius: 12px;
-  overflow: hidden;
-  max-height: 500px;
+  overflow-x: auto;
   overflow-y: auto;
-  min-width: 1600px;
+  max-height: 500px;
   width: 100%;
 }
 
 .table-header {
   display: grid;
-  grid-template-columns: 2fr 1fr 1fr 1fr 1fr 1fr 1fr 80px;
+  grid-template-columns: 3fr 1fr 1fr 1fr 1fr 1fr 1fr 80px;
   gap: 16px;
   padding: 16px 24px;
   background-color: #f8f9fa;
@@ -939,7 +941,7 @@ main {
 
 .table-row {
   display: grid;
-  grid-template-columns: 2fr 1fr 1fr 1fr 1fr 1fr 1fr 80px;
+  grid-template-columns: 3fr 1fr 1fr 1fr 1fr 1fr 1fr 80px;
   gap: 16px;
   padding: 20px 24px;
   border-bottom: 1px solid #f1f3f4;
@@ -5649,7 +5651,8 @@ main {
 /* Article Management Styles */
 .table-cell.actions {
   display: flex;
-  gap: 8px;
+  flex-direction: column;
+  gap: 4px;
   align-items: center;
   justify-content: center;
 }
@@ -5658,10 +5661,10 @@ main {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  width: 24px;
-  height: 24px;
+  width: 20px;
+  height: 20px;
   border: 1px solid #e1e8ed;
-  border-radius: 4px;
+  border-radius: 3px;
   background: #fff;
   color: #536471;
   text-decoration: none;
@@ -5726,9 +5729,9 @@ main {
 /* Wide container for articles table */
 .articles-wide-container {
   width: 100%;
-  max-width: 1800px;
+  max-width: 1600px;
   margin: 32px auto 0;
-  padding: 0 24px;
+  padding: 0 20px;
   overflow-x: auto;
 }
 

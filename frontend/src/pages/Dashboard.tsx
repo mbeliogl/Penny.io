@@ -258,10 +258,7 @@ function Dashboard() {
           </div>
         )}
 
-      </div>
-
-      {/* Articles List - Wide Container */}
-      <div className="articles-wide-container">
+        {/* Articles List */}
         <div className="articles-section">
           <div className="articles-header">
             <h2><Book size={20} />Your Articles</h2>
@@ -411,14 +408,14 @@ function Dashboard() {
                   </div>
                   <div className="table-cell actions">
                     <Link to={`/edit/${article.id}`} className="action-btn edit-btn" title="Edit article">
-                      <Edit size={12} />
+                      <Edit size={10} />
                     </Link>
                     <button 
                       onClick={() => setDeleteConfirm({ show: true, article })}
                       className="action-btn delete-btn" 
                       title="Delete article"
                     >
-                      <Trash2 size={12} />
+                      <Trash2 size={10} />
                     </button>
                   </div>
                 </div>

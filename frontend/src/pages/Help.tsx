@@ -65,8 +65,8 @@ function Help() {
                   <p>Start with lower prices ($0.01-$0.05) to build readership, then adjust based on engagement. Consider your content length and value when pricing.</p>
                 </details>
                 <details className="faq-question">
-                  <summary>Can I edit articles after publishing?</summary>
-                  <p>Currently, articles cannot be edited after publishing. Make sure to review your content carefully before hitting publish.</p>
+                  <summary>Can I edit or delete articles after publishing?</summary>
+                  <p>Yes. You can find edit and delete buttons next to each of your articles in the dashboard view.</p>
                 </details>
                 <details className="faq-question">
                   <summary>Is there a content review process?</summary>
