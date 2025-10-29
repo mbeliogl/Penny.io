@@ -1,5 +1,5 @@
 import { Link } from 'react-router-dom';
-import { Info, BookOpen, PenTool, HelpCircle, Mail, Shield, FileText, LayoutDashboard, Library } from 'lucide-react';
+import { Info, BookOpen, PenTool, HelpCircle, Mail, Shield, FileText, LayoutDashboard, Library, Zap } from 'lucide-react';
 
 function Footer() {
   return (
@@ -36,6 +36,7 @@ function Footer() {
               <li><Link to="/contact"><Mail size={16}/>Contact</Link></li>
               <li><Link to="/privacy"><Shield size={16}/>Privacy</Link></li>
               <li><Link to="/terms"><FileText size={16}/>Terms</Link></li>
+              <li><Link to="/x402-test"><Zap size={16}/>x402 Test</Link></li>
             </ul>
           </div>
         </div>

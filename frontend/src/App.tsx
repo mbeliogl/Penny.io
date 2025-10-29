@@ -16,6 +16,7 @@ import Help from './pages/Help';
 import Privacy from './pages/Privacy';
 import Terms from './pages/Terms';
 import Contact from './pages/Contact';
+import X402Test from './pages/X402Test';
 import './App.css'
 
 function App() {
@@ -40,6 +41,7 @@ function App() {
               <Route path="/privacy" element={<Privacy />} />
               <Route path="/terms" element={<Terms />} />
               <Route path="/contact" element={<Contact />} />
+              <Route path="/x402-test" element={<X402Test />} />
             </Routes>
           </main>
           <Footer />

@@ -4,12 +4,15 @@ import { useWallet } from '../contexts/WalletContext';
 import { ConnectButton } from '@rainbow-me/rainbowkit';
 import { Clock, User, Lock, HeartHandshake } from 'lucide-react';
 import { apiService, Article as ArticleType } from '../services/api';
+import { x402PaymentService } from '../services/x402PaymentService';
+import { useSignMessage } from 'wagmi';
 
 // Article page now uses real API data instead of mock data
 
 function Article() {
   const { id } = useParams();
   const { isConnected, address } = useWallet();
+  const { signMessage } = useSignMessage();
   const [article, setArticle] = useState<ArticleType | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string>('');
@@ -23,7 +26,7 @@ function Article() {
   const [isProcessingTip, setIsProcessingTip] = useState(false);
   const [hasTipped, setHasTipped] = useState(false);
 
-  // Fetch article on component mount
+  // Fetch article on component mount and check payment status
   useEffect(() => {
     const fetchArticle = async () => {
       if (!id) return;
@@ -35,6 +38,15 @@ function Article() {
         const response = await apiService.getArticleById(parseInt(id));
         if (response.success && response.data) {
           setArticle(response.data);
+          
+          // Check if user has already paid for this article
+          if (address) {
+            const hasPaidBefore = await x402PaymentService.checkPaymentStatus(
+              response.data.id, 
+              address
+            );
+            setHasPaid(hasPaidBefore);
+          }
         } else {
           setError(response.error || 'Article not found');
         }
@@ -47,26 +59,39 @@ function Article() {
     };
 
     fetchArticle();
-  }, [id]);
+  }, [id, address]);
 
   // Check if current user is the author of this article
   const isAuthor = address && article && address.toLowerCase() === article.authorAddress.toLowerCase();
 
-  // Increment view count when article loads (ony once per session)
+  // Increment view count when article loads (only once per session)
   useEffect(() => {
-    if (article && !isAuthor) {
-      // Only increment views for not-authors
+    if (article && !isAuthor && address && signMessage) {
+      // Only increment views for connected non-authors
       const incrementViews = async () => {
         try {
-          await apiService.incrementArticleViews(article.id);
+          // Try x402 micro-payment for view tracking, fallback to free increment
+          const isX402Supported = x402PaymentService.isX402Supported();
+          
+          if (isX402Supported) {
+            try {
+              await x402PaymentService.payForView(article.id, address, signMessage);
+            } catch (error) {
+              console.log('x402 view payment failed, using free view tracking:', error);
+              await apiService.incrementArticleViews(article.id);
+            }
+          } else {
+            // Fallback to free view tracking
+            await apiService.incrementArticleViews(article.id);
+          }
         } catch (error) {
-          console.error('Failed to incremenet views', error);
+          console.error('Failed to increment views', error);
           // Don't show error to users - this is background functionality
         }
       };
       incrementViews();
     }
-  }, [article, isAuthor]); //Only run when article or isAuthor changes
+  }, [article, isAuthor, address, signMessage]); // Only run when article, isAuthor, or wallet state changes
 
   if (loading) {
     return (
@@ -94,27 +119,70 @@ function Article() {
   }
 
   const handlePayment = async () => {
+    if (!address || !signMessage) {
+      console.error('Wallet not connected or sign function not available');
+      return;
+    }
+
     setIsProcessingPayment(true);
     
     try {
-      // Simulate payment processing delay
-      await new Promise(resolve => setTimeout(resolve, 2000));
+      // Check if x402 is supported, otherwise fallback to mock payment
+      const isX402Supported = x402PaymentService.isX402Supported();
       
-      // Record the purchase in the backend
-      const purchaseResponse = await apiService.recordPurchase(article.id);
-      
-      if (purchaseResponse.success) {
-        setHasPaid(true);
-        setShowPaymentToast(true);
-        // Hide toast after 3 seconds
-        setTimeout(() => setShowPaymentToast(false), 3000);
+      if (isX402Supported) {
+        // Use real x402 payment
+        const paymentResult = await x402PaymentService.purchaseArticle(
+          article.id,
+          article.price,
+          address,
+          signMessage
+        );
+
+        if (paymentResult.success) {
+          setHasPaid(true);
+          setShowPaymentToast(true);
+          setTimeout(() => setShowPaymentToast(false), 3000);
+        } else {
+          console.error('x402 payment failed:', paymentResult.error);
+          // Try fallback payment
+          const fallbackSuccess = await x402PaymentService.fallbackPurchase(article.id);
+          if (fallbackSuccess) {
+            setHasPaid(true);
+            setShowPaymentToast(true);
+            setTimeout(() => setShowPaymentToast(false), 3000);
+          }
+        }
       } else {
-        console.error('Failed to record purchase:', purchaseResponse.error);
-        // Could add error handling here
+        // Fallback to regular API payment for browsers without x402 support
+        console.log('x402 not supported, using fallback payment');
+        
+        // Simulate payment processing delay
+        await new Promise(resolve => setTimeout(resolve, 2000));
+        
+        const purchaseResponse = await apiService.recordPurchase(article.id);
+        
+        if (purchaseResponse.success) {
+          setHasPaid(true);
+          setShowPaymentToast(true);
+          setTimeout(() => setShowPaymentToast(false), 3000);
+        } else {
+          console.error('Failed to record purchase:', purchaseResponse.error);
+        }
       }
     } catch (error) {
       console.error('Payment processing failed:', error);
-      // Could add error handling here
+      // Try fallback payment as last resort
+      try {
+        const fallbackSuccess = await x402PaymentService.fallbackPurchase(article.id);
+        if (fallbackSuccess) {
+          setHasPaid(true);
+          setShowPaymentToast(true);
+          setTimeout(() => setShowPaymentToast(false), 3000);
+        }
+      } catch (fallbackError) {
+        console.error('Fallback payment also failed:', fallbackError);
+      }
     } finally {
       setIsProcessingPayment(false);
     }
