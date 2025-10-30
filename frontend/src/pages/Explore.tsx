@@ -134,7 +134,7 @@ function Explore() {
             <BookOpen size={48} />
           </div>
           <h1>Explore Articles</h1>
-          <p>Discover quality content from writers around the world. Pay only for what you read.</p>
+          <p>Discover quality content from writers around the world.</p>
         </div>
 
         {/* Main Content with Sidebar */}
@@ -261,9 +261,9 @@ function Explore() {
                   <div className="prompt-content">
                     <Search size={64} />
                     <h3>Discover Amazing Content</h3>
-                    <p>Select a category from the sidebar or use the search to find articles that interest you.</p>
+                    <p>Select a category from the sidebar or use the search feature to find articles that interest you.</p>
                     <div className="prompt-stats">
-                      <span className="total-articles">{articles.length} articles waiting to be discovered</span>
+                      <span className="total-articles">{articles.length} articles to explore</span>
                     </div>
                   </div>
                 </div>
