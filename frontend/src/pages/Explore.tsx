@@ -124,8 +124,8 @@ function Explore() {
       if (sortBy === 'date') {
         return new Date(b.publishDate).getTime() - new Date(a.publishDate).getTime();
       } else if (sortBy === 'likes') {
-        // For now, sort by views as a proxy for popularity (we'll add likes later)
-        return b.views - a.views;
+        // Sort by actual likes count for popularity
+        return b.likes - a.likes;
       }
       return 0;
     });

@@ -299,7 +299,7 @@ main {
 }
 
 .article-card .article-card-link:hover h3 {
-  color: #00ba7c;
+  color: #1d9bf0;
 }
 
 .article-card:hover {
@@ -6299,7 +6299,7 @@ main {
 }
 
 .sidebar-header svg {
-  color: #00ba7c;
+  color: #1a1a1a;
 }
 
 .category-list {
@@ -6331,7 +6331,7 @@ main {
 }
 
 .category-item.active {
-  background-color: #00ba7c;
+  background-color: #1a1a1a;
   color: white;
   font-weight: 600;
 }

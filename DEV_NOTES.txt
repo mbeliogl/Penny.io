@@ -42,34 +42,18 @@ Coinbase Wallet Localhost Configuration
   2. Explore Page (Public Discovery)
 ]  - /explore route with article grid
         - all articles shows top articles 
-  - Sort by: newest, most viewed, highest rated
   - Pagination for large article lists
 
   3. Article Likes System
-
-  - Article Popularity & Category Sorting - Implementation Plan
-
   Current State Analysis:
 
   - ✅ Views tracking: Already implemented and working
   - ✅ Purchases tracking: Already implemented (represents "readers")
   - ✅ Categories system: Already implemented with 16 categories
-  - ❌ Likes system: Not implemented yet
   - ❌ Popularity scoring: No unified popularity metric
 
   🎯 Suggested Implementation Plan:
 
-  Phase 1: Likes System (Database & Backend)
-
-  1. Add likes to database schema
-  ALTER TABLE articles ADD COLUMN likes INTEGER DEFAULT 0;
-  2. Create like/unlike API endpoints
-  POST /api/articles/:id/like     # Like an article
-  DELETE /api/articles/:id/like   # Unlike an article  
-  GET /api/articles/:id/likes     # Get like count
-  3. Track user likes to prevent duplicate likes
-    - Simple approach: Store in localStorage (client-side)
-    - Advanced approach: Create user_likes table with wallet addresses
 
   Phase 2: Popularity Scoring Algorithm
 
@@ -132,10 +116,7 @@ Coinbase Wallet Localhost Configuration
   🚀 Implementation Priority:
 
   Week 1 - Core Popularity:
-  1. ✅ Add likes column to database
-  2. ✅ Implement like/unlike API endpoints
   3. ✅ Create popularity scoring algorithm
-  4. ✅ Add Like button to article pages
 
   Week 2 - Explore Page Integration:
   5. ✅ Update explore page sorting options
@@ -160,3 +141,10 @@ Coinbase Wallet Localhost Configuration
   - "Recently Published" feed
   - "Trending" based on views/likes
   - Author highlighting
+
+
+
+
+
+
+      
