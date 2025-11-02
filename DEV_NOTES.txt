@@ -13,32 +13,25 @@
   - ✅ Categories system: Already implemented with 16 categories
   - ❌ Popularity scoring: No unified popularity metric
 
-  🎯 Suggested Implementation Plan:
+  
+  POPULARITY ALGO:
+  
+  - Create & test popularity scoring algorithm  
+  - Document popularity scroring algo & tech notes
 
 
-  Phase 5: Enhanced Category Experience
+  Advanced Features:
+  - Category statistics (total articles, avg popularity for each category)
+  - Add trending indicators
+  - Category-specific trending sections
+  - Popular articles widget for homepage
 
-  1. Category-specific popular articles
-  // API endpoint: GET /api/articles?category=Technology&sortBy=popular
-  2. Trending in category indicators
-  <div className="trending-badge">🔥 Trending in {category}</div>
-  3. Category statistics
-  // Show total articles, avg popularity in each category
 
-  🚀 Implementation Priority:
-
-  Week 1 - Core Popularity:
-  3. ✅ Create popularity scoring algorithm
-
-  Week 2 - Explore Page Integration:
-  5. ✅ Update explore page sorting options
-  6. ✅ Implement popularity-based default sorting for categories
-  7. ✅ Add trending indicators
-
-  Week 3 - Advanced Features:
-  8. ✅ Time-decay popularity algorithm
-  9. ✅ Category-specific trending sections
-  10. ✅ Popular articles widget for homepage
+  Enhanced Article Discovery (home page):
+  - "Popular Articles" section on home page
+  - "Recently Published" feed
+  - "Trending" based on views/likes
+  - Author highlighting
 
   🎯 Success Metrics:
 
@@ -47,12 +40,7 @@
   - Category selection defaults to most engaging content
   - Users can easily discover trending content in their interests
 
-  4. Enhanced Article Discovery
 
-  - "Popular Articles" section on home page
-  - "Recently Published" feed
-  - "Trending" based on views/likes
-  - Author highlighting
 
 
 

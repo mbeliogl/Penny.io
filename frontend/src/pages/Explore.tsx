@@ -1,6 +1,6 @@
-import { useState, useEffect } from 'react';
-import { Link } from 'react-router-dom';
-import { Search, Filter, X, BookOpen, Tag } from 'lucide-react';
+import { useState, useEffect, useRef } from 'react';
+import { Link, useAsyncError } from 'react-router-dom';
+import { Search, Filter, X, BookOpen, Tag, Grid, List, ArrowUp } from 'lucide-react';
 import { apiService, Article } from '../services/api';
 import { useWallet } from '../contexts/WalletContext';
 import LikeButton from '../components/LikeButton';
@@ -44,6 +44,17 @@ function Explore() {
   const [showFilters, setShowFilters] = useState(false);
   const [selectedCategory, setSelectedCategory] = useState('All Articles');
 
+  //Pagination declarations
+  const [displayedArticles, setDisplayedArticles] = useState<Article[]>([]);
+  const [hasMore, setHasMore] = useState(true);
+  const [isLoadingMore, setIsLoadingMore] = useState(false);
+  const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid'); //grid vs. list toggle
+  const [showScrollTop, setShowScrollTop] = useState(false);
+
+  // Ref for sentinel element (to trigger loadMore())
+  const loadMoreRef = useRef<HTMLDivElement>(null);
+
+
   // Handle like count changes
   const handleLikeChange = (articleId: number, newLikeCount: number) => {
     setArticles(prev => prev.map(article => 
@@ -76,6 +87,13 @@ function Explore() {
 
     fetchArticles();
   }, []);
+
+  // Reset displayed articles when filteredArticles changes
+  useEffect(() => {
+    const INITIAL_LOAD = 10;
+    setDisplayedArticles(filteredArticles.slice(0, INITIAL_LOAD));
+    setHasMore(filteredArticles.length > INITIAL_LOAD);
+  }, [filteredArticles]);
 
   // Filter and search articles
   useEffect(() => {
@@ -136,6 +154,68 @@ function Explore() {
 
     setFilteredArticles(filtered);
   }, [articles, searchTerm, authorFilter, dateFilter, sortBy, selectedCategory]);
+
+  // Load more articles into view
+  const loadMore = () => {
+    if (isLoadingMore || !hasMore) return; 
+
+    setIsLoadingMore(true);
+
+    // Simulate slight delay for UX 
+    setTimeout(() => {
+      const BATCH_SIZE = 20; 
+      const currentLength = displayedArticles.length;
+      const nextBatch = filteredArticles.slice(currentLength, currentLength + BATCH_SIZE);
+
+      setDisplayedArticles(prev => [...prev, ...nextBatch]);
+      setHasMore(currentLength + BATCH_SIZE < filteredArticles.length);
+      setIsLoadingMore(false);
+    }, 300);
+  };
+
+  // Intersection Observer for infinite scroll 
+  useEffect(() => {
+    const observer = new IntersectionObserver(
+      (entries) => {
+      const firstEntry = entries[0];
+      if (firstEntry.isIntersecting && hasMore && !isLoadingMore) {
+        loadMore();
+      }
+    },
+    { threshold: 0.1} //Trigger when 10% visible
+  );
+
+  const currentRef = loadMoreRef.current;
+  if (currentRef) {
+    observer.observe(currentRef);
+  }
+
+  return () => {
+    if (currentRef) {
+      observer.unobserve(currentRef);
+    }
+  };
+  }, [hasMore, isLoadingMore]); // Re-run when these change
+
+  // Track scroll position for "scroll to top" button
+  useEffect(() => {
+    const handleScroll = () => {
+      // Show button after scrolling down 400px
+      setShowScrollTop(window.scrollY > 400);
+    };
+
+    window.addEventListener('scroll', handleScroll);
+    return () => window.removeEventListener('scroll', handleScroll);
+  }, []);
+
+  // Scroll to top and reset displayed articles
+  const scrollToTop = () => {
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+    // Reset to initial 10 articles
+    const INITIAL_LOAD = 10;
+    setDisplayedArticles(filteredArticles.slice(0, INITIAL_LOAD));
+    setHasMore(filteredArticles.length > INITIAL_LOAD);
+  };
 
   // Clear all filters
   const clearFilters = () => {
@@ -266,13 +346,31 @@ function Explore() {
                 </div>
               )}
               
-              {/* Results count */}
+              {/* Results count and view toggle */}
               <div className="search-results-info">
-                {searchTerm || authorFilter || dateFilter !== 'all' || selectedCategory !== 'All Articles' ? (
-                  <p>Found {filteredArticles.length} articles</p>
-                ) : (
-                  <p>{filteredArticles.length} articles available</p>
-                )}
+                <div className="results-count">
+                  {searchTerm || authorFilter || dateFilter !== 'all' || selectedCategory !== 'All Articles' ? (
+                    <p>Found {filteredArticles.length} articles</p>
+                  ) : (
+                    <p>{filteredArticles.length} articles available</p>
+                  )}
+                </div>
+                <div className="view-toggle">
+                  <button
+                    className={`view-btn ${viewMode === 'grid' ? 'active' : ''}`}
+                    onClick={() => setViewMode('grid')}
+                    title="Grid view"
+                  >
+                    <Grid size={18} />
+                  </button>
+                  <button
+                    className={`view-btn ${viewMode === 'list' ? 'active' : ''}`}
+                    onClick={() => setViewMode('list')}
+                    title="List view"
+                  >
+                    <List size={18} />
+                  </button>
+                </div>
               </div>
             </div>
 
@@ -283,36 +381,60 @@ function Explore() {
                   <p>Loading articles...</p>
                 </div>
               ) : filteredArticles.length > 0 ? (
-                <div className="article-grid">
-                  {filteredArticles.map((article) => (
-                    <div key={article.id} className="article-card">
-                      <Link to={`/article/${article.id}`} className="article-card-link">
-                        <h3>{article.title}</h3>
-                        <p>{stripHtmlTags(article.preview)}</p>
-                      </Link>
-                      <div className="article-meta">
-                        <div className="author-info">
-                          <span className="author">by @{article.authorAddress.slice(0, 6)}...{article.authorAddress.slice(-4)}</span>
-                          <span className="read-time">• {article.readTime}</span>
+                <>
+                  <div className={`article-${viewMode}`}>
+                    {displayedArticles.map((article) => (
+                      <div key={article.id} className="article-card">
+                        <Link to={`/article/${article.id}`} className="article-card-link">
+                          <h3>{article.title}</h3>
+                          <p>{stripHtmlTags(article.preview)}</p>
+                        </Link>
+                        <div className="article-meta">
+                          <div className="author-info">
+                            <span className="author">by @{article.authorAddress.slice(0, 6)}...{article.authorAddress.slice(-4)}</span>
+                            <span className="read-time">• {article.readTime}</span>
+                          </div>
+                          <span className="price">${article.price.toFixed(2)}</span>
                         </div>
-                        <span className="price">${article.price.toFixed(2)}</span>
-                      </div>
-                      <div className="article-stats">
-                        <div className="article-stats-left">
-                          <span className="views">{article.views} views</span>
-                          <span className="purchases">{article.purchases} readers</span>
+                        <div className="article-stats">
+                          <div className="article-stats-left">
+                            <span className="views">{article.views} views</span>
+                            <span className="purchases">{article.purchases} readers</span>
+                          </div>
+                          <div className="article-stats-right">
+                            <LikeButton
+                              articleId={article.id}
+                              userAddress={address}
+                              initialLikes={article.likes}
+                              className="article-stats-like-button"
+                              onLikeChange={handleLikeChange}
+                            />
+                            <span className="price">${article.price.toFixed(2)}</span>
+                          </div>
                         </div>
-                        <LikeButton 
-                          articleId={article.id} 
-                          userAddress={address} 
-                          initialLikes={article.likes}
-                          className="article-stats-like-button"
-                          onLikeChange={handleLikeChange}
-                        />
                       </div>
+                    ))}
+                  </div>
+
+                  {/* Sentinel element for infinite scroll */}
+                  {hasMore && (
+                    <div ref={loadMoreRef} className="load-more-trigger" style={{ height: '20px' }} />
+                  )}
+
+                  {/* Loading indicator */}
+                  {isLoadingMore && (
+                    <div className="loading-more">
+                      <p>Loading more articles...</p>
                     </div>
-                  ))}
-                </div>
+                  )}
+
+                  {/* End of results message */}
+                  {!hasMore && displayedArticles.length > 0 && (
+                    <div className="end-of-results">
+                      <p>You've reached the end!</p>
+                    </div>
+                  )}
+                </>
               ) : (
                 <div className="no-articles">
                   <div className="no-articles-content">
@@ -334,6 +456,17 @@ function Explore() {
           </div>
         </div>
       </div>
+
+      {/* Scroll to Top Button */}
+      {showScrollTop && (
+        <button
+          className="scroll-to-top"
+          onClick={scrollToTop}
+          title="Scroll to top and reset"
+        >
+          <ArrowUp size={24} />
+        </button>
+      )}
     </div>
   );
 }

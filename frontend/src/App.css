@@ -275,6 +275,185 @@ main {
   margin-top: 40px;
 }
 
+/* List View Styles */
+.article-list {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  margin-top: 40px;
+}
+
+.article-list .article-card {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  grid-template-rows: auto auto auto;
+  gap: 12px 20px;
+  padding: 20px;
+  align-items: start;
+}
+
+.article-list .article-card .article-card-link {
+  grid-column: 1;
+  grid-row: 1 / 3;
+  margin-bottom: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+.article-list .article-card h3 {
+  font-size: 1.125rem;
+  margin-bottom: 8px;
+}
+
+.article-list .article-card p {
+  margin-bottom: 0;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.article-list .article-card .article-meta {
+  grid-column: 2;
+  grid-row: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 8px;
+  margin-top: 0;
+  padding-top: 0;
+  border-top: none;
+  min-width: 150px;
+}
+
+.article-list .article-card .article-meta .author-info {
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 4px;
+}
+
+.article-list .article-card .article-meta .read-time {
+  margin-left: 0;
+}
+
+/* Hide price in metadata for list view (will show in stats instead) */
+.article-list .article-card .article-meta .price {
+  display: none;
+}
+
+.article-list .article-card .article-stats {
+  grid-column: 1 / 3;
+  grid-row: 3;
+  margin-top: 0;
+  padding-top: 12px;
+  border-top: 1px solid #e1e8ed;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+/* Right side wrapper for like button and price */
+.article-list .article-card .article-stats .article-stats-right {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+/* Show price in stats for list view only */
+.article-list .article-card .article-stats .price {
+  display: block;
+}
+
+/* Hide price in stats for grid view (it shows in metadata instead) */
+.article-grid .article-card .article-stats .price {
+  display: none;
+}
+
+/* Infinite Scroll Styles */
+.load-more-trigger {
+  width: 100%;
+  margin: 20px 0;
+}
+
+.loading-more {
+  text-align: center;
+  padding: 40px 20px;
+}
+
+.loading-more p {
+  color: #666;
+  font-size: 14px;
+  font-style: italic;
+}
+
+.end-of-results {
+  text-align: center;
+  padding: 40px 20px;
+  margin-top: 20px;
+}
+
+.end-of-results p {
+  color: #999;
+  font-size: 14px;
+  font-weight: 500;
+}
+
+/* Scroll to Top Button */
+.scroll-to-top {
+  position: fixed;
+  bottom: 40px;
+  right: 40px;
+  width: 56px;
+  height: 56px;
+  background: #1a1a1a;
+  color: white;
+  border: none;
+  border-radius: 50%;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  transition: all 0.3s ease;
+  z-index: 50;
+  animation: fadeInUp 0.3s ease;
+}
+
+.scroll-to-top:hover {
+  background: #333;
+  transform: translateY(-4px);
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.25);
+}
+
+.scroll-to-top:active {
+  transform: translateY(-2px);
+}
+
+@keyframes fadeInUp {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@media (max-width: 768px) {
+  .scroll-to-top {
+    bottom: 24px;
+    right: 24px;
+    width: 48px;
+    height: 48px;
+  }
+
+  .scroll-to-top svg {
+    width: 20px;
+    height: 20px;
+  }
+}
+
 /* Article Card Styles */
 .article-card-link {
   text-decoration: none;
@@ -6202,11 +6381,48 @@ main {
   border-color: #1a1a1a;
 }
 
-.search-results-info p {
+.search-results-info {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.search-results-info .results-count p {
   font-size: 14px;
   color: #666;
   margin: 0;
   font-style: italic;
+}
+
+.view-toggle {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+
+.view-btn {
+  padding: 8px;
+  background: #f8f9fa;
+  border: 1px solid #e1e8ed;
+  border-radius: 6px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s ease;
+  color: #666;
+}
+
+.view-btn:hover {
+  background: #e9ecef;
+  color: #1a1a1a;
+  border-color: #1a1a1a;
+}
+
+.view-btn.active {
+  background: #1a1a1a;
+  color: white;
+  border-color: #1a1a1a;
 }
 
 @media (max-width: 768px) {
@@ -6496,7 +6712,7 @@ main {
   color: #1a1a1a;
 }
 
-.category-list {
+.categories-sidebar .category-list {
   display: flex;
   flex-direction: column;
   gap: 4px;
