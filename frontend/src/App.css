@@ -1291,6 +1291,8 @@ main {
   display: flex;
   flex-direction: column;
   gap: 6px;
+  flex: 1;
+  min-width: 0;
 }
 
 .donation-name {
@@ -1328,6 +1330,8 @@ main {
   cursor: pointer;
   transition: background-color 0.2s ease, transform 0.2s ease;
   white-space: nowrap;
+  min-width: 80px;
+  justify-content: center;
 }
 
 .donation-copy-button:hover {
