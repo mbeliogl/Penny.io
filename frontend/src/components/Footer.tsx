@@ -1,7 +1,46 @@
+import { useState } from 'react';
 import { Link } from 'react-router-dom';
-import { Info, BookOpen, PenTool, HelpCircle, Mail, Shield, FileText, LayoutDashboard, Library, Wrench } from 'lucide-react';
+import { Info, BookOpen, PenTool, HelpCircle, Mail, Shield, FileText, LayoutDashboard, Library, Wrench, HeartHandshake, Copy, Check } from 'lucide-react';
 
 function Footer() {
+  const [isDonateModalOpen, setIsDonateModalOpen] = useState(false);
+  const [copiedAddress, setCopiedAddress] = useState<string | null>(null);
+
+  const donationOptions = [
+    {
+      name: 'Ethereum (Base)',
+      symbol: 'ETH / USDC',
+      address: '0xA1b2C3d4E5f67890123456789aBCdEf012345678',
+    },
+    {
+      name: 'Solana',
+      symbol: 'SOL / USDC',
+      address: '9h8g7f6e5d4c3b2a1nM9L8K7J6H5G4F3E2D1C0B',
+    },
+    {
+      name: 'Bitcoin',
+      symbol: 'BTC',
+      address: 'bc1qsampleaddress0l1m2n3o4p5q6r7s8t9u0vwxyz',
+    },
+  ];
+
+  const handleCopyAddress = async (address: string) => {
+    try {
+      if (navigator?.clipboard?.writeText) {
+        await navigator.clipboard.writeText(address);
+        setCopiedAddress(address);
+        setTimeout(() => setCopiedAddress(null), 2000);
+      }
+    } catch (error) {
+      console.error('Failed to copy wallet address', error);
+    }
+  };
+
+  const closeDonateModal = () => {
+    setIsDonateModalOpen(false);
+    setCopiedAddress(null);
+  };
+
   return (
     <footer className="footer">
       <div className="container">
@@ -11,8 +50,18 @@ function Footer() {
             <p>Micropayments for quality content</p>
 
             {/* Donate Option */}
-            <div className='donate'>
-              <h3>donate</h3>
+            <div className="donate">
+              <button
+                type="button"
+                className="donate-button"
+                onClick={(event) => {
+                  event.stopPropagation();
+                  setIsDonateModalOpen(true);
+                }}
+              >
+                <HeartHandshake size={16} />
+                <span>Donate</span>
+              </button>
             </div>
           </div>
           
@@ -54,6 +103,68 @@ function Footer() {
           </div>
         </div>
       </div>
+
+      {isDonateModalOpen && (
+        <div
+          className="donation-modal-overlay"
+          role="presentation"
+          onClick={closeDonateModal}
+        >
+          <div
+            className="donation-modal"
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="donation-modal-title"
+            onClick={(event) => event.stopPropagation()}
+          >
+            <div className="donation-modal-header">
+              <div className="donation-modal-title">
+                <HeartHandshake size={18} />
+                <h3 id="donation-modal-title">Support Penny.io</h3>
+              </div>
+              <button
+                type="button"
+                className="donation-modal-close"
+                onClick={closeDonateModal}
+                aria-label="Close donation modal"
+              >
+                ×
+              </button>
+            </div>
+            <p className="donation-modal-description">
+              Choose a network and copy the wallet address to send your appreciation.
+            </p>
+            <ul className="donation-list">
+              {donationOptions.map(({ name, symbol, address }) => (
+                <li key={address} className="donation-item">
+                  <div className="donation-info">
+                    <span className="donation-name">{name}</span>
+                    <span className="donation-symbol">{symbol}</span>
+                    <code className="donation-address">{address}</code>
+                  </div>
+                  <button
+                    type="button"
+                    className="donation-copy-button"
+                    onClick={() => handleCopyAddress(address)}
+                  >
+                    {copiedAddress === address ? (
+                      <>
+                        <Check size={14} />
+                        <span>Copied</span>
+                      </>
+                    ) : (
+                      <>
+                        <Copy size={14} />
+                        <span>Copy</span>
+                      </>
+                    )}
+                  </button>
+                </li>
+              ))}
+            </ul>
+          </div>
+        </div>
+      )}
     </footer>
   );
 }
