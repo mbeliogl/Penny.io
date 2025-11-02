@@ -211,7 +211,8 @@ router.post('/articles', async (req: Request, res: Response) => {
       earnings: 0,
       readTime,
       categories: categories || [],
-      likes: 0
+      likes: 0,
+      popularityScore: 0
     };
 
     const article = await db.createArticle(articleData);
@@ -294,7 +295,7 @@ router.put('/articles/:id/view', async (req: Request, res: Response) => {
     }
 
     const result = await db.incrementArticleViews(articleId);
-    
+
     if (result) {
       // Also increment author's total views
       const article = await db.getArticleById(articleId);
@@ -305,6 +306,9 @@ router.put('/articles/:id/view', async (req: Request, res: Response) => {
           await db.createOrUpdateAuthor(author);
         }
       }
+
+      // Recalculate popularity score
+      await db.updatePopularityScore(articleId);
 
       const response: ApiResponse<{ message: string }> = {
         success: true,
@@ -449,6 +453,9 @@ router.post('/articles/:id/purchase', async (req: Request, res: Response) => {
         author.totalEarnings += article.price;
         await db.createOrUpdateAuthor(author);
       }
+
+      // Recalculate popularity score
+      await db.updatePopularityScore(articleId);
 
       // Record payment for persistence
       recordPayment(articleId, paymentData.authorization?.from || 'unknown');
@@ -752,6 +759,30 @@ router.post('/upload', upload.single('file'), (req: Request, res: Response) => {
   }
 });
 
+// POST /api/articles/recalculate-popularity - Manually recalculate all popularity scores
+router.post('/articles/recalculate-popularity', async (req: Request, res: Response) => {
+  try {
+    console.log('🔄 Starting manual popularity score recalculation...');
+    const result = await db.recalculateAllPopularityScores();
+
+    const response: ApiResponse<{ updated: number; errors: number }> = {
+      success: true,
+      data: {
+        updated: result.updated,
+        errors: result.errors
+      }
+    };
+    res.json(response);
+  } catch (error) {
+    console.error('Error recalculating popularity scores:', error);
+    const response: ApiResponse<never> = {
+      success: false,
+      error: 'Failed to recalculate popularity scores'
+    };
+    res.status(500).json(response);
+  }
+});
+
 // x402 Payment Verification Routes
 
 interface PaymentPayload {
@@ -903,11 +934,14 @@ router.post('/articles/:id/like', async (req: Request, res: Response) => {
 
     // Try to like the article
     const liked = await db.likeArticle(articleId, userAddress);
-    
+
     if (liked) {
       // Update the article's likes count
       await db.updateArticleLikesCount(articleId);
-      
+
+      // Recalculate popularity score
+      await db.updatePopularityScore(articleId);
+
       const response: ApiResponse<{ message: string; liked: boolean }> = {
         success: true,
         data: { message: 'Article liked successfully', liked: true }
@@ -955,11 +989,14 @@ router.delete('/articles/:id/like', async (req: Request, res: Response) => {
 
     // Try to unlike the article
     const unliked = await db.unlikeArticle(articleId, userAddress);
-    
+
     if (unliked) {
       // Update the article's likes count
       await db.updateArticleLikesCount(articleId);
-      
+
+      // Recalculate popularity score
+      await db.updatePopularityScore(articleId);
+
       const response: ApiResponse<{ message: string; liked: boolean }> = {
         success: true,
         data: { message: 'Article unliked successfully', liked: false }
@@ -1067,6 +1104,9 @@ async function recordArticlePurchase(articleId: number): Promise<any> {
     const newEarnings = article.earnings + article.price;
 
     await db.updateArticleStats(articleId, undefined, newPurchases, newEarnings);
+
+    // Recalculate popularity score
+    await db.updatePopularityScore(articleId);
 
     return {
       articleId,

@@ -1,6 +1,7 @@
 import sqlite3 from 'sqlite3';
 import path, { resolve } from 'path';
 import { Article, Author, Draft } from './types';
+import { calculatePopularityScore } from './popularityScorer';
 
 class Database {
   private db: sqlite3.Database;
@@ -103,6 +104,29 @@ class Database {
         console.error('Error adding likes column:', err);
       } else if (!err) {
         console.log('Added likes column to articles table');
+      }
+    });
+
+    // Add popularityScore column to existing articles table if it doesn't exist
+    this.db.run(`
+      ALTER TABLE articles ADD COLUMN popularityScore REAL DEFAULT 0
+    `, (err) => {
+      if (err && !err.message.includes('duplicate column name')) {
+        console.error('Error adding popularityScore column:', err);
+      } else if (!err) {
+        console.log('Added popularityScore column to articles table');
+      }
+    });
+
+    // Create index for popularityScore for better sorting performance
+    this.db.run(`
+      CREATE INDEX IF NOT EXISTS idx_articles_popularity
+      ON articles(popularityScore DESC)
+    `, (err) => {
+      if (err) {
+        console.error('Error creating popularity index:', err);
+      } else {
+        console.log('Created popularity score index');
       }
     });
   }
@@ -600,6 +624,104 @@ class Database {
           );
         }
       );
+    });
+  }
+
+  /**
+   * Update popularity score for a single article
+   */
+  async updatePopularityScore(articleId: number): Promise<void> {
+    return new Promise((resolve, reject) => {
+      // First, get article metrics
+      this.db.get(
+        'SELECT views, likes, purchases, publishDate FROM articles WHERE id = ?',
+        [articleId],
+        (err, row: any) => {
+          if (err) {
+            reject(err);
+            return;
+          }
+
+          if (!row) {
+            reject(new Error(`Article ${articleId} not found`));
+            return;
+          }
+
+          // Calculate new score
+          const score = calculatePopularityScore(
+            row.views,
+            row.likes,
+            row.purchases,
+            row.publishDate
+          );
+
+          // Update database
+          this.db.run(
+            'UPDATE articles SET popularityScore = ? WHERE id = ?',
+            [score, articleId],
+            (err) => {
+              if (err) {
+                reject(err);
+              } else {
+                console.log(`✅ Updated popularity score for article ${articleId}: ${score}`);
+                resolve();
+              }
+            }
+          );
+        }
+      );
+    });
+  }
+
+  /**
+   * Recalculate popularity scores for ALL articles
+   */
+  async recalculateAllPopularityScores(): Promise<{ updated: number; errors: number }> {
+    return new Promise((resolve, reject) => {
+      this.db.all('SELECT id, views, likes, purchases, publishDate FROM articles', [], async (err, rows: any[]) => {
+        if (err) {
+          reject(err);
+          return;
+        }
+
+        let updated = 0;
+        let errors = 0;
+
+        console.log(`🔄 Recalculating popularity scores for ${rows.length} articles...`);
+
+        for (const row of rows) {
+          try {
+            const score = calculatePopularityScore(
+              row.views,
+              row.likes,
+              row.purchases,
+              row.publishDate
+            );
+
+            await new Promise<void>((res, rej) => {
+              this.db.run(
+                'UPDATE articles SET popularityScore = ? WHERE id = ?',
+                [score, row.id],
+                (err) => {
+                  if (err) {
+                    rej(err);
+                  } else {
+                    res();
+                  }
+                }
+              );
+            });
+
+            updated++;
+          } catch (error) {
+            console.error(`❌ Error updating article ${row.id}:`, error);
+            errors++;
+          }
+        }
+
+        console.log(`✅ Recalculation complete: ${updated} updated, ${errors} errors`);
+        resolve({ updated, errors });
+      });
     });
   }
 

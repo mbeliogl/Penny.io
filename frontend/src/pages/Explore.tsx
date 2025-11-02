@@ -40,7 +40,7 @@ function Explore() {
   const [searchTerm, setSearchTerm] = useState('');
   const [authorFilter, setAuthorFilter] = useState('');
   const [dateFilter, setDateFilter] = useState('all'); // all, week, month
-  const [sortBy, setSortBy] = useState('date'); // date, likes
+  const [sortBy, setSortBy] = useState('popular'); // date, popular, views, likes
   const [showFilters, setShowFilters] = useState(false);
   const [selectedCategory, setSelectedCategory] = useState('All Articles');
 
@@ -123,8 +123,12 @@ function Explore() {
     filtered.sort((a, b) => {
       if (sortBy === 'date') {
         return new Date(b.publishDate).getTime() - new Date(a.publishDate).getTime();
+      } else if (sortBy === 'popular') {
+        // Sort by popularity score (highest first)
+        return (b.popularityScore || 0) - (a.popularityScore || 0);
+      } else if (sortBy === 'views') {
+        return b.views - a.views;
       } else if (sortBy === 'likes') {
-        // Sort by actual likes count for popularity
         return b.likes - a.likes;
       }
       return 0;
@@ -239,13 +243,15 @@ function Explore() {
                     
                     <div className="filter-group">
                       <label>Sort by:</label>
-                      <select 
-                        value={sortBy} 
+                      <select
+                        value={sortBy}
                         onChange={(e) => setSortBy(e.target.value)}
                         className="filter-select"
                       >
                         <option value="date">Latest</option>
-                        <option value="likes">Most Popular</option>
+                        <option value="popular">Most Popular</option>
+                        <option value="views">Most Viewed</option>
+                        <option value="likes">Most Liked</option>
                       </select>
                     </div>
                     
@@ -275,17 +281,6 @@ function Explore() {
               {loading ? (
                 <div className="loading-articles">
                   <p>Loading articles...</p>
-                </div>
-              ) : selectedCategory === 'All Articles' && !searchTerm && !authorFilter && dateFilter === 'all' ? (
-                <div className="explore-prompt">
-                  <div className="prompt-content">
-                    <Search size={64} />
-                    <h3>Discover Amazing Content</h3>
-                    <p>Select a category from the sidebar or use the search feature to find articles that interest you.</p>
-                    <div className="prompt-stats">
-                      <span className="total-articles">{articles.length} articles to explore</span>
-                    </div>
-                  </div>
                 </div>
               ) : filteredArticles.length > 0 ? (
                 <div className="article-grid">

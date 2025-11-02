@@ -16,6 +16,7 @@ export interface Article {
   readTime: string;
   categories: string[];
   likes: number;
+  popularityScore: number;
 }
 
 export interface Author {
