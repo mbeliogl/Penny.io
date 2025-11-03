@@ -5,6 +5,18 @@ import rateLimit from 'express-rate-limit';
 import Database from './database';
 import { supabase } from './supabaseClient';
 import { Article, Author, Draft, CreateArticleRequest, CreateDraftRequest, ApiResponse, GetArticlesQuery } from './types';
+import {
+  validate,
+  createArticleSchema,
+  updateArticleSchema,
+  createDraftSchema,
+  getArticlesQuerySchema,
+  articleIdSchema,
+  draftIdSchema,
+  likeRequestSchema,
+  verifyPaymentSchema,
+  deleteRequestSchema
+} from './validation';
 
 const router = express.Router();
 const db = new Database();
@@ -125,7 +137,7 @@ function estimateReadTime(content: string): string {
 }
 
 // GET /api/articles - Get all articles or articles by author
-router.get('/articles', readLimiter, async (req: Request, res: Response) => {
+router.get('/articles', readLimiter, validate(getArticlesQuerySchema, 'query'), async (req: Request, res: Response) => {
   try {
     const { authorAddress, search, sortBy, sortOrder } = req.query as GetArticlesQuery;
 
@@ -230,7 +242,7 @@ router.get('/articles/:id', readLimiter, async (req: Request, res: Response) => 
 });
 
 // POST /api/articles - Create new article
-router.post('/articles', writeLimiter, async (req: Request, res: Response) => {
+router.post('/articles', writeLimiter, validate(createArticleSchema), async (req: Request, res: Response) => {
   try {
     const { title, content, price, authorAddress, categories }: CreateArticleRequest = req.body;
 
@@ -548,7 +560,7 @@ router.post('/articles/:id/purchase', criticalLimiter, async (req: Request, res:
 // Draft Routes
 
 // POST /api/drafts - Create or update draft
-router.post('/drafts', writeLimiter, async (req: Request, res: Response) => {
+router.post('/drafts', writeLimiter, validate(createDraftSchema), async (req: Request, res: Response) => {
   try {
     const { title, content, price, authorAddress, isAutoSave }: CreateDraftRequest & { isAutoSave?: boolean } = req.body;
 
@@ -620,7 +632,7 @@ router.get('/drafts/:authorAddress', readLimiter, async (req: Request, res: Resp
 });
 
 // DELETE /api/drafts/:id - Delete draft
-router.delete('/drafts/:id', writeLimiter, async (req: Request, res: Response) => {
+router.delete('/drafts/:id', writeLimiter, validate(deleteRequestSchema), async (req: Request, res: Response) => {
   try {
     const draftId = parseInt(req.params.id);
     const { authorAddress } = req.body;
@@ -659,7 +671,7 @@ router.delete('/drafts/:id', writeLimiter, async (req: Request, res: Response) =
 });
 
 // PUT /api/articles/:id - Update existing article
-router.put('/articles/:id', writeLimiter, async (req: Request, res: Response) => {
+router.put('/articles/:id', writeLimiter, validate(updateArticleSchema), async (req: Request, res: Response) => {
   try {
     const articleId = parseInt(req.params.id);
     const { title, content, price, authorAddress, categories }: CreateArticleRequest = req.body;
@@ -732,7 +744,7 @@ router.put('/articles/:id', writeLimiter, async (req: Request, res: Response) =>
 });
 
 // DELETE /api/articles/:id - Delete article
-router.delete('/articles/:id', writeLimiter, async (req: Request, res: Response) => {
+router.delete('/articles/:id', writeLimiter, validate(deleteRequestSchema), async (req: Request, res: Response) => {
   try {
     const articleId = parseInt(req.params.id);
     const { authorAddress } = req.body;
@@ -883,7 +895,7 @@ interface PaymentPayload {
 }
 
 // Verify x402 payment
-router.post('/verify-payment', criticalLimiter, async (req: Request, res: Response) => {
+router.post('/verify-payment', criticalLimiter, validate(verifyPaymentSchema), async (req: Request, res: Response) => {
   try {
     const { paymentPayload, articleId } = req.body as {
       paymentPayload: PaymentPayload;
@@ -986,7 +998,7 @@ router.get('/payment-status/:articleId/:userAddress', readLimiter, async (req: R
 // Like/Unlike Routes
 
 // POST /api/articles/:id/like - Like an article
-router.post('/articles/:id/like', writeLimiter, async (req: Request, res: Response) => {
+router.post('/articles/:id/like', writeLimiter, validate(likeRequestSchema), async (req: Request, res: Response) => {
   try {
     const articleId = parseInt(req.params.id);
     const { userAddress } = req.body;
@@ -1051,7 +1063,7 @@ router.post('/articles/:id/like', writeLimiter, async (req: Request, res: Respon
 });
 
 // DELETE /api/articles/:id/like - Unlike an article
-router.delete('/articles/:id/like', writeLimiter, async (req: Request, res: Response) => {
+router.delete('/articles/:id/like', writeLimiter, validate(likeRequestSchema), async (req: Request, res: Response) => {
   try {
     const articleId = parseInt(req.params.id);
     const { userAddress } = req.body;
