@@ -17,6 +17,7 @@ import {
   verifyPaymentSchema,
   deleteRequestSchema
 } from './validation';
+import { checkForSpam } from './spamPrevention';
 
 const router = express.Router();
 const db = new Database();
@@ -261,6 +262,17 @@ router.post('/articles', writeLimiter, validate(createArticleSchema), async (req
         error: 'Price must be between $0.01 and $1.00'
       };
       return res.status(400).json(response);
+    }
+
+    // Spam prevention check
+    const spamCheck = await checkForSpam(authorAddress, title, content);
+    if (spamCheck.isSpam) {
+      const response: ApiResponse<never> = {
+        success: false,
+        error: spamCheck.reason || 'Content blocked by spam filter',
+        message: spamCheck.details
+      };
+      return res.status(429).json(response); // 429 Too Many Requests
     }
 
     // Generate preview and read time
