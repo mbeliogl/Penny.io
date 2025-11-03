@@ -1,12 +1,81 @@
 import express, { Request, Response } from 'express';
 import multer from 'multer';
 import path from 'path';
+import rateLimit from 'express-rate-limit';
 import Database from './database';
 import { supabase } from './supabaseClient';
 import { Article, Author, Draft, CreateArticleRequest, CreateDraftRequest, ApiResponse, GetArticlesQuery } from './types';
 
 const router = express.Router();
 const db = new Database();
+
+// ============================================
+// RATE LIMITING CONFIGURATION
+// ============================================
+
+/**
+ * Rate Limiter: General Read Operations
+ * For endpoints that fetch data (GET requests)
+ * Higher limit since reading doesn't modify state
+ */
+const readLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000, // 15 minutes
+  max: 100, // 100 requests per window
+  message: {
+    success: false,
+    error: 'Too many requests from this IP, please try again later.'
+  },
+  standardHeaders: true, // Return rate limit info in `RateLimit-*` headers
+  legacyHeaders: false,  // Disable `X-RateLimit-*` headers
+});
+
+/**
+ * Rate Limiter: Write Operations
+ * For endpoints that create/update/delete data
+ * Lower limit to prevent spam and abuse
+ */
+const writeLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000, // 15 minutes
+  max: 20, // 20 requests per window
+  message: {
+    success: false,
+    error: 'Too many write requests. Please slow down and try again later.'
+  },
+  standardHeaders: true,
+  legacyHeaders: false,
+});
+
+/**
+ * Rate Limiter: Critical Operations
+ * For payment endpoints and sensitive operations
+ * Very strict limit to prevent abuse
+ */
+const criticalLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000, // 15 minutes
+  max: 10, // 10 requests per window
+  message: {
+    success: false,
+    error: 'Too many attempts. Please wait before trying again.'
+  },
+  standardHeaders: true,
+  legacyHeaders: false,
+});
+
+/**
+ * Rate Limiter: File Uploads
+ * For image upload endpoint
+ * Moderate limit to prevent storage abuse
+ */
+const uploadLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000, // 15 minutes
+  max: 30, // 30 uploads per window
+  message: {
+    success: false,
+    error: 'Too many upload requests. Please wait before uploading more files.'
+  },
+  standardHeaders: true,
+  legacyHeaders: false,
+});
 
 // Configure multer for file uploads (memory storage for Supabase)
 const storage = multer.memoryStorage();
@@ -56,7 +125,7 @@ function estimateReadTime(content: string): string {
 }
 
 // GET /api/articles - Get all articles or articles by author
-router.get('/articles', async (req: Request, res: Response) => {
+router.get('/articles', readLimiter, async (req: Request, res: Response) => {
   try {
     const { authorAddress, search, sortBy, sortOrder } = req.query as GetArticlesQuery;
 
@@ -131,7 +200,7 @@ router.get('/articles', async (req: Request, res: Response) => {
 });
 
 // GET /api/articles/:id - Get specific article
-router.get('/articles/:id', async (req: Request, res: Response) => {
+router.get('/articles/:id', readLimiter, async (req: Request, res: Response) => {
   try {
     const articleId = parseInt(req.params.id);
     const article = await db.getArticleById(articleId);
@@ -161,7 +230,7 @@ router.get('/articles/:id', async (req: Request, res: Response) => {
 });
 
 // POST /api/articles - Create new article
-router.post('/articles', async (req: Request, res: Response) => {
+router.post('/articles', writeLimiter, async (req: Request, res: Response) => {
   try {
     const { title, content, price, authorAddress, categories }: CreateArticleRequest = req.body;
 
@@ -243,7 +312,7 @@ router.post('/articles', async (req: Request, res: Response) => {
 });
 
 // GET /api/authors/:address - Get author info
-router.get('/authors/:address', async (req: Request, res: Response) => {
+router.get('/authors/:address', readLimiter, async (req: Request, res: Response) => {
   try {
     const { address } = req.params;
     const author = await db.getAuthor(address);
@@ -273,7 +342,7 @@ router.get('/authors/:address', async (req: Request, res: Response) => {
 });
 
 // PUT /api/articles/:id/view - Increment article views
-router.put('/articles/:id/view', async (req: Request, res: Response) => {
+router.put('/articles/:id/view', readLimiter, async (req: Request, res: Response) => {
   try {
     const articleId = parseInt(req.params.id);
     
@@ -369,7 +438,7 @@ async function verifyX402Payment(paymentData: any, article: any): Promise<boolea
 }
 
 // POST /api/articles/:id/purchase - x402 Purchase with dynamic pricing and recipients
-router.post('/articles/:id/purchase', async (req: Request, res: Response) => {
+router.post('/articles/:id/purchase', criticalLimiter, async (req: Request, res: Response) => {
   try {
     const articleId = parseInt(req.params.id);
     const article = await db.getArticleById(articleId);
@@ -479,7 +548,7 @@ router.post('/articles/:id/purchase', async (req: Request, res: Response) => {
 // Draft Routes
 
 // POST /api/drafts - Create or update draft
-router.post('/drafts', async (req: Request, res: Response) => {
+router.post('/drafts', writeLimiter, async (req: Request, res: Response) => {
   try {
     const { title, content, price, authorAddress, isAutoSave }: CreateDraftRequest & { isAutoSave?: boolean } = req.body;
 
@@ -525,7 +594,7 @@ router.post('/drafts', async (req: Request, res: Response) => {
 });
 
 // GET /api/drafts/:authorAddress - Get drafts for author
-router.get('/drafts/:authorAddress', async (req: Request, res: Response) => {
+router.get('/drafts/:authorAddress', readLimiter, async (req: Request, res: Response) => {
   try {
     const { authorAddress } = req.params;
     
@@ -551,7 +620,7 @@ router.get('/drafts/:authorAddress', async (req: Request, res: Response) => {
 });
 
 // DELETE /api/drafts/:id - Delete draft
-router.delete('/drafts/:id', async (req: Request, res: Response) => {
+router.delete('/drafts/:id', writeLimiter, async (req: Request, res: Response) => {
   try {
     const draftId = parseInt(req.params.id);
     const { authorAddress } = req.body;
@@ -590,7 +659,7 @@ router.delete('/drafts/:id', async (req: Request, res: Response) => {
 });
 
 // PUT /api/articles/:id - Update existing article
-router.put('/articles/:id', async (req: Request, res: Response) => {
+router.put('/articles/:id', writeLimiter, async (req: Request, res: Response) => {
   try {
     const articleId = parseInt(req.params.id);
     const { title, content, price, authorAddress, categories }: CreateArticleRequest = req.body;
@@ -663,7 +732,7 @@ router.put('/articles/:id', async (req: Request, res: Response) => {
 });
 
 // DELETE /api/articles/:id - Delete article
-router.delete('/articles/:id', async (req: Request, res: Response) => {
+router.delete('/articles/:id', writeLimiter, async (req: Request, res: Response) => {
   try {
     const articleId = parseInt(req.params.id);
     const { authorAddress } = req.body;
@@ -725,7 +794,7 @@ router.delete('/articles/:id', async (req: Request, res: Response) => {
 });
 
 // POST /api/upload - Upload image files for TinyMCE (Supabase Storage)
-router.post('/upload', upload.single('file'), async (req: Request, res: Response) => {
+router.post('/upload', uploadLimiter, upload.single('file'), async (req: Request, res: Response) => {
   try {
     if (!req.file) {
       return res.status(400).json({
@@ -776,7 +845,7 @@ router.post('/upload', upload.single('file'), async (req: Request, res: Response
 });
 
 // POST /api/articles/recalculate-popularity - Manually recalculate all popularity scores
-router.post('/articles/recalculate-popularity', async (req: Request, res: Response) => {
+router.post('/articles/recalculate-popularity', criticalLimiter, async (req: Request, res: Response) => {
   try {
     console.log('🔄 Starting manual popularity score recalculation...');
     const result = await db.recalculateAllPopularityScores();
@@ -814,7 +883,7 @@ interface PaymentPayload {
 }
 
 // Verify x402 payment
-router.post('/verify-payment', async (req: Request, res: Response) => {
+router.post('/verify-payment', criticalLimiter, async (req: Request, res: Response) => {
   try {
     const { paymentPayload, articleId } = req.body as {
       paymentPayload: PaymentPayload;
@@ -890,7 +959,7 @@ router.post('/verify-payment', async (req: Request, res: Response) => {
 });
 
 // Get payment status for an article
-router.get('/payment-status/:articleId/:userAddress', async (req: Request, res: Response) => {
+router.get('/payment-status/:articleId/:userAddress', readLimiter, async (req: Request, res: Response) => {
   try {
     const { articleId, userAddress } = req.params;
 
@@ -917,7 +986,7 @@ router.get('/payment-status/:articleId/:userAddress', async (req: Request, res: 
 // Like/Unlike Routes
 
 // POST /api/articles/:id/like - Like an article
-router.post('/articles/:id/like', async (req: Request, res: Response) => {
+router.post('/articles/:id/like', writeLimiter, async (req: Request, res: Response) => {
   try {
     const articleId = parseInt(req.params.id);
     const { userAddress } = req.body;
@@ -982,7 +1051,7 @@ router.post('/articles/:id/like', async (req: Request, res: Response) => {
 });
 
 // DELETE /api/articles/:id/like - Unlike an article
-router.delete('/articles/:id/like', async (req: Request, res: Response) => {
+router.delete('/articles/:id/like', writeLimiter, async (req: Request, res: Response) => {
   try {
     const articleId = parseInt(req.params.id);
     const { userAddress } = req.body;
@@ -1037,7 +1106,7 @@ router.delete('/articles/:id/like', async (req: Request, res: Response) => {
 });
 
 // GET /api/articles/:id/like-status/:userAddress - Check if user liked article
-router.get('/articles/:id/like-status/:userAddress', async (req: Request, res: Response) => {
+router.get('/articles/:id/like-status/:userAddress', readLimiter, async (req: Request, res: Response) => {
   try {
     const articleId = parseInt(req.params.id);
     const { userAddress } = req.params;
