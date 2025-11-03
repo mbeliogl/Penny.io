@@ -7,6 +7,7 @@ import { apiService, Article as ArticleType } from '../services/api';
 import { x402PaymentService } from '../services/x402PaymentService';
 import { useSignMessage } from 'wagmi';
 import LikeButton from '../components/LikeButton';
+import { sanitizeHTML } from '../utils/sanitize';
 
 // Article page now uses real API data instead of mock data
 
@@ -322,7 +323,7 @@ function Article() {
                       <ul key={index}>
                         {items.map((item, i) => {
                           const text = item.replace('- ', '');
-                          return <li key={i} dangerouslySetInnerHTML={{__html: formatText(text)}} />;
+                          return <li key={i} dangerouslySetInnerHTML={{__html: sanitizeHTML(formatText(text))}} />;
                         })}
                       </ul>
                     );
@@ -333,12 +334,12 @@ function Article() {
                       <ol key={index}>
                         {items.map((item, i) => {
                           const text = item.replace(/^\d+\.\s*/, '');
-                          return <li key={i} dangerouslySetInnerHTML={{__html: formatText(text)}} />;
+                          return <li key={i} dangerouslySetInnerHTML={{__html: sanitizeHTML(formatText(text))}} />;
                         })}
                       </ol>
                     );
                   }
-                  return <p key={index} dangerouslySetInnerHTML={{__html: formatText(paragraph)}} />;
+                  return <p key={index} dangerouslySetInnerHTML={{__html: sanitizeHTML(formatText(paragraph))}} />;
                 })}
               </div>
             )}

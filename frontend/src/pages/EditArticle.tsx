@@ -5,6 +5,7 @@ import { ConnectButton } from '@rainbow-me/rainbowkit';
 import { Edit3, Save, Eye, ArrowLeft, X, CheckCircle } from 'lucide-react';
 import { Editor } from '@tinymce/tinymce-react';
 import { apiService, Article } from '../services/api';
+import { sanitizeHTML } from '../utils/sanitize';
 
 function EditArticle() {
   const { id } = useParams<{ id: string }>();
@@ -457,7 +458,7 @@ function EditArticle() {
                   </div>
                 </div>
                 <div className="preview-body">
-                  <div className="preview-text" dangerouslySetInnerHTML={{ __html: content }} />
+                  <div className="preview-text" dangerouslySetInnerHTML={{ __html: sanitizeHTML(content) }} />
                 </div>
               </div>
               <div className="preview-actions">
