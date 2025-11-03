@@ -4,11 +4,14 @@
   - Category statistics (total articles, avg popularity for each category)
   - Category-specific trending sections
     - Add trending indicators
+  - Reading history and favorites for users
+    
 
   Enhanced Article Discovery (home page):
   - "Popular Articles" section on home page
     - Switch b/n "Popular Articles" and "Recently Published" feed
-  - Author highlighting
+  - Author profiles
+  - Author highlighting 
 
  ### API / Tech MARKETPLACE: 
 

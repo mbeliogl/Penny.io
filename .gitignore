@@ -19,6 +19,11 @@ build/
 *.db
 *.sqlite
 *.sqlite3
+backend/supabase/migrations/
+backend/scripts/exportSQLiteData.ts
+backend/scripts/importToPostgres.ts
+backend/scripts/migrateImagesToSupabase.ts
+backend/data_export/
 
 # Logs
 logs
