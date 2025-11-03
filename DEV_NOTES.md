@@ -1,19 +1,20 @@
-*** FEATURES ROADMAP *** 
 
-  Advanced Features:
+
+# FEATURES ROADMAP
+
+## UI / UX Features:
   - Category statistics (total articles, avg popularity for each category)
   - Category-specific trending sections
     - Add trending indicators
   - Reading history and favorites for users
     
-
-  Enhanced Article Discovery (home page):
+### Enhanced Article Discovery (home page):
   - "Popular Articles" section on home page
     - Switch b/n "Popular Articles" and "Recently Published" feed
   - Author profiles
   - Author highlighting 
 
- ### API / Tech MARKETPLACE: 
+## API / Tech MARKETPLACE: 
 
   - code access (scaping) & API usage profits directly to publisher wallet via x402
     - Similar layout to article publishing & access 
@@ -22,18 +23,14 @@
 
 
 
-### my plan 
+# DEV PLAN 
 
-x402/payment system
+## x402/payment system
 - Complete x402 payments production setup for testnet & mainnet
 - tip system backend integration
 - Donate button (share actual x402 address)
 
-backend/database
-- Migrate database/backend to Supabase
-- security hardening (blockchain & website)
-
-Styling/cleanup
+## Styling/cleanup
 - logo/branding
 - clean up / format code 
 - resources & support misc.
