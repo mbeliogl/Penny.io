@@ -2,23 +2,14 @@ import express, { Request, Response } from 'express';
 import multer from 'multer';
 import path from 'path';
 import Database from './database';
+import { supabase } from './supabaseClient';
 import { Article, Author, Draft, CreateArticleRequest, CreateDraftRequest, ApiResponse, GetArticlesQuery } from './types';
 
 const router = express.Router();
 const db = new Database();
 
-// Configure multer for file uploads
-const storage = multer.diskStorage({
-  destination: (req, file, cb) => {
-    cb(null, path.join(__dirname, '../uploads'));
-  },
-  filename: (req, file, cb) => {
-    // Generate unique filename with timestamp and random string
-    const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
-    const extension = path.extname(file.originalname);
-    cb(null, file.fieldname + '-' + uniqueSuffix + extension);
-  }
-});
+// Configure multer for file uploads (memory storage for Supabase)
+const storage = multer.memoryStorage();
 
 // File filter for images only
 const fileFilter = (req: any, file: any, cb: any) => {
@@ -458,7 +449,7 @@ router.post('/articles/:id/purchase', async (req: Request, res: Response) => {
       await db.updatePopularityScore(articleId);
 
       // Record payment for persistence
-      recordPayment(articleId, paymentData.authorization?.from || 'unknown');
+      await recordPayment(articleId, paymentData.authorization?.from || 'unknown', article.price);
 
       return res.json({
         success: true,
@@ -733,8 +724,8 @@ router.delete('/articles/:id', async (req: Request, res: Response) => {
   }
 });
 
-// POST /api/upload - Upload image files for TinyMCE
-router.post('/upload', upload.single('file'), (req: Request, res: Response) => {
+// POST /api/upload - Upload image files for TinyMCE (Supabase Storage)
+router.post('/upload', upload.single('file'), async (req: Request, res: Response) => {
   try {
     if (!req.file) {
       return res.status(400).json({
@@ -743,12 +734,41 @@ router.post('/upload', upload.single('file'), (req: Request, res: Response) => {
       });
     }
 
-    // Return the file URL that TinyMCE expects
-    const fileUrl = `/uploads/${req.file.filename}`;
-    
+    console.log('📤 Uploading to Supabase Storage:', req.file.originalname);
+
+    // Generate unique filename
+    const fileExt = path.extname(req.file.originalname);
+    const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
+    const fileName = `${uniqueSuffix}${fileExt}`;
+    const filePath = `articles/${fileName}`;
+
+    // Upload to Supabase Storage
+    const { data, error } = await supabase.storage
+      .from('article-images')
+      .upload(filePath, req.file.buffer, {
+        contentType: req.file.mimetype,
+        cacheControl: '3600',
+        upsert: false
+      });
+
+    if (error) {
+      console.error('Supabase Storage upload error:', error);
+      return res.status(500).json({
+        success: false,
+        error: 'Failed to upload file to storage'
+      });
+    }
+
+    // Get public URL
+    const { data: publicUrlData } = supabase.storage
+      .from('article-images')
+      .getPublicUrl(filePath);
+
+    console.log('✅ Upload successful:', publicUrlData.publicUrl);
+
     // TinyMCE expects this specific response format
     res.json({
-      location: fileUrl
+      location: publicUrlData.publicUrl
     });
   } catch (error) {
     console.error('Error uploading file:', error);
@@ -853,10 +873,10 @@ router.post('/verify-payment', async (req: Request, res: Response) => {
 
     // Record successful payment
     const purchaseResponse = await recordArticlePurchase(articleId);
-    
+
     // Track payment for this user
-    recordPayment(articleId, paymentPayload.authorization.from);
-    
+    await recordPayment(articleId, paymentPayload.authorization.from, article.price);
+
     res.json({
       success: true,
       message: 'Payment verified successfully',
@@ -877,9 +897,9 @@ router.post('/verify-payment', async (req: Request, res: Response) => {
 router.get('/payment-status/:articleId/:userAddress', async (req: Request, res: Response) => {
   try {
     const { articleId, userAddress } = req.params;
-    
-    const hasPaid = checkPaymentStatus(parseInt(articleId), userAddress);
-    
+
+    const hasPaid = await checkPaymentStatus(parseInt(articleId), userAddress);
+
     res.json({
       success: true,
       data: {
@@ -1119,20 +1139,14 @@ async function recordArticlePurchase(articleId: number): Promise<any> {
   }
 }
 
-// Simple in-memory payment tracking (in production, use a database)
-const paymentTracker = new Map<string, Set<string>>();
-
-function checkPaymentStatus(articleId: number, userAddress: string): boolean {
-  const articlePayments = paymentTracker.get(articleId.toString());
-  return articlePayments ? articlePayments.has(userAddress.toLowerCase()) : false;
+// Payment tracking now uses database (payments table)
+// These wrapper functions maintain backward compatibility with existing code
+async function checkPaymentStatus(articleId: number, userAddress: string): Promise<boolean> {
+  return db.checkPaymentStatus(articleId, userAddress);
 }
 
-function recordPayment(articleId: number, userAddress: string): void {
-  const key = articleId.toString();
-  if (!paymentTracker.has(key)) {
-    paymentTracker.set(key, new Set());
-  }
-  paymentTracker.get(key)?.add(userAddress.toLowerCase());
+async function recordPayment(articleId: number, userAddress: string, amount: number, transactionHash?: string): Promise<void> {
+  await db.recordPayment(articleId, userAddress, amount, transactionHash);
 }
 
 export default router;

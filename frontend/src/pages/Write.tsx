@@ -681,7 +681,6 @@ function Write() {
                     
                     // Image upload configuration
                     images_upload_url: 'http://localhost:3001/api/upload',
-                    images_upload_base_path: 'http://localhost:3001',
                     images_upload_credentials: false,
                     automatic_uploads: true,
                     

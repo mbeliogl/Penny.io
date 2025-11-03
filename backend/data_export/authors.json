@@ -1,0 +1,56 @@
+[
+  {
+    "address": "0xEc115640B09416a59fE77e4e7b852fE700Fa6bF1",
+    "displayName": null,
+    "createdAt": "2025-10-29T19:12:29.700Z",
+    "totalEarnings": 0,
+    "totalArticles": 0,
+    "totalViews": 0,
+    "totalPurchases": 0
+  },
+  {
+    "address": "0x25A6bd85966E9dE449cf36F7f6A033944C8bB5D8",
+    "displayName": null,
+    "createdAt": "2025-10-28T13:01:48.505Z",
+    "totalEarnings": 0.91,
+    "totalArticles": 18,
+    "totalViews": 5,
+    "totalPurchases": 4
+  },
+  {
+    "address": "0x742d35Cc6634C0532925a3b844Bc9e7595f0bEb4",
+    "displayName": "Alex Chen",
+    "createdAt": "2025-08-05T00:47:44.171Z",
+    "totalEarnings": 8.65,
+    "totalArticles": 2,
+    "totalViews": 287,
+    "totalPurchases": 35
+  },
+  {
+    "address": "0x9876543210fedcba9876543210fedcba98765432",
+    "displayName": "Emma Johnson",
+    "createdAt": "2025-10-04T00:47:44.172Z",
+    "totalEarnings": 8.73,
+    "totalArticles": 4,
+    "totalViews": 1091,
+    "totalPurchases": 85
+  },
+  {
+    "address": "0xabcdefabcdefabcdefabcdefabcdefabcdefabcd",
+    "displayName": "David Kim",
+    "createdAt": "2025-09-19T00:47:44.172Z",
+    "totalEarnings": 31.5,
+    "totalArticles": 4,
+    "totalViews": 973,
+    "totalPurchases": 128
+  },
+  {
+    "address": "0x1234567890abcdef1234567890abcdef12345678",
+    "displayName": "Sarah Martinez",
+    "createdAt": "2025-09-04T00:47:44.172Z",
+    "totalEarnings": 101.38,
+    "totalArticles": 10,
+    "totalViews": 2146,
+    "totalPurchases": 278
+  }
+]

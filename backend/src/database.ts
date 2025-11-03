@@ -1,738 +1,628 @@
-import sqlite3 from 'sqlite3';
-import path, { resolve } from 'path';
+/**
+ * Supabase Database Class
+ *
+ * Replaces SQLite database.ts with PostgreSQL/Supabase implementation.
+ * All methods maintain the same interface for drop-in replacement.
+ *
+ * Key differences from SQLite:
+ * - Field names: snake_case in DB, camelCase in TypeScript
+ * - JSONB: No JSON.parse() needed, already native
+ * - Timestamps: TIMESTAMPTZ instead of ISO strings
+ * - No table initialization needed (handled by migrations)
+ */
+
+import { supabase, pgPool } from './supabaseClient';
 import { Article, Author, Draft } from './types';
 import { calculatePopularityScore } from './popularityScorer';
 
 class Database {
-  private db: sqlite3.Database;
-
   constructor() {
-    const dbPath = path.join(__dirname, '../penny.db');
-    this.db = new sqlite3.Database(dbPath, (err) => {
-      if (err) {
-        console.error('Error opening database:', err);
-      } else {
-        console.log('Connected to SQLite database');
-        this.initializeTables();
-      }
-    });
+    console.log('✅ Connected to Supabase PostgreSQL');
+    // No table initialization needed - handled by migrations
   }
 
-  private initializeTables(): void {
-    // Create authors table
-    this.db.run(`
-      CREATE TABLE IF NOT EXISTS authors (
-        address TEXT PRIMARY KEY,
-        displayName TEXT,
-        createdAt TEXT NOT NULL,
-        totalEarnings REAL DEFAULT 0,
-        totalArticles INTEGER DEFAULT 0,
-        totalViews INTEGER DEFAULT 0,
-        totalPurchases INTEGER DEFAULT 0
-      )
-    `);
-
-    // Create articles table
-    this.db.run(`
-      CREATE TABLE IF NOT EXISTS articles (
-        id INTEGER PRIMARY KEY AUTOINCREMENT,
-        title TEXT NOT NULL,
-        content TEXT NOT NULL,
-        preview TEXT NOT NULL,
-        price REAL NOT NULL,
-        authorAddress TEXT NOT NULL,
-        publishDate TEXT NOT NULL,
-        createdAt TEXT NOT NULL,
-        updatedAt TEXT NOT NULL,
-        views INTEGER DEFAULT 0,
-        purchases INTEGER DEFAULT 0,
-        earnings REAL DEFAULT 0,
-        readTime TEXT NOT NULL,
-        categories TEXT DEFAULT '[]',
-        FOREIGN KEY (authorAddress) REFERENCES authors (address)
-      )
-    `);
-
-    // Create drafts table
-    this.db.run(`
-      CREATE TABLE IF NOT EXISTS drafts (
-        id INTEGER PRIMARY KEY AUTOINCREMENT,
-        title TEXT NOT NULL,
-        content TEXT NOT NULL,
-        price REAL NOT NULL,
-        authorAddress TEXT NOT NULL,
-        createdAt TEXT NOT NULL,
-        updatedAt TEXT NOT NULL,
-        expiresAt TEXT NOT NULL,
-        FOREIGN KEY (authorAddress) REFERENCES authors (address)
-      )
-    `);
-
-    // Create user_likes table to track likes and prevent duplicates
-    this.db.run(`
-      CREATE TABLE IF NOT EXISTS user_likes (
-        id INTEGER PRIMARY KEY AUTOINCREMENT,
-        articleId INTEGER NOT NULL,
-        userAddress TEXT NOT NULL,
-        createdAt TEXT NOT NULL,
-        FOREIGN KEY (articleId) REFERENCES articles (id) ON DELETE CASCADE,
-        UNIQUE(articleId, userAddress)
-      )
-    `);
-
-    console.log('Database tables initialized');
-    this.migrateTables();
-  }
-
-  private migrateTables(): void {
-    // Add categories column to existing articles table if it doesn't exist
-    this.db.run(`
-      ALTER TABLE articles ADD COLUMN categories TEXT DEFAULT '[]'
-    `, (err) => {
-      if (err && !err.message.includes('duplicate column name')) {
-        console.error('Error adding categories column:', err);
-      } else if (!err) {
-        console.log('Added categories column to articles table');
-      }
-    });
-
-    // Add likes column to existing articles table if it doesn't exist
-    this.db.run(`
-      ALTER TABLE articles ADD COLUMN likes INTEGER DEFAULT 0
-    `, (err) => {
-      if (err && !err.message.includes('duplicate column name')) {
-        console.error('Error adding likes column:', err);
-      } else if (!err) {
-        console.log('Added likes column to articles table');
-      }
-    });
-
-    // Add popularityScore column to existing articles table if it doesn't exist
-    this.db.run(`
-      ALTER TABLE articles ADD COLUMN popularityScore REAL DEFAULT 0
-    `, (err) => {
-      if (err && !err.message.includes('duplicate column name')) {
-        console.error('Error adding popularityScore column:', err);
-      } else if (!err) {
-        console.log('Added popularityScore column to articles table');
-      }
-    });
-
-    // Create index for popularityScore for better sorting performance
-    this.db.run(`
-      CREATE INDEX IF NOT EXISTS idx_articles_popularity
-      ON articles(popularityScore DESC)
-    `, (err) => {
-      if (err) {
-        console.error('Error creating popularity index:', err);
-      } else {
-        console.log('Created popularity score index');
-      }
-    });
-  }
-
-  // Helper method to parse article from database row
+  /**
+   * Helper: Convert DB row (snake_case) to Article (camelCase)
+   */
   private parseArticleFromRow(row: any): Article {
     return {
-      ...row,
-      categories: row.categories ? JSON.parse(row.categories) : []
+      id: row.id,
+      title: row.title,
+      content: row.content,
+      preview: row.preview,
+      price: parseFloat(row.price),
+      authorAddress: row.author_address,
+      publishDate: row.publish_date,
+      createdAt: row.created_at,
+      updatedAt: row.updated_at,
+      views: row.views || 0,
+      purchases: row.purchases || 0,
+      earnings: parseFloat(row.earnings) || 0,
+      readTime: row.read_time,
+      categories: row.categories || [], // Already parsed (JSONB)
+      likes: row.likes || 0,
+      popularityScore: parseFloat(row.popularity_score) || 0,
     };
   }
 
-  // Article methods
-  createArticle(article: Omit<Article, 'id'>): Promise<Article> {
-    return new Promise((resolve, reject) => {
-      const {
-        title,
-        content,
-        preview,
-        price,
-        authorAddress,
-        publishDate,
-        createdAt,
-        updatedAt,
-        views,
-        purchases,
-        earnings,
-        readTime,
-        categories
-      } = article;
-
-      const categoriesJson = JSON.stringify(categories || []);
-
-      this.db.run(
-        `INSERT INTO articles (title, content, preview, price, authorAddress, publishDate, createdAt, updatedAt, views, purchases, earnings, readTime, categories)
-         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
-        [title, content, preview, price, authorAddress, publishDate, createdAt, updatedAt, views, purchases, earnings, readTime, categoriesJson],
-        function(err) {
-          if (err) {
-            reject(err);
-          } else {
-            resolve({ id: this.lastID, ...article } as Article);
-          }
-        }
-      );
-    });
-  }
-
-  getArticlesByAuthor(authorAddress: string): Promise<Article[]> {
-    return new Promise((resolve, reject) => {
-      this.db.all(
-        'SELECT * FROM articles WHERE authorAddress = ? ORDER BY createdAt DESC',
-        [authorAddress],
-        (err, rows) => {
-          if (err) {
-            reject(err);
-          } else {
-            const articles = rows.map(row => this.parseArticleFromRow(row));
-            resolve(articles);
-          }
-        }
-      );
-    });
-  }
-
-  getArticleById(id: number): Promise<Article | null> {
-    return new Promise((resolve, reject) => {
-      this.db.get(
-        'SELECT * FROM articles WHERE id = ?',
-        [id],
-        (err, row) => {
-          if (err) {
-            reject(err);
-          } else {
-            resolve(row ? this.parseArticleFromRow(row) : null);
-          }
-        }
-      );
-    });
-  }
-
-  getAllArticles(): Promise<Article[]> {
-    return new Promise((resolve, reject) => {
-      this.db.all(
-        'SELECT * FROM articles ORDER BY createdAt DESC',
-        (err, rows) => {
-          if (err) {
-            reject(err);
-          } else {
-            const articles = rows.map(row => this.parseArticleFromRow(row));
-            resolve(articles);
-          }
-        }
-      );
-    });
-  }
-
-  // Author methods
-  createOrUpdateAuthor(author: Author): Promise<Author> {
-    return new Promise((resolve, reject) => {
-      const { address, displayName, createdAt, totalEarnings, totalArticles, totalViews, totalPurchases } = author;
-
-      this.db.run(
-        `INSERT OR REPLACE INTO authors (address, displayName, createdAt, totalEarnings, totalArticles, totalViews, totalPurchases)
-         VALUES (?, ?, ?, ?, ?, ?, ?)`,
-        [address, displayName, createdAt, totalEarnings, totalArticles, totalViews, totalPurchases],
-        function(err) {
-          if (err) {
-            reject(err);
-          } else {
-            resolve(author);
-          }
-        }
-      );
-    });
-  }
-
-  getAuthor(address: string): Promise<Author | null> {
-    return new Promise((resolve, reject) => {
-      this.db.get(
-        'SELECT * FROM authors WHERE address = ?',
-        [address],
-        (err, row) => {
-          if (err) {
-            reject(err);
-          } else {
-            resolve((row as Author) || null);
-          }
-        }
-      );
-    });
-  }
-
-  updateArticleStats(id: number, views?: number, purchases?: number, earnings?: number): Promise<void> {
-    return new Promise((resolve, reject) => {
-      let query = 'UPDATE articles SET ';
-      const params: any[] = [];
-      const updates: string[] = [];
-
-      if (views !== undefined) {
-        updates.push('views = ?');
-        params.push(views);
-      }
-      if (purchases !== undefined) {
-        updates.push('purchases = ?');
-        params.push(purchases);
-      }
-      if (earnings !== undefined) {
-        updates.push('earnings = ?');
-        params.push(earnings);
-      }
-
-      query += updates.join(', ') + ' WHERE id = ?';
-      params.push(id);
-
-      this.db.run(query, params, (err) => {
-        if (err) {
-          reject(err);
-        } else {
-          resolve();
-        }
-      });
-    });
-  }
-
-  // Increment article views by 1
-  incrementArticleViews(articleId: number): Promise<boolean> {
-    return new Promise((resolve, reject) => {
-      const query = 'UPDATE articles SET views = views + 1 WHERE id = ?';
-      
-      this.db.run(query, [articleId], function(err) {
-        if (err) {
-          console.error('Error incrementing article views:', err);
-          reject(err);
-          return;
-        }
-        
-        // this.changes tells us how many rows were affected
-        resolve(this.changes > 0);
-      });
-    });
-  }
-
-  // Draft methods
-  createDraft(draft: Omit<Draft, 'id'>): Promise<Draft> {
-    return new Promise((resolve, reject) => {
-      const { title, content, price, authorAddress, createdAt, updatedAt, expiresAt } = draft;
-
-      // Always create new draft
-      this.db.run(
-        `INSERT INTO drafts (title, content, price, authorAddress, createdAt, updatedAt, expiresAt)
-         VALUES (?, ?, ?, ?, ?, ?, ?)`,
-        [title, content, price, authorAddress, createdAt, updatedAt, expiresAt],
-        function(err) {
-          if (err) {
-            reject(err);
-          } else {
-            resolve({ id: this.lastID, ...draft } as Draft);
-          }
-        }
-      );
-    });
-  }
-
-  updateDraft(draftId: number, draft: Omit<Draft, 'id'>): Promise<Draft> {
-    return new Promise((resolve, reject) => {
-      const { title, content, price, authorAddress, updatedAt, expiresAt } = draft;
-
-      this.db.run(
-        `UPDATE drafts SET title = ?, content = ?, price = ?, updatedAt = ?, expiresAt = ? WHERE id = ? AND authorAddress = ?`,
-        [title, content, price, updatedAt, expiresAt, draftId, authorAddress],
-        function(err) {
-          if (err) {
-            reject(err);
-          } else if (this.changes === 0) {
-            reject(new Error('Draft not found or unauthorized'));
-          } else {
-            resolve({ id: draftId, ...draft } as Draft);
-          }
-        }
-      );
-    });
-  }
-
-  createOrUpdateRecentDraft(draft: Omit<Draft, 'id'>, isAutoSave: boolean = false): Promise<Draft> {
-    return new Promise((resolve, reject) => {
-      const { title, content, price, authorAddress, createdAt, updatedAt, expiresAt } = draft;
-
-      if (!isAutoSave) {
-        // Manual save: always create new draft
-        return this.createDraft(draft).then(resolve).catch(reject);
-      }
-
-      // Auto-save: check for recent draft (within 1 hour)
-      const oneHourAgo = new Date(Date.now() - 60 * 60 * 1000).toISOString();
-      
-      this.db.get(
-        'SELECT id FROM drafts WHERE authorAddress = ? AND updatedAt > ? ORDER BY updatedAt DESC LIMIT 1',
-        [authorAddress, oneHourAgo],
-        (err, row: any) => {
-          if (err) {
-            reject(err);
-            return;
-          }
-
-          if (row) {
-            // Update recent draft
-            this.db.run(
-              `UPDATE drafts SET title = ?, content = ?, price = ?, updatedAt = ?, expiresAt = ? WHERE id = ?`,
-              [title, content, price, updatedAt, expiresAt, row.id],
-              function(err) {
-                if (err) {
-                  reject(err);
-                } else {
-                  resolve({ id: row.id, ...draft } as Draft);
-                }
-              }
-            );
-          } else {
-            // Create new draft
-            this.createDraft(draft).then(resolve).catch(reject);
-          }
-        }
-      );
-    });
-  }
-
-  getDraftsByAuthor(authorAddress: string): Promise<Draft[]> {
-    return new Promise((resolve, reject) => {
-      this.db.all(
-        'SELECT * FROM drafts WHERE authorAddress = ? AND expiresAt > datetime("now") ORDER BY updatedAt DESC',
-        [authorAddress],
-        (err, rows) => {
-          if (err) {
-            reject(err);
-          } else {
-            resolve(rows as Draft[]);
-          }
-        }
-      );
-    });
-  }
-
-  deleteDraft(draftId: number, authorAddress: string): Promise<boolean> {
-    return new Promise((resolve, reject) => {
-      this.db.run(
-        'DELETE FROM drafts WHERE id = ? AND authorAddress = ?',
-        [draftId, authorAddress],
-        function(err) {
-          if (err) {
-            reject(err);
-          } else {
-            resolve(this.changes > 0);
-          }
-        }
-      );
-    });
-  }
-
-  cleanupExpiredDrafts(): Promise<number> {
-    return new Promise((resolve, reject) => {
-      this.db.run(
-        'DELETE FROM drafts WHERE expiresAt <= datetime("now")',
-        function(err) {
-          if (err) {
-            reject(err);
-          } else {
-            resolve(this.changes);
-          }
-        }
-      );
-    });
-  }
-
-  // Update article
-  updateArticle(id: number, updates: { title?: string; content?: string; preview?: string; price?: number; readTime?: string; updatedAt?: string; categories?: string[] }): Promise<Article> {
-    return new Promise((resolve, reject) => {
-      const fields: string[] = [];
-      const values: any[] = [];
-
-      Object.entries(updates).forEach(([key, value]) => {
-        if (value !== undefined) {
-          if (key === 'categories') {
-            fields.push(`${key} = ?`);
-            values.push(JSON.stringify(value));
-          } else {
-            fields.push(`${key} = ?`);
-            values.push(value);
-          }
-        }
-      });
-
-      if (fields.length === 0) {
-        reject(new Error('No fields to update'));
-        return;
-      }
-
-      values.push(id);
-      const query = `UPDATE articles SET ${fields.join(', ')} WHERE id = ?`;
-
-      this.db.run(query, values, function(err) {
-        if (err) {
-          reject(err);
-        } else if (this.changes === 0) {
-          reject(new Error('Article not found'));
-        } else {
-          // Fetch and return updated article - the promise chain will handle this
-          resolve(undefined);
-        }
-      });
-    }).then(() => this.getArticleById(id)) as Promise<Article>;
-  }
-
-  // Delete article
-  deleteArticle(id: number): Promise<boolean> {
-    return new Promise((resolve, reject) => {
-      this.db.run(
-        'DELETE FROM articles WHERE id = ?',
-        [id],
-        function(err) {
-          if (err) {
-            reject(err);
-          } else {
-            resolve(this.changes > 0);
-          }
-        }
-      );
-    });
-  }
-
-  // Recalculate author totals from existing articles (for data correction)
-  recalculateAuthorTotals(authorAddress: string): Promise<void> {
-    return new Promise((resolve, reject) => {
-      // Get current totals from articles
-      this.db.get(
-        `SELECT 
-          COUNT(*) as articleCount,
-          COALESCE(SUM(views), 0) as totalViews,
-          COALESCE(SUM(purchases), 0) as totalPurchases,
-          COALESCE(SUM(earnings), 0) as totalEarnings
-         FROM articles WHERE authorAddress = ?`,
-        [authorAddress],
-        async (err, row: any) => {
-          if (err) {
-            reject(err);
-            return;
-          }
-
-          try {
-            // Get existing author record
-            const author = await this.getAuthor(authorAddress);
-            if (author) {
-              // Update with recalculated totals, but preserve totalArticles if it's higher
-              // (to account for deleted articles that should count toward lifetime total)
-              author.totalViews = Math.max(row.totalViews, 0);
-              author.totalPurchases = Math.max(row.totalPurchases, 0);
-              author.totalEarnings = Math.max(row.totalEarnings, 0);
-              author.totalArticles = Math.max(author.totalArticles, row.articleCount);
-              
-              await this.createOrUpdateAuthor(author);
-            }
-            resolve();
-          } catch (error) {
-            reject(error);
-          }
-        }
-      );
-    });
-  }
-
-  // Like/Unlike methods
-  likeArticle(articleId: number, userAddress: string): Promise<boolean> {
-    return new Promise((resolve, reject) => {
-      const now = new Date().toISOString();
-      
-      // Try to insert like (will fail if duplicate due to UNIQUE constraint)
-      this.db.run(
-        'INSERT INTO user_likes (articleId, userAddress, createdAt) VALUES (?, ?, ?)',
-        [articleId, userAddress, now],
-        function(err) {
-          if (err) {
-            if (err.message.includes('UNIQUE constraint failed')) {
-              // User already liked this article
-              resolve(false);
-            } else {
-              reject(err);
-            }
-            return;
-          }
-          
-          // Successfully added like, now increment article likes count
-          resolve(true);
-        }
-      );
-    });
-  }
-
-  unlikeArticle(articleId: number, userAddress: string): Promise<boolean> {
-    return new Promise((resolve, reject) => {
-      this.db.run(
-        'DELETE FROM user_likes WHERE articleId = ? AND userAddress = ?',
-        [articleId, userAddress],
-        function(err) {
-          if (err) {
-            reject(err);
-            return;
-          }
-          
-          // this.changes tells us how many rows were affected
-          resolve(this.changes > 0);
-        }
-      );
-    });
-  }
-
-  checkUserLikedArticle(articleId: number, userAddress: string): Promise<boolean> {
-    return new Promise((resolve, reject) => {
-      this.db.get(
-        'SELECT 1 FROM user_likes WHERE articleId = ? AND userAddress = ?',
-        [articleId, userAddress],
-        (err, row) => {
-          if (err) {
-            reject(err);
-            return;
-          }
-          resolve(!!row);
-        }
-      );
-    });
-  }
-
-  updateArticleLikesCount(articleId: number): Promise<void> {
-    return new Promise((resolve, reject) => {
-      // Count actual likes from user_likes table and update article
-      this.db.get(
-        'SELECT COUNT(*) as likeCount FROM user_likes WHERE articleId = ?',
-        [articleId],
-        (err, row: any) => {
-          if (err) {
-            reject(err);
-            return;
-          }
-          
-          // Update the article's likes count
-          this.db.run(
-            'UPDATE articles SET likes = ? WHERE id = ?',
-            [row.likeCount, articleId],
-            (updateErr) => {
-              if (updateErr) {
-                reject(updateErr);
-              } else {
-                resolve();
-              }
-            }
-          );
-        }
-      );
-    });
+  /**
+   * Helper: Convert DB row (snake_case) to Author (camelCase)
+   */
+  private parseAuthorFromRow(row: any): Author {
+    return {
+      address: row.address,
+      displayName: row.display_name,
+      createdAt: row.created_at,
+      totalEarnings: parseFloat(row.total_earnings) || 0,
+      totalArticles: row.total_articles || 0,
+      totalViews: row.total_views || 0,
+      totalPurchases: row.total_purchases || 0,
+    };
   }
 
   /**
-   * Update popularity score for a single article
+   * Helper: Convert DB row (snake_case) to Draft (camelCase)
    */
+  private parseDraftFromRow(row: any): Draft {
+    return {
+      id: row.id,
+      title: row.title,
+      content: row.content,
+      price: parseFloat(row.price),
+      authorAddress: row.author_address,
+      createdAt: row.created_at,
+      updatedAt: row.updated_at,
+      expiresAt: row.expires_at,
+    };
+  }
+
+  // ============================================
+  // ARTICLE METHODS
+  // ============================================
+
+  async createArticle(article: Omit<Article, 'id'>): Promise<Article> {
+    const { data, error } = await supabase
+      .from('articles')
+      .insert({
+        title: article.title,
+        content: article.content,
+        preview: article.preview,
+        price: article.price,
+        author_address: article.authorAddress,
+        publish_date: article.publishDate,
+        created_at: article.createdAt,
+        updated_at: article.updatedAt,
+        views: article.views || 0,
+        purchases: article.purchases || 0,
+        earnings: article.earnings || 0,
+        read_time: article.readTime,
+        categories: article.categories || [],
+        likes: article.likes || 0,
+        popularity_score: article.popularityScore || 0,
+      })
+      .select()
+      .single();
+
+    if (error) throw error;
+    return this.parseArticleFromRow(data);
+  }
+
+  async getArticlesByAuthor(authorAddress: string): Promise<Article[]> {
+    const { data, error } = await supabase
+      .from('articles')
+      .select('*')
+      .eq('author_address', authorAddress)
+      .order('created_at', { ascending: false });
+
+    if (error) throw error;
+    return data.map(row => this.parseArticleFromRow(row));
+  }
+
+  async getArticleById(id: number): Promise<Article | null> {
+    const { data, error } = await supabase
+      .from('articles')
+      .select('*')
+      .eq('id', id)
+      .single();
+
+    if (error) {
+      if (error.code === 'PGRST116') return null; // Not found
+      throw error;
+    }
+
+    return this.parseArticleFromRow(data);
+  }
+
+  async getAllArticles(): Promise<Article[]> {
+    const { data, error } = await supabase
+      .from('articles')
+      .select('*')
+      .order('created_at', { ascending: false });
+
+    if (error) throw error;
+    return data.map(row => this.parseArticleFromRow(row));
+  }
+
+  async updateArticle(
+    id: number,
+    updates: {
+      title?: string;
+      content?: string;
+      preview?: string;
+      price?: number;
+      readTime?: string;
+      updatedAt?: string;
+      categories?: string[];
+    }
+  ): Promise<Article> {
+    // Convert camelCase to snake_case
+    const dbUpdates: any = {};
+    if (updates.title !== undefined) dbUpdates.title = updates.title;
+    if (updates.content !== undefined) dbUpdates.content = updates.content;
+    if (updates.preview !== undefined) dbUpdates.preview = updates.preview;
+    if (updates.price !== undefined) dbUpdates.price = updates.price;
+    if (updates.readTime !== undefined) dbUpdates.read_time = updates.readTime;
+    if (updates.updatedAt !== undefined) dbUpdates.updated_at = updates.updatedAt;
+    if (updates.categories !== undefined) dbUpdates.categories = updates.categories;
+
+    const { data, error } = await supabase
+      .from('articles')
+      .update(dbUpdates)
+      .eq('id', id)
+      .select()
+      .single();
+
+    if (error) {
+      if (error.code === 'PGRST116') throw new Error('Article not found');
+      throw error;
+    }
+
+    return this.parseArticleFromRow(data);
+  }
+
+  async deleteArticle(id: number): Promise<boolean> {
+    const { error } = await supabase.from('articles').delete().eq('id', id);
+
+    if (error) throw error;
+    return true;
+  }
+
+  async updateArticleStats(
+    id: number,
+    views?: number,
+    purchases?: number,
+    earnings?: number
+  ): Promise<void> {
+    const updates: any = {};
+    if (views !== undefined) updates.views = views;
+    if (purchases !== undefined) updates.purchases = purchases;
+    if (earnings !== undefined) updates.earnings = earnings;
+
+    const { error } = await supabase.from('articles').update(updates).eq('id', id);
+
+    if (error) throw error;
+  }
+
+  async incrementArticleViews(articleId: number): Promise<boolean> {
+    // Use PostgreSQL increment: views = views + 1
+    const { error } = await supabase.rpc('increment_article_views', {
+      article_id: articleId,
+    });
+
+    if (error) {
+      // If function doesn't exist, fall back to manual increment
+      const article = await this.getArticleById(articleId);
+      if (!article) return false;
+
+      const { error: updateError } = await supabase
+        .from('articles')
+        .update({ views: article.views + 1 })
+        .eq('id', articleId);
+
+      if (updateError) throw updateError;
+    }
+
+    return true;
+  }
+
   async updatePopularityScore(articleId: number): Promise<void> {
-    return new Promise((resolve, reject) => {
-      // First, get article metrics
-      this.db.get(
-        'SELECT views, likes, purchases, publishDate FROM articles WHERE id = ?',
-        [articleId],
-        (err, row: any) => {
-          if (err) {
-            reject(err);
-            return;
-          }
+    // Get article metrics
+    const article = await this.getArticleById(articleId);
+    if (!article) throw new Error(`Article ${articleId} not found`);
 
-          if (!row) {
-            reject(new Error(`Article ${articleId} not found`));
-            return;
-          }
+    // Calculate new score
+    const score = calculatePopularityScore(
+      article.views,
+      article.likes,
+      article.purchases,
+      article.publishDate
+    );
 
-          // Calculate new score
-          const score = calculatePopularityScore(
-            row.views,
-            row.likes,
-            row.purchases,
-            row.publishDate
-          );
+    // Update database
+    const { error } = await supabase
+      .from('articles')
+      .update({ popularity_score: score })
+      .eq('id', articleId);
 
-          // Update database
-          this.db.run(
-            'UPDATE articles SET popularityScore = ? WHERE id = ?',
-            [score, articleId],
-            (err) => {
-              if (err) {
-                reject(err);
-              } else {
-                console.log(`✅ Updated popularity score for article ${articleId}: ${score}`);
-                resolve();
-              }
-            }
-          );
-        }
-      );
-    });
+    if (error) throw error;
+
+    console.log(`✅ Updated popularity score for article ${articleId}: ${score}`);
   }
 
-  /**
-   * Recalculate popularity scores for ALL articles
-   */
   async recalculateAllPopularityScores(): Promise<{ updated: number; errors: number }> {
-    return new Promise((resolve, reject) => {
-      this.db.all('SELECT id, views, likes, purchases, publishDate FROM articles', [], async (err, rows: any[]) => {
-        if (err) {
-          reject(err);
-          return;
-        }
+    const { data: articles, error } = await supabase
+      .from('articles')
+      .select('id, views, likes, purchases, publish_date');
 
-        let updated = 0;
-        let errors = 0;
+    if (error) throw error;
 
-        console.log(`🔄 Recalculating popularity scores for ${rows.length} articles...`);
+    let updated = 0;
+    let errors = 0;
 
-        for (const row of rows) {
-          try {
-            const score = calculatePopularityScore(
-              row.views,
-              row.likes,
-              row.purchases,
-              row.publishDate
-            );
+    console.log(`🔄 Recalculating popularity scores for ${articles.length} articles...`);
 
-            await new Promise<void>((res, rej) => {
-              this.db.run(
-                'UPDATE articles SET popularityScore = ? WHERE id = ?',
-                [score, row.id],
-                (err) => {
-                  if (err) {
-                    rej(err);
-                  } else {
-                    res();
-                  }
-                }
-              );
-            });
+    for (const article of articles) {
+      try {
+        const score = calculatePopularityScore(
+          article.views,
+          article.likes,
+          article.purchases,
+          article.publish_date
+        );
 
-            updated++;
-          } catch (error) {
-            console.error(`❌ Error updating article ${row.id}:`, error);
-            errors++;
-          }
-        }
+        const { error: updateError } = await supabase
+          .from('articles')
+          .update({ popularity_score: score })
+          .eq('id', article.id);
 
-        console.log(`✅ Recalculation complete: ${updated} updated, ${errors} errors`);
-        resolve({ updated, errors });
-      });
-    });
+        if (updateError) throw updateError;
+        updated++;
+      } catch (error) {
+        console.error(`❌ Error updating article ${article.id}:`, error);
+        errors++;
+      }
+    }
+
+    console.log(`✅ Recalculation complete: ${updated} updated, ${errors} errors`);
+    return { updated, errors };
   }
+
+  // ============================================
+  // AUTHOR METHODS
+  // ============================================
+
+  async createOrUpdateAuthor(author: Author): Promise<Author> {
+    const { data, error } = await supabase
+      .from('authors')
+      .upsert({
+        address: author.address,
+        display_name: author.displayName,
+        created_at: author.createdAt,
+        total_earnings: author.totalEarnings,
+        total_articles: author.totalArticles,
+        total_views: author.totalViews,
+        total_purchases: author.totalPurchases,
+      })
+      .select()
+      .single();
+
+    if (error) throw error;
+    return this.parseAuthorFromRow(data);
+  }
+
+  async getAuthor(address: string): Promise<Author | null> {
+    const { data, error } = await supabase
+      .from('authors')
+      .select('*')
+      .eq('address', address)
+      .single();
+
+    if (error) {
+      if (error.code === 'PGRST116') return null; // Not found
+      throw error;
+    }
+
+    return this.parseAuthorFromRow(data);
+  }
+
+  async recalculateAuthorTotals(authorAddress: string): Promise<void> {
+    // Use PostgreSQL function
+    const { error } = await supabase.rpc('recalculate_author_totals', {
+      target_author_address: authorAddress,
+    });
+
+    if (error) {
+      // If function doesn't exist, fall back to manual calculation
+      const client = await pgPool.connect();
+      try {
+        const result = await client.query(
+          `SELECT
+            COUNT(*) as article_count,
+            COALESCE(SUM(views), 0) as total_views,
+            COALESCE(SUM(purchases), 0) as total_purchases,
+            COALESCE(SUM(earnings), 0) as total_earnings
+           FROM articles WHERE author_address = $1`,
+          [authorAddress]
+        );
+
+        const row = result.rows[0];
+        const author = await this.getAuthor(authorAddress);
+
+        if (author) {
+          author.totalViews = Math.max(parseInt(row.total_views), 0);
+          author.totalPurchases = Math.max(parseInt(row.total_purchases), 0);
+          author.totalEarnings = Math.max(parseFloat(row.total_earnings), 0);
+          author.totalArticles = Math.max(author.totalArticles, parseInt(row.article_count));
+
+          await this.createOrUpdateAuthor(author);
+        }
+      } finally {
+        client.release();
+      }
+    }
+  }
+
+  // ============================================
+  // DRAFT METHODS
+  // ============================================
+
+  async createDraft(draft: Omit<Draft, 'id'>): Promise<Draft> {
+    const { data, error } = await supabase
+      .from('drafts')
+      .insert({
+        title: draft.title,
+        content: draft.content,
+        price: draft.price,
+        author_address: draft.authorAddress,
+        created_at: draft.createdAt,
+        updated_at: draft.updatedAt,
+        expires_at: draft.expiresAt,
+      })
+      .select()
+      .single();
+
+    if (error) throw error;
+    return this.parseDraftFromRow(data);
+  }
+
+  async updateDraft(draftId: number, draft: Omit<Draft, 'id'>): Promise<Draft> {
+    const { data, error } = await supabase
+      .from('drafts')
+      .update({
+        title: draft.title,
+        content: draft.content,
+        price: draft.price,
+        updated_at: draft.updatedAt,
+        expires_at: draft.expiresAt,
+      })
+      .eq('id', draftId)
+      .eq('author_address', draft.authorAddress)
+      .select()
+      .single();
+
+    if (error) {
+      if (error.code === 'PGRST116') throw new Error('Draft not found or unauthorized');
+      throw error;
+    }
+
+    return this.parseDraftFromRow(data);
+  }
+
+  async createOrUpdateRecentDraft(draft: Omit<Draft, 'id'>, isAutoSave: boolean = false): Promise<Draft> {
+    if (!isAutoSave) {
+      // Manual save: always create new draft
+      return this.createDraft(draft);
+    }
+
+    // Auto-save: check for recent draft (within 1 hour)
+    const oneHourAgo = new Date(Date.now() - 60 * 60 * 1000).toISOString();
+
+    const { data: recentDraft, error: fetchError } = await supabase
+      .from('drafts')
+      .select('id')
+      .eq('author_address', draft.authorAddress)
+      .gt('updated_at', oneHourAgo)
+      .order('updated_at', { ascending: false })
+      .limit(1)
+      .single();
+
+    if (fetchError && fetchError.code !== 'PGRST116') {
+      throw fetchError;
+    }
+
+    if (recentDraft) {
+      // Update recent draft
+      return this.updateDraft(recentDraft.id, draft);
+    } else {
+      // Create new draft
+      return this.createDraft(draft);
+    }
+  }
+
+  async getDraftsByAuthor(authorAddress: string): Promise<Draft[]> {
+    const { data, error } = await supabase
+      .from('drafts')
+      .select('*')
+      .eq('author_address', authorAddress)
+      .gt('expires_at', new Date().toISOString())
+      .order('updated_at', { ascending: false });
+
+    if (error) throw error;
+    return data.map(row => this.parseDraftFromRow(row));
+  }
+
+  async deleteDraft(draftId: number, authorAddress: string): Promise<boolean> {
+    const { error } = await supabase
+      .from('drafts')
+      .delete()
+      .eq('id', draftId)
+      .eq('author_address', authorAddress);
+
+    if (error) throw error;
+    return true;
+  }
+
+  async cleanupExpiredDrafts(): Promise<number> {
+    const { data, error } = await supabase
+      .from('drafts')
+      .delete()
+      .lte('expires_at', new Date().toISOString())
+      .select();
+
+    if (error) throw error;
+    return data?.length || 0;
+  }
+
+  // ============================================
+  // LIKE METHODS
+  // ============================================
+
+  async likeArticle(articleId: number, userAddress: string): Promise<boolean> {
+    const now = new Date().toISOString();
+
+    const { error } = await supabase.from('user_likes').insert({
+      article_id: articleId,
+      user_address: userAddress,
+      created_at: now,
+    });
+
+    if (error) {
+      // Check if it's a duplicate like (UNIQUE constraint violation)
+      if (error.code === '23505') {
+        // User already liked this article
+        return false;
+      }
+      throw error;
+    }
+
+    // Successfully added like
+    return true;
+  }
+
+  async unlikeArticle(articleId: number, userAddress: string): Promise<boolean> {
+    const { error } = await supabase
+      .from('user_likes')
+      .delete()
+      .eq('article_id', articleId)
+      .eq('user_address', userAddress);
+
+    if (error) throw error;
+    return true;
+  }
+
+  async checkUserLikedArticle(articleId: number, userAddress: string): Promise<boolean> {
+    const { data, error } = await supabase
+      .from('user_likes')
+      .select('id')
+      .eq('article_id', articleId)
+      .eq('user_address', userAddress)
+      .single();
+
+    if (error && error.code !== 'PGRST116') {
+      throw error;
+    }
+
+    return !!data;
+  }
+
+  async updateArticleLikesCount(articleId: number): Promise<void> {
+    // Use PostgreSQL function
+    const { error } = await supabase.rpc('recalculate_article_likes', {
+      target_article_id: articleId,
+    });
+
+    if (error) {
+      // If function doesn't exist, fall back to manual count
+      const { count, error: countError } = await supabase
+        .from('user_likes')
+        .select('*', { count: 'exact', head: true })
+        .eq('article_id', articleId);
+
+      if (countError) throw countError;
+
+      const { error: updateError } = await supabase
+        .from('articles')
+        .update({ likes: count || 0 })
+        .eq('id', articleId);
+
+      if (updateError) throw updateError;
+    }
+  }
+
+  // ============================================
+  // PAYMENT TRACKING METHODS
+  // ============================================
+
+  async recordPayment(
+    articleId: number,
+    userAddress: string,
+    amount: number,
+    transactionHash?: string
+  ): Promise<boolean> {
+    const { error } = await supabase.from('payments').insert({
+      article_id: articleId,
+      user_address: userAddress.toLowerCase(),
+      amount,
+      transaction_hash: transactionHash,
+      payment_verified: true,
+      created_at: new Date().toISOString(),
+    });
+
+    if (error) {
+      // Ignore duplicate payment errors (UNIQUE constraint)
+      if (error.code === '23505') {
+        console.log(`Payment already recorded for article ${articleId} by ${userAddress}`);
+        return false;
+      }
+      throw error;
+    }
+
+    return true;
+  }
+
+  async checkPaymentStatus(articleId: number, userAddress: string): Promise<boolean> {
+    const { data, error } = await supabase
+      .from('payments')
+      .select('id')
+      .eq('article_id', articleId)
+      .eq('user_address', userAddress.toLowerCase())
+      .single();
+
+    if (error && error.code !== 'PGRST116') {
+      throw error;
+    }
+
+    return !!data;
+  }
+
+  async getPaymentsByArticle(articleId: number): Promise<number> {
+    const { count, error } = await supabase
+      .from('payments')
+      .select('*', { count: 'exact', head: true })
+      .eq('article_id', articleId);
+
+    if (error) throw error;
+    return count || 0;
+  }
+
+  async getPaymentsByUser(userAddress: string): Promise<number> {
+    const { count, error } = await supabase
+      .from('payments')
+      .select('*', { count: 'exact', head: true })
+      .eq('user_address', userAddress.toLowerCase());
+
+    if (error) throw error;
+    return count || 0;
+  }
+
+  // ============================================
+  // CLEANUP
+  // ============================================
 
   close(): void {
-    this.db.close((err) => {
-      if (err) {
-        console.error('Error closing database:', err);
-      } else {
-        console.log('Database connection closed');
-      }
-    });
+    // Supabase client doesn't need explicit closing
+    // pgPool is managed globally
+    console.log('✅ Database connection closed');
   }
 }
 
