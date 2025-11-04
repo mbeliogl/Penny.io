@@ -5,7 +5,7 @@ import { ConnectButton } from '@rainbow-me/rainbowkit';
 import { Clock, User, Lock, HeartHandshake, Tag } from 'lucide-react';
 import { apiService, Article as ArticleType } from '../services/api';
 import { x402PaymentService } from '../services/x402PaymentService';
-import { useSignMessage } from 'wagmi';
+import { useWalletClient } from 'wagmi';
 import LikeButton from '../components/LikeButton';
 import { sanitizeHTML } from '../utils/sanitize';
 
@@ -14,19 +14,13 @@ import { sanitizeHTML } from '../utils/sanitize';
 function Article() {
   const { id } = useParams();
   const { isConnected, address } = useWallet();
-  const { signMessageAsync } = useSignMessage();
+  const { data: walletClient } = useWalletClient();
   const [article, setArticle] = useState<ArticleType | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string>('');
   const [hasPaid, setHasPaid] = useState(false);
   const [isProcessingPayment, setIsProcessingPayment] = useState(false);
   const [showPaymentToast, setShowPaymentToast] = useState(false);
-
-  // Wrapper for signMessage that matches our payment service signature
-  const signMessageWrapper = async (message: string): Promise<string> => {
-    const signature = await signMessageAsync({ message });
-    return signature;
-  };
 
   // Tipping state
   const [showTipModal, setShowTipModal] = useState(false);
@@ -121,70 +115,40 @@ function Article() {
   }
 
   const handlePayment = async () => {
-    if (!address || !signMessageAsync) {
-      console.error('Wallet not connected or sign function not available');
+    if (!address) {
+      console.error('Wallet not connected');
       return;
     }
 
     setIsProcessingPayment(true);
+    setError('');
     
-    try {
-      // Check if x402 is supported, otherwise fallback to mock payment
-      const isX402Supported = x402PaymentService.isX402Supported();
-      
-      if (isX402Supported) {
-        // Use real x402 payment
-        const paymentResult = await x402PaymentService.purchaseArticle(
-          article.id,
-          article.price,
-          address,
-          signMessageWrapper
-        );
+    if (!walletClient) {
+      console.error('Wallet client not available');
+      setError('Unable to access connected wallet. Please reconnect and try again.');
+      setIsProcessingPayment(false);
+      return;
+    }
 
-        if (paymentResult.success) {
-          setHasPaid(true);
-          setShowPaymentToast(true);
-          setTimeout(() => setShowPaymentToast(false), 3000);
-        } else {
-          console.error('x402 payment failed:', paymentResult.error);
-          // Try fallback payment
-          const fallbackSuccess = await x402PaymentService.fallbackPurchase(article.id);
-          if (fallbackSuccess) {
-            setHasPaid(true);
-            setShowPaymentToast(true);
-            setTimeout(() => setShowPaymentToast(false), 3000);
-          }
-        }
+    try {
+      const paymentResult = await x402PaymentService.purchaseArticle(
+        article.id,
+        walletClient
+      );
+
+      if (paymentResult.success) {
+        setHasPaid(true);
+        setError('');
+        setShowPaymentToast(true);
+        setTimeout(() => setShowPaymentToast(false), 3000);
       } else {
-        // Fallback to regular API payment for browsers without x402 support
-        console.log('x402 not supported, using fallback payment');
-        
-        // Simulate payment processing delay
-        await new Promise(resolve => setTimeout(resolve, 2000));
-        
-        const purchaseResponse = await apiService.recordPurchase(article.id);
-        
-        if (purchaseResponse.success) {
-          setHasPaid(true);
-          setShowPaymentToast(true);
-          setTimeout(() => setShowPaymentToast(false), 3000);
-        } else {
-          console.error('Failed to record purchase:', purchaseResponse.error);
-        }
+        const errorMessage = paymentResult.error || 'Payment verification failed';
+        console.error('x402 payment failed:', errorMessage, paymentResult.rawResponse);
+        setError(errorMessage);
       }
     } catch (error) {
       console.error('Payment processing failed:', error);
-      // Try fallback payment as last resort
-      try {
-        const fallbackSuccess = await x402PaymentService.fallbackPurchase(article.id);
-        if (fallbackSuccess) {
-          setHasPaid(true);
-          setShowPaymentToast(true);
-          setTimeout(() => setShowPaymentToast(false), 3000);
-        }
-      } catch (fallbackError) {
-        console.error('Fallback payment also failed:', fallbackError);
-      }
+      setError(error instanceof Error ? error.message : 'Payment processing failed');
     } finally {
       setIsProcessingPayment(false);
     }

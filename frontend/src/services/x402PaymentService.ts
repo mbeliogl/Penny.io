@@ -1,13 +1,7 @@
 // x402 Payment Service for handling micropayments
 import { apiService } from './api';
-
-export interface PaymentPayload {
-  from: string;
-  to: string;
-  value: number;  // Integer in micro USDC
-  signature: string;
-  message?: string;
-}
+import { createPaymentHeader as createEncodedPaymentHeader } from 'x402/client';
+import type { WalletClient } from 'viem';
 
 export interface PaymentRequirement {
   price: string;
@@ -37,11 +31,14 @@ export interface PaymentResponse {
   paymentRequired?: PaymentRequirement;
   receipt?: string;
   error?: string;
+  encodedHeader?: string;
+  rawResponse?: any;
 }
 
 class X402PaymentService {
   private facilitatorUrl = import.meta.env.VITE_X402_FACILITATOR_URL || 'https://x402.org/facilitator';
   private network = import.meta.env.VITE_X402_NETWORK || 'base-sepolia';
+  private readonly X402_VERSION = 1;
 
   /**
    * Get facilitator URL - uses CDP if configured, otherwise falls back to public
@@ -68,16 +65,16 @@ class X402PaymentService {
    */
   async attemptPayment(
     endpoint: string,
-    paymentPayload?: PaymentPayload
+    encodedPaymentHeader?: string
   ): Promise<PaymentResponse> {
     try {
       const headers: Record<string, string> = {
         'Content-Type': 'application/json',
       };
 
-      // Add x402 payment header if we have a payment payload
-      if (paymentPayload) {
-        headers['X-PAYMENT'] = btoa(JSON.stringify(paymentPayload));
+      // Add x402 payment header if already prepared (reuse logic)
+      if (encodedPaymentHeader) {
+        headers['X-PAYMENT'] = encodedPaymentHeader;
       }
 
       const response = await fetch(`http://localhost:3001/api${endpoint}`, {
@@ -126,37 +123,19 @@ class X402PaymentService {
   }
 
   /**
-   * Create a payment payload for a given article purchase
+   * Create an encoded x402 payment header for the selected payment requirements
    */
-  async createPaymentPayload(
-    articlePrice: number,
-    recipientAddress: string,
-    userAddress: string,
-    signMessage: (message: string) => Promise<string>
-  ): Promise<PaymentPayload> {
-    try {
-      // Convert price to micro USDC (USDC has 6 decimals)
-      const valueInCents = Math.round(articlePrice * 100);
-      const valueInMicroUSDC = valueInCents * 10000; // Convert to micro USDC (integer)
-
-      // Create message to sign
-      const messageToSign = `Authorize payment of ${valueInMicroUSDC} micro USDC from ${userAddress} to ${recipientAddress}`;
-
-      // Get signature from user's wallet
-      const signature = await signMessage(messageToSign);
-
-      // Return flat payment payload structure (matches backend validation schema)
-      return {
-        from: userAddress,
-        to: recipientAddress, // Dynamic recipient - article author from backend
-        value: valueInMicroUSDC, // Integer value in micro USDC
-        signature,
-        message: messageToSign,
-      };
-    } catch (error) {
-      console.error('Error creating payment payload:', error);
-      throw new Error('Failed to create payment payload');
+  private async createPaymentHeaderFromRequirements(
+    requirement: PaymentRequirement,
+    walletClient: WalletClient
+  ): Promise<string> {
+    if (!requirement.accept) {
+      throw new Error('No x402 payment option returned by facilitator');
     }
+
+    const encodedHeader = await createEncodedPaymentHeader(walletClient, this.X402_VERSION, requirement.accept);
+    console.log('🔐 Encoded x402 payment header:', encodedHeader);
+    return encodedHeader;
   }
 
   /**
@@ -164,39 +143,44 @@ class X402PaymentService {
    */
   async purchaseArticle(
     articleId: number,
-    articlePrice: number,
-    userAddress: string,
-    signMessage: (message: string) => Promise<string>
+    walletClient: WalletClient
   ): Promise<PaymentResponse> {
     try {
       // First attempt without payment to trigger 402 response
       const initialResponse = await this.attemptPayment(`/articles/${articleId}/purchase`);
 
-      if (initialResponse.paymentRequired) {
-        // Create payment payload - recipient comes from backend 402 response
-        const paymentPayload = await this.createPaymentPayload(
-          articlePrice,
-          initialResponse.paymentRequired.to, // Article author's address from backend
-          userAddress,
-          signMessage
+      if (initialResponse.paymentRequired && initialResponse.paymentRequired.accept) {
+        const encodedHeader = await this.createPaymentHeaderFromRequirements(
+          initialResponse.paymentRequired,
+          walletClient
         );
-        console.log('🔍 Created payment payload:', paymentPayload);
 
-        // Retry with payment
-        // Verify payment with backend
-        const verificationResponse = await this.verifyPayment(paymentPayload, articleId);
+        const response = await fetch(`http://localhost:3001/api/articles/${articleId}/purchase`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'X-PAYMENT': encodedHeader
+          }
+        });
 
-        if (verificationResponse.success) {
+        const result = await response.json();
+        console.log('🔍 Purchase response:', result);
+
+        if (response.ok && result.success) {
           return {
             success: true,
-            receipt: verificationResponse.receipt
-          };
-        } else {
-          return {
-            success: false,
-            error: verificationResponse.error || 'Payment verification failed'
+            receipt: result.data?.receipt || result.receipt || 'Payment processed',
+            encodedHeader,
+            rawResponse: result
           };
         }
+
+        return {
+          success: false,
+          error: result?.error || `Payment failed with status ${response.status}`,
+          encodedHeader,
+          rawResponse: result
+        };
       }
 
       return initialResponse;
@@ -214,7 +198,6 @@ class X402PaymentService {
    */
   async payForView(articleId: number): Promise<PaymentResponse> {
     try {
-      // Views are FREE - just increment the counter via API
       await apiService.incrementArticleViews(articleId);
 
       return {
@@ -232,44 +215,10 @@ class X402PaymentService {
 
   /**
    * Check if x402 is supported in the current browser
-   * We provide our own x402 implementation, so always return true
+   * We rely on wallet clients with signTypedData support
    */
   isX402Supported(): boolean {
-    // We implement x402 ourselves via wallet signatures
     return true;
-  }
-
-  /**
-   * Verify payment with backend
-   */
-  async verifyPayment(paymentPayload: PaymentPayload, articleId: number): Promise<any> {
-    try {
-      console.log('🔍 Sending payment verification:', {
-        paymentPayload,
-        articleId
-      });
-
-      const response = await fetch('http://localhost:3001/api/verify-payment', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          paymentPayload,
-          articleId
-        })
-      });
-
-      const result = await response.json();
-      console.log('🔍 Verification response:', result);
-      return result;
-    } catch (error) {
-      console.error('Payment verification failed:', error);
-      return {
-        success: false,
-        error: 'Payment verification failed'
-      };
-    }
   }
 
   /**
@@ -282,19 +231,6 @@ class X402PaymentService {
       return data.success ? data.data.hasPaid : false;
     } catch (error) {
       console.error('Error checking payment status:', error);
-      return false;
-    }
-  }
-
-  /**
-   * Fallback to regular API payment if x402 is not supported
-   */
-  async fallbackPurchase(articleId: number): Promise<boolean> {
-    try {
-      const response = await apiService.recordPurchase(articleId);
-      return response.success;
-    } catch (error) {
-      console.error('Fallback purchase failed:', error);
       return false;
     }
   }

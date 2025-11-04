@@ -1,15 +1,15 @@
-import React, { useState, useEffect } from 'react';
-import { useAccount, useChainId, useSwitchChain } from 'wagmi';
-import { useSignMessage } from 'wagmi';
-import { base, baseSepolia } from 'wagmi/chains';
+import React, { useState } from 'react';
+import { useAccount, useChainId, useSwitchChain, useWalletClient } from 'wagmi';
+import { baseSepolia } from 'wagmi/chains';
+import { x402PaymentService, PaymentRequirement } from '../services/x402PaymentService';
 
 const X402Test: React.FC = () => {
   const { address, isConnected } = useAccount();
   const chainId = useChainId();
   const { switchChain } = useSwitchChain();
-  const { signMessage } = useSignMessage();
-  
-  const [currentPaymentReq, setCurrentPaymentReq] = useState<any>(null);
+  const { data: walletClient } = useWalletClient();
+
+  const [currentPaymentReq, setCurrentPaymentReq] = useState<PaymentRequirement | null>(null);
   const [selectedArticle, setSelectedArticle] = useState('2');
   const [testResults, setTestResults] = useState<{
     network?: string;
@@ -40,32 +40,37 @@ const X402Test: React.FC = () => {
   const getPaymentRequirements = async () => {
     try {
       setTestResults(prev => ({ ...prev, paymentReq: '⏳ Fetching payment requirements...' }));
-      
-      const response = await fetch(`http://localhost:3001/api/articles/${selectedArticle}/purchase`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        }
-      });
 
-      if (response.status === 402) {
-        const paymentData = await response.json();
-        const req = paymentData.accepts[0];
-        setCurrentPaymentReq(req);
-        
+      const response = await x402PaymentService.attemptPayment(`/articles/${selectedArticle}/purchase`);
+
+      if (response.paymentRequired) {
+        setCurrentPaymentReq(response.paymentRequired);
+
+        const requirement = response.paymentRequired.accept;
+        const amountDisplay = requirement
+          ? `$${(parseInt(requirement.maxAmountRequired, 10) / 1_000_000).toFixed(2)} (${requirement.maxAmountRequired} micro USDC)`
+          : 'Unknown';
+
+        const prettyJson = JSON.stringify(response.paymentRequired.raw, null, 2);
+
         const result = `✅ Payment Requirements Received
 
-💰 Amount: $${(parseInt(req.maxAmountRequired) / 100000).toFixed(2)} (${req.maxAmountRequired} micro USDC)
-👤 Pay To (Author): ${req.payTo}
-🌐 Network: ${req.network}
-🪙 Asset: USDC (${req.asset})
-📝 Description: ${req.description}
+💰 Amount: ${amountDisplay}
+👤 Pay To (Author): ${requirement?.payTo}
+🌐 Network: ${requirement?.network}
+🪙 Asset: USDC (${requirement?.asset})
+📝 Description: ${requirement?.description}
+
+Raw Response:
+${prettyJson}
 
 Ready for real wallet transaction!`;
 
         setTestResults(prev => ({ ...prev, paymentReq: result }));
-      } else {
-        throw new Error(`Unexpected response: ${response.status}`);
+      } else if (response.success) {
+        setTestResults(prev => ({ ...prev, paymentReq: '✅ Already paid! Access granted without new authorization.' }));
+      } else if (response.error) {
+        setTestResults(prev => ({ ...prev, paymentReq: `❌ Error: ${response.error}` }));
       }
     } catch (error: any) {
       setTestResults(prev => ({ ...prev, paymentReq: `❌ Error: ${error.message}` }));
@@ -78,67 +83,37 @@ Ready for real wallet transaction!`;
       return;
     }
 
+    if (!walletClient) {
+      setTestResults(prev => ({ ...prev, payment: '❌ Wallet client unavailable. Please reconnect and retry.' }));
+      return;
+    }
+
     try {
-      setTestResults(prev => ({ ...prev, payment: '⏳ Creating payment authorization...' }));
+      setTestResults(prev => ({ ...prev, payment: '⏳ Preparing x402 payment header...' }));
 
-      // Create payment authorization
-      const now = Math.floor(Date.now() / 1000);
-      const authorization = {
-        from: address,
-        to: currentPaymentReq.payTo,
-        value: currentPaymentReq.maxAmountRequired,
-        validAfter: now,
-        validBefore: now + 300, // 5 minutes
-        nonce: Math.random().toString(36).substring(2, 15)
-      };
+      const purchaseResult = await x402PaymentService.purchaseArticle(
+        parseInt(selectedArticle, 10),
+        walletClient
+      );
 
-      // Create message to sign
-      const message = `Authorize payment of ${authorization.value} micro USDC from ${authorization.from} to ${authorization.to} (valid ${authorization.validAfter}-${authorization.validBefore}, nonce: ${authorization.nonce})`;
-
-      setTestResults(prev => ({ ...prev, payment: `⏳ Requesting wallet signature...\n\nMessage to sign:\n${message}` }));
-
-      // Request signature from wallet
-      const signature = await signMessage({ message });
-
-      setTestResults(prev => ({ ...prev, payment: '⏳ Signature received, submitting payment...' }));
-
-      // Create payment payload
-      const paymentPayload = {
-        signature: signature,
-        authorization: authorization
-      };
-
-      // Submit payment to server
-      const paymentHeader = btoa(JSON.stringify(paymentPayload));
-
-      const response = await fetch(`http://localhost:3001/api/articles/${selectedArticle}/purchase`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'X-PAYMENT': paymentHeader
-        }
-      });
-
-      const result = await response.json();
-
-      if (response.ok && result.success) {
+      if (purchaseResult.success) {
         const successMsg = `🎉 REAL PAYMENT SUCCESSFUL!
 
-${result.data.message}
-Receipt: ${result.data.receipt}
+Receipt: ${purchaseResult.receipt}
+Encoded Header: ${purchaseResult.encodedHeader}
 
-✅ Real wallet signature: ${signature.substring(0, 20)}...
 ✅ Payment verified and recorded
-✅ USDC payment authorized to author: ${authorization.to}
+✅ USDC payment authorized to author: ${currentPaymentReq.to}
 ✅ Access granted to full content
 
 🎊 Complete x402 micropayment with real wallets!`;
 
         setTestResults(prev => ({ ...prev, payment: successMsg }));
       } else {
-        throw new Error(result.error || 'Payment failed');
+        const failureDetail = purchaseResult.error || 'Payment failed';
+        const raw = purchaseResult.rawResponse ? `\nResponse: ${JSON.stringify(purchaseResult.rawResponse, null, 2)}` : '';
+        setTestResults(prev => ({ ...prev, payment: `❌ Payment Failed: ${failureDetail}${raw}` }));
       }
-
     } catch (error: any) {
       setTestResults(prev => ({ ...prev, payment: `❌ Payment Failed: ${error.message}` }));
     }

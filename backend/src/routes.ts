@@ -14,14 +14,22 @@ import {
   articleIdSchema,
   draftIdSchema,
   likeRequestSchema,
-  verifyPaymentSchema,
   deleteRequestSchema
 } from './validation';
 import { checkForSpam } from './spamPrevention';
+import { facilitator as defaultFacilitator, createFacilitatorConfig } from '@coinbase/x402';
+import { useFacilitator } from 'x402/verify';
+import { PaymentPayload, PaymentPayloadSchema, PaymentRequirements } from 'x402/types';
 
 const router = express.Router();
 const db = new Database();
 const isProduction = process.env.NODE_ENV === 'production';
+
+const facilitatorConfig = process.env.COINBASE_CDP_API_KEY && process.env.COINBASE_CDP_API_SECRET
+  ? createFacilitatorConfig(process.env.COINBASE_CDP_API_KEY, process.env.COINBASE_CDP_API_SECRET)
+  : defaultFacilitator;
+
+const { verify: verifyWithFacilitator } = useFacilitator(facilitatorConfig);
 
 // ============================================
 // RATE LIMITING CONFIGURATION
@@ -115,6 +123,49 @@ const upload = multer({
     fileSize: 5 * 1024 * 1024 // 5MB limit
   }
 });
+
+function buildPaymentRequirement(article: Article, req: Request): PaymentRequirements {
+  const priceInCents = Math.round(article.price * 100);
+  const priceInMicroUSDC = (priceInCents * 10000).toString();
+  const network = process.env.X402_NETWORK || 'base-sepolia';
+  const asset =
+    network === 'base'
+      ? process.env.X402_MAINNET_USDC_ADDRESS || '0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913'
+      : process.env.X402_TESTNET_USDC_ADDRESS || '0x036CbD53842c5426634e7929541eC2318f3dCF7e';
+
+  return {
+    scheme: 'exact',
+    network,
+    maxAmountRequired: priceInMicroUSDC,
+    resource: `${req.protocol}://${req.get('host')}/api/articles/${article.id}/purchase`,
+    description: `Purchase access to: ${article.title}`,
+    mimeType: 'application/json',
+    payTo: article.authorAddress,
+    maxTimeoutSeconds: 60,
+    asset,
+    outputSchema: {
+      input: {
+        type: 'http',
+        method: 'POST',
+        discoverable: true
+      }
+    },
+    extra: {
+      name: 'USDC',
+      version: '2',
+      title: `Purchase: ${article.title}`,
+      category: article.categories?.[0] || 'content',
+      tags: article.categories || ['article', 'content'],
+      serviceName: 'Penny.io Article Access',
+      serviceDescription: `Unlock full access to "${article.title}" by ${article.authorAddress.slice(0, 6)}...${article.authorAddress.slice(-4)}`,
+      pricing: {
+        currency: 'USD',
+        amount: article.price.toString(),
+        display: `$${article.price.toFixed(2)}`
+      }
+    }
+  };
+}
 
 // Utility function to generate preview from content
 function generatePreview(content: string, maxLength: number = 300): string {
@@ -421,51 +472,6 @@ router.put('/articles/:id/view', readLimiter, async (req: Request, res: Response
   }
 });
 
-// Verify x402 payment payload
-async function verifyX402Payment(paymentData: any, article: any): Promise<boolean> {
-  try {
-    // Basic validation
-    if (!paymentData.authorization || !paymentData.signature) {
-      return false;
-    }
-
-    const { authorization } = paymentData;
-    
-    // Verify payment amount
-    const requiredAmount = Math.round(article.price * 100 * 10000); // Convert to micro USDC
-    const paidAmount = parseInt(authorization.value);
-    
-    if (paidAmount < requiredAmount) {
-      console.log(`Insufficient payment: ${paidAmount} < ${requiredAmount}`);
-      return false;
-    }
-
-    // Verify payment recipient
-    if (authorization.to.toLowerCase() !== article.authorAddress.toLowerCase()) {
-      console.log(`Wrong recipient: ${authorization.to} != ${article.authorAddress}`);
-      return false;
-    }
-
-    // Verify timing
-    const now = Math.floor(Date.now() / 1000);
-    if (now < authorization.validAfter || now > authorization.validBefore) {
-      console.log('Payment authorization expired');
-      return false;
-    }
-
-    // In production, verify signature here:
-    // const message = createEIP712Message(authorization);
-    // const recoveredAddress = ethers.utils.verifyMessage(message, paymentData.signature);
-    // return recoveredAddress.toLowerCase() === authorization.from.toLowerCase();
-
-    console.log('Payment validation passed (demo mode)');
-    return true;
-  } catch (error) {
-    console.error('Payment verification error:', error);
-    return false;
-  }
-}
-
 // POST /api/articles/:id/purchase - x402 Purchase with dynamic pricing and recipients
 router.post('/articles/:id/purchase', criticalLimiter, async (req: Request, res: Response) => {
   try {
@@ -479,108 +485,72 @@ router.post('/articles/:id/purchase', criticalLimiter, async (req: Request, res:
       });
     }
 
-    // Check if x402 payment header is present
+    const paymentRequirement = buildPaymentRequirement(article, req);
     const paymentHeader = req.headers['x-payment'];
-    
+
     if (!paymentHeader) {
-      // Return 402 Payment Required with x402 format
-      const priceInCents = Math.round(article.price * 100);
-      const priceInMicroUSDC = priceInCents * 10000; // Convert to micro USDC
-
-      const facilitatorUrl = process.env.COINBASE_CDP_API_KEY
-        ? `https://facilitator.cdp.coinbase.com`
-        : process.env.X402_FACILITATOR_URL || 'https://x402.org/facilitator';
-
       return res.status(402).json({
         x402Version: 1,
-        error: "X-PAYMENT header is required",
-        accepts: [{
-          scheme: "exact",
-          network: process.env.X402_NETWORK || "base-sepolia",
-          maxAmountRequired: priceInMicroUSDC.toString(),
-          resource: `${req.protocol}://${req.get('host')}/api/articles/${articleId}/purchase`,
-          description: `Purchase access to: ${article.title}`,
-          mimeType: "application/json",
-          payTo: article.authorAddress, // Dynamic recipient - payment goes to author!
-          maxTimeoutSeconds: 60,
-          asset: process.env.X402_NETWORK === 'base'
-            ? "0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913" // USDC Base mainnet
-            : "0x036CbD53842c5426634e7929541eC2318f3dCF7e", // USDC Base Sepolia
-          outputSchema: {
-            input: {
-              type: "http",
-              method: "POST",
-              discoverable: true
-            }
-          },
-          extra: {
-            name: "USDC",
-            version: "2",
-            // Bazaar discovery metadata
-            title: `Purchase: ${article.title}`,
-            category: article.categories?.[0] || "content",
-            tags: article.categories || ["article", "content"],
-            serviceName: "Penny.io Article Access",
-            serviceDescription: `Unlock full access to "${article.title}" by ${article.authorAddress.slice(0, 6)}...${article.authorAddress.slice(-4)}`,
-            pricing: {
-              currency: "USD",
-              amount: article.price.toString(),
-              display: `$${article.price.toFixed(2)}`
-            }
-          }
-        }]
+        error: 'X-PAYMENT header is required',
+        accepts: [paymentRequirement]
       });
     }
 
-    // Payment header is present - verify and process payment
+    let paymentPayload: PaymentPayload;
     try {
-      const paymentData = JSON.parse(Buffer.from(paymentHeader as string, 'base64').toString());
-      
-      // Verify payment (simplified for demo)
-      const isValidPayment = await verifyX402Payment(paymentData, article);
-      
-      if (!isValidPayment) {
-        return res.status(400).json({
-          success: false,
-          error: 'Invalid payment'
-        });
-      }
-
-      // Payment verified! Update article stats
-      const newPurchases = article.purchases + 1;
-      const newEarnings = article.earnings + article.price;
-
-      await db.updateArticleStats(articleId, undefined, newPurchases, newEarnings);
-
-      // Update author stats
-      const author = await db.getAuthor(article.authorAddress);
-      if (author) {
-        author.totalPurchases += 1;
-        author.totalEarnings += article.price;
-        await db.createOrUpdateAuthor(author);
-      }
-
-      // Recalculate popularity score
-      await db.updatePopularityScore(articleId);
-
-      // Record payment for persistence
-      await recordPayment(articleId, paymentData.authorization?.from || 'unknown', article.price);
-
-      return res.json({
-        success: true,
-        data: { 
-          message: 'Payment verified and purchase recorded',
-          receipt: `payment-${articleId}-${Date.now()}`
-        }
-      });
-
+      const decoded = Buffer.from(paymentHeader as string, 'base64').toString('utf8');
+      paymentPayload = PaymentPayloadSchema.parse(JSON.parse(decoded));
     } catch (error) {
-      console.error('Error processing payment:', error);
+      console.error('Invalid x402 payment header:', error);
       return res.status(400).json({
         success: false,
-        error: 'Invalid payment format'
+        error: 'Invalid x402 payment header'
       });
     }
+
+    // Basic guard to ensure amounts align before calling facilitator
+    const requiredAmount = BigInt(paymentRequirement.maxAmountRequired);
+    const providedAmount = BigInt(paymentPayload.payload.authorization.value);
+
+    if (providedAmount < requiredAmount) {
+      return res.status(400).json({
+        success: false,
+        error: 'Insufficient payment amount'
+      });
+    }
+
+    // Verify payment with facilitator (CDP when configured, public otherwise)
+    const verification = await verifyWithFacilitator(paymentPayload, paymentRequirement);
+    if (!verification.isValid) {
+      return res.status(400).json({
+        success: false,
+        error: `Payment verification failed: ${verification.invalidReason || 'unknown_reason'}`
+      });
+    }
+
+    if (paymentPayload.payload.authorization.to.toLowerCase() !== article.authorAddress.toLowerCase()) {
+      return res.status(400).json({
+        success: false,
+        error: 'Payment recipient mismatch'
+      });
+    }
+
+    const payerAddress =
+      verification.payer ||
+      (typeof paymentPayload.payload.authorization.from === 'string'
+        ? paymentPayload.payload.authorization.from
+        : '');
+
+    await recordArticlePurchase(articleId);
+    await recordPayment(articleId, payerAddress || 'unknown', article.price);
+
+    return res.json({
+      success: true,
+      data: {
+        message: 'Payment verified and purchase recorded',
+        receipt: `payment-${articleId}-${Date.now()}`
+      }
+    });
 
   } catch (error) {
     console.error('Error in purchase route:', error);
@@ -914,99 +884,6 @@ router.post('/articles/recalculate-popularity', criticalLimiter, async (req: Req
   }
 });
 
-// x402 Payment Verification Routes
-
-interface PaymentPayload {
-  from: string;
-  to: string;
-  value: number;
-  signature: string;
-  message?: string;
-  validAfter?: number;
-  validBefore?: number;
-  nonce?: string;
-}
-
-// Verify x402 payment
-router.post('/verify-payment', criticalLimiter, validate(verifyPaymentSchema), async (req: Request, res: Response) => {
-  try {
-    const { paymentPayload, articleId } = req.body as {
-      paymentPayload: PaymentPayload;
-      articleId: number;
-    };
-
-    // Basic validation
-    if (!paymentPayload || !articleId) {
-      return res.status(400).json({
-        success: false,
-        error: 'Missing payment payload or article ID'
-      });
-    }
-
-    // Verify payment signature and authorization
-    const isValid = await verifyPaymentSignature(paymentPayload);
-    
-    if (!isValid) {
-      return res.status(400).json({
-        success: false,
-        error: 'Invalid payment signature'
-      });
-    }
-
-    // Check payment amount against article price
-    const article = await db.getArticleById(articleId);
-    if (!article) {
-      return res.status(404).json({
-        success: false,
-        error: 'Article not found'
-      });
-    }
-
-    const requiredAmount = Math.round(article.price * 100 * 10000); // Convert to micro USDC
-    const paidAmount = typeof paymentPayload.value === 'number'
-      ? paymentPayload.value
-      : parseInt(paymentPayload.value as unknown as string, 10);
-
-    if (paidAmount < requiredAmount) {
-      return res.status(400).json({
-        success: false,
-        error: 'Insufficient payment amount'
-      });
-    }
-
-    // Verify payment timing if provided
-    if (paymentPayload.validAfter && paymentPayload.validBefore) {
-      const now = Math.floor(Date.now() / 1000);
-      if (now < paymentPayload.validAfter || now > paymentPayload.validBefore) {
-        return res.status(400).json({
-          success: false,
-          error: 'Payment authorization expired'
-        });
-      }
-    }
-
-    // Record successful payment
-    const purchaseResponse = await recordArticlePurchase(articleId);
-
-    // Track payment for this user
-    await recordPayment(articleId, paymentPayload.from, article.price);
-
-    res.json({
-      success: true,
-      message: 'Payment verified successfully',
-      receipt: `payment-${articleId}-${Date.now()}`,
-      data: purchaseResponse
-    });
-
-  } catch (error) {
-    console.error('Payment verification error:', error);
-    res.status(500).json({
-      success: false,
-      error: 'Payment verification failed'
-    });
-  }
-});
-
 // Get payment status for an article
 router.get('/payment-status/:articleId/:userAddress', readLimiter, async (req: Request, res: Response) => {
   try {
@@ -1184,51 +1061,6 @@ router.get('/articles/:id/like-status/:userAddress', readLimiter, async (req: Re
     res.status(500).json(response);
   }
 });
-
-// Helper functions for payment verification
-
-async function verifyPaymentSignature(paymentPayload: PaymentPayload): Promise<boolean> {
-  try {
-    // In a real implementation, this would:
-    // 1. Verify the signature against the authorization data
-    // 2. Check that the signer is the same as the 'from' address
-    // 3. Validate the signature format and cryptographic integrity
-    
-    // For demo purposes, we'll do basic validation
-    const { signature, from, to, value } = paymentPayload;
-
-    // Check required fields
-    if (!signature || !from || !to || value === undefined || value === null) {
-      return false;
-    }
-
-    // Check that signature looks like a valid hex string
-    if (!/^0x[a-fA-F0-9]+$/.test(signature)) {
-      return false;
-    }
-
-    // Check addresses format
-    if (!/^0x[a-fA-F0-9]{40}$/.test(from) || 
-        !/^0x[a-fA-F0-9]{40}$/.test(to)) {
-      return false;
-    }
-
-    // Basic value validation (micro USDC, must be positive integer)
-    if (typeof value !== 'number' || !Number.isInteger(value) || value <= 0) {
-      return false;
-    }
-
-    // In production, use a library like ethers.js to verify the signature:
-    // const message = createEIP712Message(authorization);
-    // const recoveredAddress = ethers.utils.verifyMessage(message, signature);
-    // return recoveredAddress.toLowerCase() === authorization.from.toLowerCase();
-
-    return true; // Demo validation passed
-  } catch (error) {
-    console.error('Signature verification error:', error);
-    return false;
-  }
-}
 
 async function recordArticlePurchase(articleId: number): Promise<any> {
   try {
