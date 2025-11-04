@@ -14,13 +14,19 @@ import { sanitizeHTML } from '../utils/sanitize';
 function Article() {
   const { id } = useParams();
   const { isConnected, address } = useWallet();
-  const { signMessage } = useSignMessage();
+  const { signMessageAsync } = useSignMessage();
   const [article, setArticle] = useState<ArticleType | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string>('');
   const [hasPaid, setHasPaid] = useState(false);
   const [isProcessingPayment, setIsProcessingPayment] = useState(false);
   const [showPaymentToast, setShowPaymentToast] = useState(false);
+
+  // Wrapper for signMessage that matches our payment service signature
+  const signMessageWrapper = async (message: string): Promise<string> => {
+    const signature = await signMessageAsync({ message });
+    return signature;
+  };
 
   // Tipping state
   const [showTipModal, setShowTipModal] = useState(false);
@@ -75,24 +81,11 @@ function Article() {
 
   // Increment view count when article loads (only once per session)
   useEffect(() => {
-    if (article && !isAuthor && address && signMessage) {
-      // Only increment views for connected non-authors
+    if (article && !isAuthor) {
+      // Only increment views for non-authors (views are FREE)
       const incrementViews = async () => {
         try {
-          // Try x402 micro-payment for view tracking, fallback to free increment
-          const isX402Supported = x402PaymentService.isX402Supported();
-          
-          if (isX402Supported) {
-            try {
-              await x402PaymentService.payForView(article.id, address, signMessage);
-            } catch (error) {
-              console.log('x402 view payment failed, using free view tracking:', error);
-              await apiService.incrementArticleViews(article.id);
-            }
-          } else {
-            // Fallback to free view tracking
-            await apiService.incrementArticleViews(article.id);
-          }
+          await x402PaymentService.payForView(article.id);
         } catch (error) {
           console.error('Failed to increment views', error);
           // Don't show error to users - this is background functionality
@@ -100,7 +93,7 @@ function Article() {
       };
       incrementViews();
     }
-  }, [article, isAuthor, address, signMessage]); // Only run when article, isAuthor, or wallet state changes
+  }, [article, isAuthor]); // Only run when article or isAuthor changes
 
   if (loading) {
     return (
@@ -128,7 +121,7 @@ function Article() {
   }
 
   const handlePayment = async () => {
-    if (!address || !signMessage) {
+    if (!address || !signMessageAsync) {
       console.error('Wallet not connected or sign function not available');
       return;
     }
@@ -145,7 +138,7 @@ function Article() {
           article.id,
           article.price,
           address,
-          signMessage
+          signMessageWrapper
         );
 
         if (paymentResult.success) {

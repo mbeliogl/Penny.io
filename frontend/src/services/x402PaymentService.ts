@@ -2,15 +2,11 @@
 import { apiService } from './api';
 
 export interface PaymentPayload {
+  from: string;
+  to: string;
+  value: number;  // Integer in micro USDC
   signature: string;
-  authorization: {
-    from: string;
-    to: string;
-    value: string;
-    validAfter: number;
-    validBefore: number;
-    nonce: string;
-  };
+  message?: string;
 }
 
 export interface PaymentRequirement {
@@ -18,6 +14,22 @@ export interface PaymentRequirement {
   network: string;
   facilitator: string;
   to: string;
+  accept: PaymentAccept | null;
+  raw: any;
+}
+
+export interface PaymentAccept {
+  scheme: string;
+  network: string;
+  maxAmountRequired: string;
+  resource: string;
+  description: string;
+  mimeType: string;
+  payTo: string;
+  maxTimeoutSeconds?: number;
+  asset?: string;
+  outputSchema?: Record<string, unknown>;
+  extra?: Record<string, unknown>;
 }
 
 export interface PaymentResponse {
@@ -28,9 +40,26 @@ export interface PaymentResponse {
 }
 
 class X402PaymentService {
-  private facilitatorUrl = 'https://x402.org/facilitator';
-  private network = 'base-sepolia';
-  private recipientAddress = '0x742d35Cc6874C298D5C29dAAF7D8a28C1f10b1C3';
+  private facilitatorUrl = import.meta.env.VITE_X402_FACILITATOR_URL || 'https://x402.org/facilitator';
+  private network = import.meta.env.VITE_X402_NETWORK || 'base-sepolia';
+
+  /**
+   * Get facilitator URL - uses CDP if configured, otherwise falls back to public
+   */
+  getFacilitatorUrl(): string {
+    const cdpAppId = import.meta.env.VITE_COINBASE_CDP_APP_ID;
+    if (cdpAppId) {
+      return 'https://facilitator.cdp.coinbase.com';
+    }
+    return this.facilitatorUrl;
+  }
+
+  /**
+   * Check if CDP is enabled
+   */
+  isCDPEnabled(): boolean {
+    return !!import.meta.env.VITE_COINBASE_CDP_APP_ID;
+  }
 
   /**
    * Attempt to access a paid resource
@@ -51,21 +80,30 @@ class X402PaymentService {
         headers['X-PAYMENT'] = btoa(JSON.stringify(paymentPayload));
       }
 
-      const response = await fetch(`http://localhost:3001/api/x402${endpoint}`, {
+      const response = await fetch(`http://localhost:3001/api${endpoint}`, {
         method: 'POST',
         headers,
       });
 
       if (response.status === 402) {
-        // Payment required - extract payment requirements
+        // Payment required - extract payment requirements from backend 402 response
         const paymentData = await response.json();
+        console.log('🔍 Received 402 payment response:', paymentData);
+        const paymentSpec: PaymentAccept | undefined = paymentData.accepts?.[0]; // Get first payment option
+        const priceInUsd = paymentData.price
+          || (paymentSpec?.maxAmountRequired
+            ? `$${(parseInt(paymentSpec.maxAmountRequired, 10) / 1_000_000).toFixed(2)}`
+            : 'Unknown');
+
         return {
           success: false,
           paymentRequired: {
-            price: paymentData.price || '$0.01',
-            network: this.network,
-            facilitator: this.facilitatorUrl,
-            to: this.recipientAddress,
+            price: priceInUsd,
+            network: paymentSpec?.network || this.network,
+            facilitator: this.getFacilitatorUrl(), // Use dynamic CDP-aware facilitator
+            to: paymentSpec?.payTo || '', // Recipient from backend (article author)
+            accept: paymentSpec || null,
+            raw: paymentData
           },
         };
       }
@@ -92,33 +130,28 @@ class X402PaymentService {
    */
   async createPaymentPayload(
     articlePrice: number,
+    recipientAddress: string,
     userAddress: string,
     signMessage: (message: string) => Promise<string>
   ): Promise<PaymentPayload> {
     try {
-      // Convert price to wei (assuming USDC with 6 decimals)
+      // Convert price to micro USDC (USDC has 6 decimals)
       const valueInCents = Math.round(articlePrice * 100);
-      const valueInMicroUSDC = valueInCents * 10000; // Convert to micro USDC
+      const valueInMicroUSDC = valueInCents * 10000; // Convert to micro USDC (integer)
 
-      // Create authorization object
-      const authorization = {
-        from: userAddress,
-        to: this.recipientAddress,
-        value: valueInMicroUSDC.toString(),
-        validAfter: Math.floor(Date.now() / 1000),
-        validBefore: Math.floor(Date.now() / 1000) + 300, // 5 minutes validity
-        nonce: this.generateNonce(),
-      };
+      // Create message to sign
+      const messageToSign = `Authorize payment of ${valueInMicroUSDC} micro USDC from ${userAddress} to ${recipientAddress}`;
 
-      // Create message to sign (EIP-712 style)
-      const messageToSign = this.createSigningMessage(authorization);
-      
       // Get signature from user's wallet
       const signature = await signMessage(messageToSign);
 
+      // Return flat payment payload structure (matches backend validation schema)
       return {
+        from: userAddress,
+        to: recipientAddress, // Dynamic recipient - article author from backend
+        value: valueInMicroUSDC, // Integer value in micro USDC
         signature,
-        authorization,
+        message: messageToSign,
       };
     } catch (error) {
       console.error('Error creating payment payload:', error);
@@ -140,12 +173,14 @@ class X402PaymentService {
       const initialResponse = await this.attemptPayment(`/articles/${articleId}/purchase`);
 
       if (initialResponse.paymentRequired) {
-        // Create payment payload
+        // Create payment payload - recipient comes from backend 402 response
         const paymentPayload = await this.createPaymentPayload(
           articlePrice,
+          initialResponse.paymentRequired.to, // Article author's address from backend
           userAddress,
           signMessage
         );
+        console.log('🔍 Created payment payload:', paymentPayload);
 
         // Retry with payment
         // Verify payment with backend
@@ -175,62 +210,33 @@ class X402PaymentService {
   }
 
   /**
-   * Pay for article view tracking (micro payment)
+   * Record article view (NO payment required - views are free)
    */
-  async payForView(
-    articleId: number,
-    userAddress: string,
-    signMessage: (message: string) => Promise<string>
-  ): Promise<PaymentResponse> {
+  async payForView(articleId: number): Promise<PaymentResponse> {
     try {
-      // Create small payment for view tracking ($0.001)
-      const paymentPayload = await this.createPaymentPayload(
-        0.001,
-        userAddress,
-        signMessage
-      );
+      // Views are FREE - just increment the counter via API
+      await apiService.incrementArticleViews(articleId);
 
-      const response = await this.attemptPayment(
-        `/articles/${articleId}/view`,
-        paymentPayload
-      );
-
-      if (response.success) {
-        // Also record the view in our database
-        await apiService.incrementArticleViews(articleId);
-      }
-
-      return response;
+      return {
+        success: true,
+        receipt: 'View recorded'
+      };
     } catch (error) {
-      console.error('View payment failed:', error);
+      console.error('View tracking failed:', error);
       return {
         success: false,
-        error: error instanceof Error ? error.message : 'View payment failed',
+        error: error instanceof Error ? error.message : 'View tracking failed',
       };
     }
   }
 
   /**
-   * Generate a unique nonce for the transaction
-   */
-  private generateNonce(): string {
-    return Math.random().toString(36).substring(2, 15) + 
-           Math.random().toString(36).substring(2, 15);
-  }
-
-  /**
-   * Create the message that needs to be signed for EIP-712
-   */
-  private createSigningMessage(authorization: any): string {
-    return `Authorize payment of ${authorization.value} micro USDC from ${authorization.from} to ${authorization.to} (valid ${authorization.validAfter}-${authorization.validBefore}, nonce: ${authorization.nonce})`;
-  }
-
-  /**
    * Check if x402 is supported in the current browser
+   * We provide our own x402 implementation, so always return true
    */
   isX402Supported(): boolean {
-    // Check for Web Monetization API or x402 support
-    return 'monetization' in document || 'x402' in window;
+    // We implement x402 ourselves via wallet signatures
+    return true;
   }
 
   /**
@@ -238,6 +244,11 @@ class X402PaymentService {
    */
   async verifyPayment(paymentPayload: PaymentPayload, articleId: number): Promise<any> {
     try {
+      console.log('🔍 Sending payment verification:', {
+        paymentPayload,
+        articleId
+      });
+
       const response = await fetch('http://localhost:3001/api/verify-payment', {
         method: 'POST',
         headers: {
@@ -249,7 +260,9 @@ class X402PaymentService {
         })
       });
 
-      return await response.json();
+      const result = await response.json();
+      console.log('🔍 Verification response:', result);
+      return result;
     } catch (error) {
       console.error('Payment verification failed:', error);
       return {
