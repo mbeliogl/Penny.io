@@ -9,7 +9,7 @@
  * - JSONB: No JSON.parse() needed, already native
  * - Timestamps: TIMESTAMPTZ instead of ISO strings
  * - No table initialization needed (handled by migrations)
- */
+  */
 
 import { supabase, pgPool } from './supabaseClient';
 import { Article, Author, Draft } from './types';

@@ -24,23 +24,31 @@ const ethereumAddressSchema = z.string()
 
 /**
  * Categories: Must be array of predefined category strings
+ * Total: 20 categories covering tech, business, lifestyle, and creative fields
  */
 const categorySchema = z.enum([
+  // Tech (5)
   'Technology',
+  'AI & Machine Learning',
+  'Web Development',
+  'Crypto & Blockchain',
+  'Security',
+  // Business (4)
   'Business',
+  'Startup',
+  'Finance',
+  'Marketing',
+  // General Topics (11)
   'Science',
   'Health',
-  'Finance',
+  'Education',
   'Politics',
   'Sports',
   'Entertainment',
+  'Gaming',
+  'Art & Design',
   'Travel',
   'Food',
-  'Fashion',
-  'Education',
-  'Art',
-  'Gaming',
-  'Crypto',
   'Other'
 ]);
 

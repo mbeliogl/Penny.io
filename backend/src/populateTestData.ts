@@ -58,23 +58,31 @@ const generateRealisticUsers = (count: number): string[] => {
 
 const testUsers = generateRealisticUsers(30); // Pool of 30 users for realistic activity
 
-// Available categories (excluding 'All Articles')
+// Available categories (must match validation schema)
 const categories = [
+  // Tech (5)
   'Technology',
-  'Crypto',
   'AI & Machine Learning',
   'Web Development',
-  'Blockchain',
-  'Startup',
-  'Business',
-  'Finance',
-  'Science',
-  'Programming',
-  'Design',
-  'Marketing',
-  'Productivity',
+  'Crypto & Blockchain',
   'Security',
-  'Data Science'
+  // Business (4)
+  'Business',
+  'Startup',
+  'Finance',
+  'Marketing',
+  // General Topics (11)
+  'Science',
+  'Health',
+  'Education',
+  'Politics',
+  'Sports',
+  'Entertainment',
+  'Gaming',
+  'Art & Design',
+  'Travel',
+  'Food',
+  'Other'
 ];
 
 // Test article data
@@ -82,22 +90,22 @@ const testArticles = [
   {
     title: 'The Future of Decentralized Finance',
     content: '<p>Decentralized finance (DeFi) is revolutionizing the financial industry by removing intermediaries and enabling peer-to-peer transactions. This comprehensive guide explores the key concepts, opportunities, and challenges in the DeFi space.</p><p>Smart contracts are the backbone of DeFi, automating financial services without the need for traditional banks or financial institutions. We\'ll examine how protocols like Uniswap, Aave, and Compound are reshaping lending, borrowing, and trading.</p><p>The risks and rewards of DeFi participation, including yield farming, liquidity mining, and governance tokens, are also discussed in detail. Understanding these mechanisms is crucial for anyone looking to participate in this rapidly evolving ecosystem.</p>',
-    categories: ['Crypto', 'Finance', 'Blockchain'],
+    categories: ['Crypto & Blockchain', 'Finance', 'Technology'],
   },
   {
     title: 'Building Scalable Web Applications with React and TypeScript',
     content: '<p>Modern web development requires robust tooling and best practices. In this article, we explore how React and TypeScript work together to create maintainable, scalable applications.</p><p>Type safety is paramount in large codebases. TypeScript provides compile-time error checking that catches bugs before they reach production. We\'ll cover patterns like custom hooks, context management, and component composition.</p><p>Performance optimization techniques, including code splitting, lazy loading, and memoization, are essential for delivering fast user experiences. Real-world examples demonstrate these concepts in action.</p>',
-    categories: ['Web Development', 'Programming', 'Technology'],
+    categories: ['Web Development', 'Technology'],
   },
   {
     title: 'Understanding Machine Learning Algorithms: A Beginner\'s Guide',
     content: '<p>Machine learning is transforming industries from healthcare to finance. This beginner-friendly guide breaks down fundamental algorithms and their practical applications.</p><p>We start with supervised learning methods like linear regression and decision trees, then progress to more complex algorithms like neural networks and ensemble methods. Each concept is explained with clear examples and visualizations.</p><p>The article also covers data preprocessing, feature engineering, and model evaluation metrics that are essential for successful ML projects. By the end, you\'ll have a solid foundation to start your ML journey.</p>',
-    categories: ['AI & Machine Learning', 'Data Science', 'Technology'],
+    categories: ['AI & Machine Learning', 'Technology', 'Science'],
   },
   {
     title: 'Smart Contract Security: Avoiding Common Vulnerabilities',
     content: '<p>Smart contract vulnerabilities can lead to catastrophic financial losses. This guide covers the most common security issues and how to prevent them.</p><p>Reentrancy attacks, integer overflows, and access control bugs have resulted in millions of dollars in losses. We analyze real-world exploits and demonstrate secure coding patterns using Solidity best practices.</p><p>Testing strategies, including unit tests, integration tests, and formal verification, are crucial for ensuring contract security. We\'ll also discuss audit processes and bug bounty programs.</p>',
-    categories: ['Security', 'Blockchain', 'Programming'],
+    categories: ['Security', 'Crypto & Blockchain', 'Web Development'],
   },
   {
     title: 'The Rise of AI Agents in Autonomous Systems',
@@ -112,7 +120,7 @@ const testArticles = [
   {
     title: 'Design Systems: Creating Consistent User Experiences',
     content: '<p>A well-crafted design system ensures consistency across products and accelerates development. This article explores how to build and maintain effective design systems.</p><p>Component libraries, design tokens, and documentation are the foundations of a successful system. We analyze examples from companies like Google (Material Design) and IBM (Carbon Design System).</p><p>Governance models, versioning strategies, and adoption tactics help teams successfully implement and evolve their design systems over time.</p>',
-    categories: ['Design', 'Web Development', 'Productivity'],
+    categories: ['Art & Design', 'Web Development', 'Technology'],
   },
   {
     title: 'Quantum Computing: Breaking the Classical Barrier',
@@ -127,22 +135,22 @@ const testArticles = [
   {
     title: 'Zero-Knowledge Proofs: Privacy in a Transparent World',
     content: '<p>Zero-knowledge proofs enable verification without revealing underlying information. This cryptographic technique is revolutionizing privacy in blockchain and beyond.</p><p>ZK-SNARKs and ZK-STARKs are the two main implementations, each with different trade-offs. We explore their mathematical foundations and practical applications in protocols like Zcash and zkSync.</p><p>Privacy-preserving authentication, confidential transactions, and scalability solutions demonstrate the broad applicability of zero-knowledge cryptography.</p>',
-    categories: ['Crypto', 'Security', 'Technology'],
+    categories: ['Crypto & Blockchain', 'Security', 'Technology'],
   },
   {
     title: 'Node.js Performance Optimization Techniques',
     content: '<p>Building high-performance Node.js applications requires understanding event loops, streams, and asynchronous patterns. This guide covers essential optimization techniques.</p><p>Profiling tools like clinic.js and Chrome DevTools help identify bottlenecks. We explore clustering, worker threads, and caching strategies that dramatically improve throughput.</p><p>Memory management, garbage collection tuning, and database query optimization round out our performance toolkit for production Node.js applications.</p>',
-    categories: ['Programming', 'Web Development', 'Technology'],
+    categories: ['Web Development', 'Technology'],
   },
   {
     title: 'The Science of Productivity: Evidence-Based Strategies',
     content: '<p>Productivity isn\'t about working harder - it\'s about working smarter. This article examines scientifically-proven techniques for maximizing output while maintaining well-being.</p><p>Time-blocking, the Pomodoro Technique, and deep work principles are explored with supporting research. We also cover the neuroscience of focus and how to optimize your environment for concentration.</p><p>Habit formation, goal setting frameworks like OKRs, and work-life balance strategies provide a holistic approach to sustainable productivity.</p>',
-    categories: ['Productivity', 'Business'],
+    categories: ['Business', 'Health', 'Education'],
   },
   {
     title: 'Blockchain Interoperability: Connecting Different Networks',
     content: '<p>The blockchain ecosystem is fragmented across multiple chains. Interoperability solutions are essential for creating a connected, multi-chain future.</p><p>Cross-chain bridges, atomic swaps, and layer-0 protocols enable asset and data transfer between blockchains. We analyze solutions like Polkadot, Cosmos, and LayerZero.</p><p>Security considerations, trust assumptions, and trade-offs in different interoperability approaches are critically examined for developers and users.</p>',
-    categories: ['Blockchain', 'Technology', 'Crypto'],
+    categories: ['Crypto & Blockchain', 'Technology', 'Security'],
   },
   {
     title: 'Financial Modeling for Early-Stage Startups',
@@ -152,32 +160,32 @@ const testArticles = [
   {
     title: 'Data Visualization: Communicating Insights Effectively',
     content: '<p>Great data visualization transforms complex data into actionable insights. This article covers principles and tools for creating compelling visualizations.</p><p>Chart selection, color theory, and cognitive load considerations are fundamental to effective design. We explore libraries like D3.js, Plotly, and Tableau for different use cases.</p><p>Dashboard design, interactive visualizations, and storytelling with data help teams communicate findings and drive decision-making across organizations.</p>',
-    categories: ['Data Science', 'Design', 'Technology'],
+    categories: ['Art & Design', 'Technology', 'Science'],
   },
   {
     title: 'API Design Best Practices for Modern Web Services',
     content: '<p>Well-designed APIs are the backbone of modern software architecture. This comprehensive guide covers REST, GraphQL, and gRPC best practices.</p><p>Versioning strategies, authentication methods, and error handling patterns ensure APIs are maintainable and developer-friendly. We examine real-world examples from leading tech companies.</p><p>Rate limiting, caching, and documentation standards complete our toolkit for building robust, scalable APIs that developers love to use.</p>',
-    categories: ['Web Development', 'Programming', 'Technology'],
+    categories: ['Web Development', 'Technology'],
   },
   {
     title: 'Cybersecurity Fundamentals for Developers',
     content: '<p>Security isn\'t optional in modern software development. This article covers essential security practices every developer should know.</p><p>OWASP Top 10 vulnerabilities, secure coding practices, and defense-in-depth strategies protect applications from common attacks. We cover SQL injection, XSS, CSRF, and authentication vulnerabilities.</p><p>Security testing, dependency management, and incident response procedures ensure your applications remain secure in production environments.</p>',
-    categories: ['Security', 'Programming', 'Web Development'],
+    categories: ['Security', 'Web Development', 'Technology'],
   },
   {
     title: 'The Economics of Cryptocurrency Mining',
     content: '<p>Cryptocurrency mining is a complex economic activity balancing energy costs, hardware investments, and market volatility. This analysis explores mining economics.</p><p>Proof-of-work consensus mechanisms, mining difficulty adjustments, and pool dynamics determine miner profitability. We calculate break-even points and ROI for different cryptocurrencies.</p><p>Environmental concerns, renewable energy adoption, and the transition to proof-of-stake are reshaping the mining landscape and its long-term viability.</p>',
-    categories: ['Crypto', 'Finance', 'Technology'],
+    categories: ['Crypto & Blockchain', 'Finance', 'Technology'],
   },
   {
     title: 'User Experience Research: Methods and Frameworks',
     content: '<p>Great UX design is grounded in research and user understanding. This guide covers essential research methods for product teams.</p><p>User interviews, usability testing, and A/B testing generate insights that drive design decisions. We explore both qualitative and quantitative research approaches.</p><p>Personas, journey mapping, and design thinking frameworks help teams empathize with users and create products that truly solve their problems.</p>',
-    categories: ['Design', 'Business', 'Productivity'],
+    categories: ['Art & Design', 'Business', 'Technology'],
   },
   {
     title: 'Microservices Architecture: Patterns and Anti-Patterns',
     content: '<p>Microservices architecture enables teams to build scalable, resilient systems. However, it introduces complexity that must be carefully managed.</p><p>Service boundaries, communication patterns, and data management strategies are critical design decisions. We examine patterns like API gateway, service mesh, and event sourcing.</p><p>Common pitfalls including distributed monoliths, cascading failures, and operational complexity are discussed with practical solutions and tooling recommendations.</p>',
-    categories: ['Technology', 'Programming', 'Web Development'],
+    categories: ['Technology', 'Web Development'],
   },
 ];
 

@@ -32,9 +32,6 @@ if (process.env.COINBASE_CDP_API_KEY) {
 
 // Health check endpoint
 app.get('/api/health', (req: Request, res: Response) => {
-  console.log(`🔍 Health check - facilitatorUrl: ${facilitatorUrl}`);
-  console.log(`🔍 Health check - CDP key exists: ${!!process.env.COINBASE_CDP_API_KEY}`);
-
   res.json({
     message: 'Penny.io backend is running!',
     timestamp: new Date().toISOString(),
@@ -65,7 +62,16 @@ app.use((req: Request, res: Response) => {
   });
 });
 
-app.listen(PORT, () => {
+const server = app.listen(PORT, () => {
   console.log(`🚀 Penny.io backend server running on port ${PORT}`);
   console.log(`📚 API documentation available at http://localhost:${PORT}/api/health`);
+});
+
+server.on('error', (error: any) => {
+  if (error.code === 'EADDRINUSE') {
+    console.error(`❌ Port ${PORT} is already in use. Run: lsof -i :${PORT}`);
+  } else {
+    console.error('❌ Server error:', error);
+  }
+  process.exit(1);
 });

@@ -84,7 +84,6 @@ let isClosing = false;
 const closePool = async () => {
   if (isClosing) return;
   isClosing = true;
-  console.log('Closing PostgreSQL pool...');
   try {
     await pgPool.end();
   } catch (err) {
