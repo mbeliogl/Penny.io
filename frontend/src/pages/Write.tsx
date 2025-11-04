@@ -1,7 +1,7 @@
-import { useState, useEffect, FormEvent } from 'react';
+import { useState, useEffect, useRef, FormEvent } from 'react';
 import { useWallet } from '../contexts/WalletContext';
 import { ConnectButton } from '@rainbow-me/rainbowkit';
-import { Save, Send, FileText, Clock, Eye, CheckCircle, X, AlertTriangle } from 'lucide-react';
+import { Save, Send, FileText, Clock, Eye, CheckCircle, X, AlertTriangle, Loader2, Check, Dot } from 'lucide-react';
 import { apiService, Draft, CreateArticleRequest } from '../services/api';
 import { Editor } from '@tinymce/tinymce-react';
 
@@ -55,6 +55,11 @@ function Write() {
   const MAX_CONTENT_LENGTH = 50000; // ~12-15 pages of text
   const MAX_CATEGORIES = 5;
   const [submitSuccess, setSubmitSuccess] = useState<boolean>(false);
+  const [isTyping, setIsTyping] = useState<boolean>(false);
+  const [isAutoSaving, setIsAutoSaving] = useState<boolean>(false);
+  const [lastAutoSaveAt, setLastAutoSaveAt] = useState<Date | null>(null);
+  const typingTimeoutRef = useRef<number | null>(null);
+  const autoSaveTimeoutRef = useRef<number | null>(null);
   
   // Typing animation state
   const [displayText, setDisplayText] = useState<string>('');
@@ -64,6 +69,10 @@ function Write() {
   const clearSubmitError = () => {
     if (submitError) {
       setSubmitError('');
+    }
+
+    if (submitSuccess) {
+      setSubmitSuccess(false);
     }
   };
 
@@ -96,10 +105,40 @@ function Write() {
 
   // Auto-save functionality
   useEffect(() => {
-    if (!address || (!title && !content)) return; // Don't auto-save empty content or when not connected
-    
-    const autoSaveTimer = setTimeout(async () => {
+    if (!address || (!title && !content)) {
+      setIsTyping(false);
+      if (typingTimeoutRef.current) {
+        window.clearTimeout(typingTimeoutRef.current);
+        typingTimeoutRef.current = null;
+      }
+      if (autoSaveTimeoutRef.current) {
+        window.clearTimeout(autoSaveTimeoutRef.current);
+        autoSaveTimeoutRef.current = null;
+      }
+      return;
+    }
+
+    if (typingTimeoutRef.current) {
+      window.clearTimeout(typingTimeoutRef.current);
+    }
+    if (autoSaveTimeoutRef.current) {
+      window.clearTimeout(autoSaveTimeoutRef.current);
+    }
+
+    setIsTyping(true);
+
+    typingTimeoutRef.current = window.setTimeout(() => {
+      setIsTyping(false);
+      typingTimeoutRef.current = null;
+      if (!isAutoSaving) {
+        setLastAutoSaveAt(new Date());
+      }
+    }, 1000);
+
+    autoSaveTimeoutRef.current = window.setTimeout(async () => {
+      setIsAutoSaving(true);
       try {
+        const now = new Date();
         await apiService.saveDraft({
           title,
           content,
@@ -107,13 +146,26 @@ function Write() {
           authorAddress: address,
           isAutoSave: true
         });
+        setLastAutoSaveAt(now);
       } catch (error) {
         console.error('Auto-save failed:', error);
+      } finally {
+        setIsAutoSaving(false);
+        autoSaveTimeoutRef.current = null;
       }
-    }, 5000); // Auto-save after 5 seconds of inactivity
+    }, 5000);
 
-    return () => clearTimeout(autoSaveTimer);
-  }, [title, content, price, address]);
+    return () => {
+      if (typingTimeoutRef.current) {
+        window.clearTimeout(typingTimeoutRef.current);
+        typingTimeoutRef.current = null;
+      }
+      if (autoSaveTimeoutRef.current) {
+        window.clearTimeout(autoSaveTimeoutRef.current);
+        autoSaveTimeoutRef.current = null;
+      }
+    };
+  }, [title, content, price, address, isAutoSaving]);
 
   // Load available drafts when connected
   useEffect(() => {
@@ -828,7 +880,27 @@ function Write() {
                   </span>
                 </div>
               </div>
-              <div className="tinymce-wrapper">
+                <div className="tinymce-wrapper">
+                <div className="editor-status">
+                  <div className="status-chip">
+                    {isTyping || isAutoSaving ? (
+                      <>
+                        <Loader2 className="status-icon spin saving" size={14} />
+                        <span>Saving…</span>
+                      </>
+                    ) : lastAutoSaveAt ? (
+                      <>
+                        <Check className="status-icon saved" size={14} />
+                        <span>Saved {lastAutoSaveAt.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
+                      </>
+                    ) : (
+                      <>
+                        <Dot className="status-icon idle" size={14} />
+                        <span>Idle</span>
+                      </>
+                    )}
+                  </div>
+                </div>
                 <Editor
                   apiKey="7ahasmo84ufchymcd8xokq6qz4l1lh2zdf1wnucvaaeuaxci"
                   value={content}

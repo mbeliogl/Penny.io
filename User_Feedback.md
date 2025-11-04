@@ -13,7 +13,7 @@
 
   ## Submit Errors (Top of form)
   - Trigger: API/backend rejects article submission
-  - Shows: Red box with icon + close button, "Unable to Publish Article"
+  - Shows: Summary in yellow box - context dependent 
   - Messages:
     - Rate limiting: "Maximum 5 articles per hour allowed"
     - Spam: "Excessive repetition detected", "Duplicate content detected"
@@ -24,11 +24,8 @@
   - Trigger: Article published successfully
   - Shows: Green box with icon + close button, "Article Published Successfully! 🎉"
   - Actions: "View in Dashboard", "Write Another Article" buttons
+  - Disappears if "Write Another Article" is clicked 
 
-  ## Category Selection Error (Inline)
-  - Trigger: Try to select 6th category
-  - Shows: Red error text below categories, "Maximum 5 categories allowed. Remove one to add another."
-  - Duration: 3 seconds auto-dismiss
 
   ## Draft Save Feedback (Button state)
   - Trigger: Save draft button clicked
@@ -40,10 +37,6 @@
   - Shows: Silent background save, console logs only
   - No user feedback: Could be improved
 
-  ## Validation Success (Bottom of form)
-  - Trigger: All validation passes after publish attempt
-  - Shows: Green box, "✅ Ready to publish!"
-  - Location: After TinyMCE editor
 
   ---
   # Dashboard Page (/dashboard)

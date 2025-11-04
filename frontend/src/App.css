@@ -3102,6 +3102,59 @@ main {
   border: 1px solid #e1e8ed;
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
   background: white;
+  position: relative;
+}
+
+.editor-status {
+  position: absolute;
+  top: 8px;
+  right: 14px;
+  z-index: 10;
+  pointer-events: none;
+}
+
+.status-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 3px 8px;
+  border-radius: 999px;
+  background: transparent;
+  color: #111827;
+  font-size: 0.68rem;
+  font-weight: 500;
+  pointer-events: auto;
+}
+
+.status-icon {
+  width: 14px;
+  height: 14px;
+  transition: transform 0.2s ease;
+}
+
+.status-icon.saving {
+  color: #d97706;
+}
+
+.status-icon.saved {
+  color: #16a34a;
+}
+
+.status-icon.idle {
+  color: #94a3b8;
+}
+
+.status-icon.spin {
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  0% {
+    transform: rotate(0deg);
+  }
+  100% {
+    transform: rotate(360deg);
+  }
 }
 
 .tinymce-wrapper .tox {
