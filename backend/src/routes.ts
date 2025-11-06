@@ -22,6 +22,8 @@ import { useFacilitator } from 'x402/verify';
 import { PaymentPayload, PaymentPayloadSchema, PaymentRequirements } from 'x402/types';
 import { normalizeAddress, tryNormalizeAddress } from './utils/address';
 import { error } from 'console';
+import { success } from 'zod';
+import { settleAuthorization } from './settlementService';
 
 const router = express.Router();
 const db = new Database();
@@ -550,16 +552,33 @@ router.post('/articles/:id/purchase', criticalLimiter, async (req: Request, res:
         typeof paymentPayload.payload.authorization.from === 'string'
           ? paymentPayload.payload.authorization.from
           : ''
-      );
+    );
 
+    // Settle authorization using CDP settle()
+    const settlement = await settleAuthorization(paymentPayload, paymentRequirement);
+
+    // Type guard: check if it's an error response
+    if ('error' in settlement) {
+      return res.status(500).json({
+        success: false,
+        error: 'Payment settlement failed. Please try again.', 
+        details: settlement.error
+      });
+    }
+
+    // Settlement succeeded => Grant access regardless of txHash
+    const txHash = settlement.txHash;
+    
+    // Record payment with txHash
     await recordArticlePurchase(articleId);
-    await recordPayment(articleId, payerAddress || 'unknown', article.price);
+    await recordPayment(articleId, payerAddress || 'unknown', article.price, txHash);
 
     return res.json({
       success: true,
       data: {
         message: 'Payment verified and purchase recorded',
-        receipt: `payment-${articleId}-${Date.now()}`
+        receipt: `payment-${articleId}-${Date.now()}`,
+        transactionHash: txHash // could be null. Frontend doesn't care. 
       }
     });
 
