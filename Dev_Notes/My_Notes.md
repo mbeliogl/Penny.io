@@ -9,7 +9,6 @@
     - Add trending indicators
   - Reading history and favorites for users
   - Make categories persist in drafts (Requires db schema/new routes)
-  - x402 donation
     
 ### Enhanced Article Discovery (home page):
   - "Popular Articles" section on home page
