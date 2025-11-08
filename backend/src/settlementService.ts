@@ -7,65 +7,110 @@
 
 */
 
+import { generateJwt } from '@coinbase/cdp-sdk/auth';
+import { constrainedMemory } from 'process';
 import { PaymentPayload, PaymentRequirements } from 'x402/types';
-import { useFacilitator } from 'x402/verify';
-import { facilitator as defaultFacilitator, createFacilitatorConfig } from '@coinbase/x402';
 
-// Use CDP facilitator (same config as verification)
-const facilitatorConfig = process.env.COINBASE_CDP_API_KEY && process.env.COINBASE_CDP_API_SECRET
-  ? createFacilitatorConfig(process.env.COINBASE_CDP_API_KEY, process.env.COINBASE_CDP_API_SECRET)
-  : defaultFacilitator;
+interface SettleResponse {
+  success: boolean;
+  payer: string;
+  transaction: string;
+  network: string;
+  errorReason?: string;
+}
 
-const facilitatorClient = useFacilitator(facilitatorConfig);
-
-/**
- * Settle authorization on-chain via CDP Facilitator
- * CDP handles the on-chain transaction and pays gas 
- */
 export async function settleAuthorization(
   paymentPayload: PaymentPayload,
   paymentRequirements: PaymentRequirements
 ): Promise<{ txHash: string } | { error: string }> {
   try {
-    console.log('🔧 Settling payment via CDP facilitator...');
-    console.log(`   From: ${paymentPayload.payload.authorization.from}`);
-    console.log(`   To: ${paymentPayload.payload.authorization.to}`);
-    console.log(`   Amount: ${paymentPayload.payload.authorization.value} micro USDC`);
-
-    // Call CDP's settle API - it handles everything
-    const settlementResult = await facilitatorClient.settle(
-      paymentPayload,
-      paymentRequirements
-    );
-
-    console.log('✅ Settlement result:', settlementResult);
-
-    // Check if CDP returned success
-    if (settlementResult.success === true) {
-        // Extract transaction hash CDP's response
-        const txHash = settlementResult.transaction;
-
-        if (txHash) {
-            console.log('✅ Settlement success. txHash:', txHash);
-        } else {
-            console.warn('⚠️ CDP settlement succeeded but missing transaction hash');
-            console.warn('Settlement result:', JSON.stringify(settlementResult, null, 2));
-        }
-
-        return {txHash: txHash || undefined};
-    }
-
-    console.error('❌ Settlement failed:', settlementResult);
-    return { error: settlementResult.error || 'Settlement failed' };
+    console.log('🔧 Settling payment via CDP API...');
+     console.log('🔧 SETTLEMENT DEBUG:');
+    //console.log('📦 Full paymentPayload:', JSON.stringify(paymentPayload, null, 2));
+    //console.log('📋 Full paymentRequirements:', JSON.stringify(paymentRequirements, null, 2));
+       console.log('\n========== CDP SETTLEMENT REQUEST ==========');
+    console.log('🔧 Network:', paymentPayload.network);
+    console.log('📋 Scheme:', paymentPayload.scheme);
+    
+    console.log('\n--- AUTHORIZATION DETAILS ---');
+    console.log('From (payer):', paymentPayload.payload.authorization.from);
+    console.log('To (recipient):', paymentPayload.payload.authorization.to);
+    console.log('Value (micro USDC):', paymentPayload.payload.authorization.value);
+    console.log('Nonce:', paymentPayload.payload.authorization.nonce);
     
 
-    // If no transaction hash, settlement might have failed
-    return { 
-      error: settlementResult.error || 'Settlement completed but no transaction hash returned' 
-    };
+    console.log('\n--- TIME WINDOW ---');
+    const validAfter = parseInt(paymentPayload.payload.authorization.validAfter);
+    const validBefore = parseInt(paymentPayload.payload.authorization.validBefore);
+    const now = Math.floor(Date.now() / 1000);
+    const windowSeconds = validBefore - validAfter;
+    const maxTimeout = paymentRequirements.maxTimeoutSeconds || 0;
+    
+    console.log('ValidAfter:', validAfter, new Date(validAfter * 1000).toISOString());
+    console.log('ValidBefore:', validBefore, new Date(validBefore * 1000).toISOString());
+    console.log('Window Duration:', windowSeconds, 'seconds');
+    console.log('Max Timeout Allowed:', maxTimeout, 'seconds');
+    console.log('❌ VALIDATION:', windowSeconds <= maxTimeout ? '✅ PASS' : '❌ FAIL - Window too long!');
+    
+    console.log('\n--- SIGNATURE ---');
+    console.log('Signature:', paymentPayload.payload.signature);
+    
+    console.log('\n--- PAYMENT REQUIREMENTS ---');
+    console.log('Max Amount Required:', paymentRequirements.maxAmountRequired);
+    console.log('Asset (USDC):', paymentRequirements.asset);
+    console.log('PayTo:', paymentRequirements.payTo);
+    console.log('Resource:', paymentRequirements.resource);
+    
+    console.log('\n--- FULL PAYLOAD (for manual testing) ---');
+    console.log(JSON.stringify({
+      x402Version: 1,
+      paymentPayload,
+      paymentRequirements
+    }, null, 2));
+    
+    console.log('\n========== CALLING CDP SETTLE ==========\n');
+    
+    const requestPath = '/platform/v2/x402/settle';
+    const requestHost = 'api.cdp.coinbase.com';
 
+    
+    // Generate JWT using CDP SDK
+    const token = await generateJwt({
+      apiKeyId: process.env.CDP_API_KEY_ID!,
+      apiKeySecret: process.env.CDP_API_KEY_SECRET!,
+      requestMethod: 'POST',
+      requestHost,
+      requestPath,
+      expiresIn: 120
+    });
+    
+    console.log(`Bearer ${token}`);
+    // Call CDP settle endpoint directly
+    const response = await fetch(`https://${requestHost}${requestPath}`, {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${token}`,
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({
+        x402Version: 1,
+        paymentPayload,
+        paymentRequirements
+      })
+    });
+    
+    const result = await response.json() as SettleResponse;
+    
+    if (response.ok && result.success) {
+      console.log('✅ Settlement successful:', result.transaction);
+      return { txHash: result.transaction };
+    }
+    
+    console.error('❌ Settlement failed:', result);
+    return { error: result.errorReason || 'Settlement failed' };
+    
   } catch (error) {
-    console.error('❌ Settlement failed:', error);
+    console.error('❌ Settlement error:', error);
     return { 
       error: error instanceof Error ? error.message : 'Unknown settlement error' 
     };

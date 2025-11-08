@@ -5,9 +5,10 @@ import { ConnectButton } from '@rainbow-me/rainbowkit';
 import { Clock, User, Lock, HeartHandshake, Tag } from 'lucide-react';
 import { apiService, Article as ArticleType } from '../services/api';
 import { x402PaymentService } from '../services/x402PaymentService';
-import { useWalletClient } from 'wagmi';
+import { useAccount, useWalletClient } from 'wagmi';
 import LikeButton from '../components/LikeButton';
 import { sanitizeHTML } from '../utils/sanitize';
+
 
 // Article page now uses real API data instead of mock data
 
@@ -32,6 +33,8 @@ function Article() {
   const [customTipAmount, setCustomTipAmount] = useState('');
   const [tipResult, setTipResult] = useState<{ success: boolean; message: string; txHash?: string } | null>(null);
 
+  // Dynamic chain detection to build correct payload
+  const { chain } = useAccount();
 
   // Handle like count changes
   const handleLikeChange = (articleId: number, newLikeCount: number) => {
@@ -119,6 +122,12 @@ function Article() {
     );
   }
 
+  const getNetworkFromChain = (chainId?: number): 'base' | 'base-sepolia' => {
+  if (chainId === 8453) return 'base';          // Base mainnet
+  if (chainId === 84532) return 'base-sepolia'; // Base Sepolia
+  return 'base-sepolia'; // Default to testnet for safety
+  };
+
   const handlePayment = async () => {
     if (!address) {
       console.error('Wallet not connected');
@@ -136,9 +145,11 @@ function Article() {
     }
 
     try {
+      const network = getNetworkFromChain(chain?.id)
       const paymentResult = await x402PaymentService.purchaseArticle(
         article.id,
-        walletClient
+        walletClient,
+        network
       );
 
       if (paymentResult.success) {

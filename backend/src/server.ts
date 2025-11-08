@@ -16,7 +16,7 @@ app.use(express.json());
 app.use('/uploads', express.static(path.join(__dirname, '../uploads')));
 
 // x402 Payment Middleware Configuration
-const facilitatorUrl = process.env.COINBASE_CDP_API_KEY
+const facilitatorUrl = process.env.CDP_API_KEY_ID
   ? `https://facilitator.cdp.coinbase.com` // CDP facilitator
   : process.env.X402_FACILITATOR_URL || 'https://x402.org/facilitator'; // Public fallback
 
@@ -24,7 +24,8 @@ const network = process.env.X402_NETWORK || 'base-sepolia';
 
 console.log(`🔗 x402 Facilitator: ${facilitatorUrl}`);
 console.log(`🌐 Network: ${network}`);
-if (process.env.COINBASE_CDP_API_KEY) {
+// Line 27
+if (process.env.CDP_API_KEY_ID) {
   console.log(`✅ Using Coinbase CDP Facilitator`);
 } else {
   console.log(`⚠️  Using public facilitator (testnet mode)`);
@@ -38,7 +39,7 @@ app.get('/api/health', (req: Request, res: Response) => {
     version: '1.0.0',
     facilitator: facilitatorUrl,
     network: network,
-    cdpEnabled: !!process.env.COINBASE_CDP_API_KEY
+    cdpEnabled: !!process.env.CDP_API_KEY_ID
   });
 });
 

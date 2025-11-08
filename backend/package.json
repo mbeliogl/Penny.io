@@ -15,6 +15,7 @@
   "license": "ISC",
   "type": "commonjs",
   "dependencies": {
+    "@coinbase/cdp-sdk": "^1.38.5",
     "@coinbase/x402": "^0.7.1",
     "@supabase/supabase-js": "^2.78.0",
     "@types/multer": "^2.0.0",
@@ -27,6 +28,7 @@
     "multer": "^2.0.2",
     "pg": "^8.16.3",
     "sqlite3": "^5.1.7",
+    "x402": "^0.7.1",
     "x402-express": "^0.7.0",
     "zod": "^4.1.12"
   },

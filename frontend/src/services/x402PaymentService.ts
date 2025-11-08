@@ -103,11 +103,14 @@ class X402PaymentService {
         // Payment required - extract payment requirements from backend 402 response
         const paymentData = await response.json();
         console.log('🔍 Received 402 payment response:', paymentData);
+        
         const paymentSpec: PaymentAccept | undefined = paymentData.accepts?.[0]; // Get first payment option
         const priceInUsd = paymentData.price
           || (paymentSpec?.maxAmountRequired
             ? `$${(parseInt(paymentSpec.maxAmountRequired, 10) / 1_000_000).toFixed(2)}`
             : 'Unknown');
+        console.log('🔍 Backend requirements:', paymentSpec);
+        console.log('🔍 maxTimeoutSeconds from backend:', paymentSpec?.maxTimeoutSeconds);
 
         return {
           success: false,

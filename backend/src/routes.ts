@@ -17,23 +17,18 @@ import {
   deleteRequestSchema
 } from './validation';
 import { checkForSpam, checkContentQuality } from './spamPrevention';
-import { facilitator as defaultFacilitator, createFacilitatorConfig } from '@coinbase/x402';
+import { facilitator } from '@coinbase/x402';
 import { useFacilitator } from 'x402/verify';
 import { PaymentPayload, PaymentPayloadSchema, PaymentRequirements } from 'x402/types';
 import { normalizeAddress, tryNormalizeAddress } from './utils/address';
-import { error } from 'console';
-import { success } from 'zod';
 import { settleAuthorization } from './settlementService';
 
 const router = express.Router();
 const db = new Database();
 const isProduction = process.env.NODE_ENV === 'production';
 
-const facilitatorConfig = process.env.COINBASE_CDP_API_KEY && process.env.COINBASE_CDP_API_SECRET
-  ? createFacilitatorConfig(process.env.COINBASE_CDP_API_KEY, process.env.COINBASE_CDP_API_SECRET)
-  : defaultFacilitator;
-
-const { verify: verifyWithFacilitator } = useFacilitator(facilitatorConfig);
+// Use CDP facilitator - auto-detects CDP_API_KEY_ID and CDP_API_KEY_SECRET from env
+const { verify: verifyWithFacilitator } = useFacilitator(facilitator);
 
 type SupportedX402Network = 'base' | 'base-sepolia';
 const DEFAULT_X402_NETWORK: SupportedX402Network =
@@ -54,7 +49,7 @@ function resolveNetworkPreference(req: Request): SupportedX402Network {
   }
 
   return DEFAULT_X402_NETWORK;
-}
+};
 
 // ============================================
 // RATE LIMITING CONFIGURATION
@@ -158,7 +153,7 @@ function buildPaymentRequirement(article: Article, req: Request, network: Suppor
       : process.env.X402_TESTNET_USDC_ADDRESS || '0x036CbD53842c5426634e7929541eC2318f3dCF7e';
 
   const resourceUrl = `${req.protocol}://${req.get('host')}/api/articles/${article.id}/purchase?network=${network}`;
-
+  
   return {
     scheme: 'exact',
     network,
@@ -167,25 +162,21 @@ function buildPaymentRequirement(article: Article, req: Request, network: Suppor
     description: `Purchase access to: ${article.title}`,
     mimeType: 'application/json',
     payTo: article.authorAddress,
-    maxTimeoutSeconds: 60,
+    maxTimeoutSeconds: 10,  // 15min to match x402 client default
     asset,
-    outputSchema: {
-      input: {
-        type: 'http',
-        method: 'POST',
-        discoverable: true
-      }
-    },
+    //outputSchema: { data: "string" },
+
     extra: {
-      name: 'USDC',
+      name: network === 'base' ? 'USDC Coin' : 'USDC',  // Different for mainnet,
       version: '2',
       title: `Purchase: ${article.title}`,
       category: article.categories?.[0] || 'content',
       tags: article.categories || ['article', 'content'],
       serviceName: 'Penny.io Article Access',
       serviceDescription: `Unlock full access to "${article.title}" by ${article.authorAddress.slice(0, 6)}...${article.authorAddress.slice(-4)}`,
+      gasLimit: '1000000',  // Add this line
       pricing: {
-        currency: 'USD',
+        currency: 'USD Coin',
         amount: article.price.toString(),
         display: `$${article.price.toFixed(2)}`
       }
@@ -676,7 +667,7 @@ router.post('/donate', criticalLimiter, async (req: Request, res: Response) => {
       description: `Donation to Penny.io platform - $${amount}`,
       mimeType: 'application/json',
       payTo: platformAddress,
-      maxTimeoutSeconds: 300,
+      maxTimeoutSeconds: 900,
       asset: usdcAddress,
       outputSchema: {
         input: {
@@ -837,7 +828,7 @@ router.post('/articles/:id/tip', criticalLimiter, async (req: Request, res: Resp
       description: `Tip for article: ${article.title}`,
       mimeType: 'application/json',
       payTo: authorAddress,
-      maxTimeoutSeconds: 300,
+      maxTimeoutSeconds: 900,
       asset: usdcAddress,
       outputSchema: {
         input: {
