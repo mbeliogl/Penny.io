@@ -26,12 +26,26 @@ export function tryNormalizeAddress(address: string | null | undefined): string 
 
 /**
  * Normalize a Solana address to its canonical Base58 form
- * Thros if the value is not a valid 32-byte Ed25519 public key
+ * Throws if the value is not a valid 32-byte Ed25519 public key
  */
 export function normalizeSolanaAddress(address: string): string {
   try {
     return new PublicKey(address).toBase58();
   } catch {
     throw new Error('Invalid Solana address');
+  }
+}
+
+/**
+ * Attempt to normalize Solana address, returning null if the value is invalid.
+ */
+export function tryNormalizeSolanaAddress(address: string | null | undefined): string | null{
+  if (!address) {
+    return null; 
+  }
+  try {
+    return normalizeSolanaAddress(address);
+  } catch {
+    return null;
   }
 }

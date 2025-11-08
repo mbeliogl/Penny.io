@@ -20,7 +20,7 @@ import { checkForSpam, checkContentQuality } from './spamPrevention';
 import { facilitator } from '@coinbase/x402';
 import { useFacilitator } from 'x402/verify';
 import { PaymentPayload, PaymentPayloadSchema, PaymentRequirements } from 'x402/types';
-import { normalizeAddress, tryNormalizeAddress } from './utils/address';
+import { normalizeAddress, tryNormalizeAddress, normalizeSolanaAddress } from './utils/address';
 import { settleAuthorization } from './settlementService';
 
 const router = express.Router();
@@ -457,6 +457,82 @@ router.get('/authors/:address', readLimiter, async (req: Request, res: Response)
       error: 'Failed to fetch author'
     };
     res.status(500).json(response);
+  }
+});
+
+const SUPPORTED_PAYOUT_NETWORKS = ['base', 'base-sepolia', 'solana', 'solana-devnet'] as const;
+type SupportedPayoutNetwork = (typeof SUPPORTED_PAYOUT_NETWORKS)[number];
+const SOLANA_NETWORKS: SupportedPayoutNetwork[] = ['solana', 'solana-devnet'];
+
+// POST /api/authors/:address/payout-methods - Add or update secondary payout method
+router.post('/authors/:address/payout-methods', writeLimiter, async (req: Request, res: Response) => {
+  try {
+    const { address } = req.params;
+    const { network, payoutAddress } = req.body || {};
+
+    let normalizedAuthorAddress: string;
+    try {
+      normalizedAuthorAddress = normalizeAddress(address);
+    } catch {
+      return res.status(400).json({
+        success: false,
+        error: 'Invalid author address'
+      } satisfies ApiResponse<never>);
+    }
+
+    if (!network || !SUPPORTED_PAYOUT_NETWORKS.includes(network)) {
+      return res.status(400).json({
+        success: false,
+        error: 'Unsupported payout network'
+      } satisfies ApiResponse<never>);
+    }
+
+    if (!payoutAddress || typeof payoutAddress !== 'string') {
+      return res.status(400).json({
+        success: false,
+        error: 'Payout address is required'
+      } satisfies ApiResponse<never>);
+    }
+
+    let normalizedPayoutAddress: string;
+    try {
+      if (SOLANA_NETWORKS.includes(network)) {
+        normalizedPayoutAddress = normalizeSolanaAddress(payoutAddress);
+      } else {
+        normalizedPayoutAddress = normalizeAddress(payoutAddress);
+      }
+    } catch (error) {
+      return res.status(400).json({
+        success: false,
+        error: 'Invalid payout address'
+      } satisfies ApiResponse<never>);
+    }
+
+    const author = await ensureAuthorRecord(normalizedAuthorAddress);
+
+    if (author.primaryPayoutNetwork === network) {
+      return res.status(400).json({
+        success: false,
+        error: 'Network already configured as primary payout method'
+      } satisfies ApiResponse<never>);
+    }
+
+    author.secondaryPayoutNetwork = network;
+    author.secondaryPayoutAddress = normalizedPayoutAddress;
+
+    const updatedAuthor = await db.createOrUpdateAuthor(author);
+
+    return res.json({
+      success: true,
+      data: updatedAuthor,
+      message: 'Secondary payout method saved'
+    } satisfies ApiResponse<Author>);
+  } catch (error) {
+    console.error('Error updating payout method:', error);
+    return res.status(500).json({
+      success: false,
+      error: 'Failed to update payout method'
+    } satisfies ApiResponse<never>);
   }
 });
 
