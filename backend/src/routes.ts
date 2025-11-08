@@ -303,6 +303,10 @@ router.get('/articles/:id', readLimiter, async (req: Request, res: Response) => 
 });
 
 // POST /api/articles - Create new article
+/**
+ * runs the spam/quality checks without writing anything. 
+ * lets the frontend “preflight” an article (so the editor can warn about spam rules, etc.) 
+ */
 router.post('/articles/validate', writeLimiter, validate(createArticleSchema), async (req: Request, res: Response) => {
   try {
     const { title, content, authorAddress }: CreateArticleRequest = req.body;
@@ -334,6 +338,10 @@ router.post('/articles/validate', writeLimiter, validate(createArticleSchema), a
 });
 
 // POST /api/articles - Create new article
+/**
+ * repeats the validation
+ * writes the article, updates author stats, and so on.
+ */
 router.post('/articles', writeLimiter, validate(createArticleSchema), async (req: Request, res: Response) => {
   try {
     const { title, content, price, authorAddress, categories, draftId }: CreateArticleRequest = req.body;

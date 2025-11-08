@@ -8,10 +8,11 @@ import { apiService, Article } from '../services/api';
 function Home() {
   const benefits = [
     "Instant payouts",
-    "You set the price", 
-    "Access infinite resources",
-    "No subscriptions needed",
     "Support creators directly",
+    "You set the price", 
+    "Pay only for what you read",
+    "No subscriptions",
+    "No ads",
     "Empower AI agents with knowledge"
   ];
 
@@ -83,8 +84,10 @@ function Home() {
             <span className="hero-powered-brand">Coinbase x402</span>
           </div>
           <h1>Content Monetization Reimagined</h1>
-          <p className="hero-subtitle">
-            Pay only for what you read—no subscriptions, no ads. Support creators directly with instant payments.
+          <p className="hero-subtitle" style={{fontSize: '15px'}}>
+            Readers: Pay only for what you read—no subscriptions, no ads. 
+            <br></br> 
+            Authors: Receive 100% of revenue directly into your wallet.
           </p>
         </div>
       </div>
