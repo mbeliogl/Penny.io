@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useWallet } from '../contexts/WalletContext';
-import { ConnectButton } from '@rainbow-me/rainbowkit';
+import AppKitConnectButton from '../components/AppKitConnectButton';
 import { Link, useNavigate } from 'react-router-dom';
 import { DollarSign, Eye, Users, Edit3, LayoutDashboard, Search, Filter, X, Book, Trash2, Edit, FileText, Clock } from 'lucide-react';
 import { isDateWithinRange, getRelativeTimeString } from '../utils/dateUtils';
@@ -352,7 +352,7 @@ function Dashboard() {
           <div className="connect-prompt">
             <h1>Connect Your Wallet</h1>
             <p>Connect your wallet to access your writer dashboard.</p>
-            <ConnectButton />
+            <AppKitConnectButton />
           </div>
         </div>
       </div>
@@ -366,7 +366,6 @@ function Dashboard() {
           <h1> <LayoutDashboard size={25}/> Writer Dashboard</h1>
           <div className="wallet-info">
             <p><strong>Address:</strong> {address?.slice(0, 6)}...{address?.slice(-4)}</p>
-            <p><strong>Balance:</strong> {balance}</p>
           </div>
         </div>
         

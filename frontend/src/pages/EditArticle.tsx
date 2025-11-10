@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useWallet } from '../contexts/WalletContext';
-import { ConnectButton } from '@rainbow-me/rainbowkit';
+import AppKitConnectButton from '../components/AppKitConnectButton';
 import { Save, Eye, ArrowLeft, X, CheckCircle, AlertTriangle } from 'lucide-react';
 import { Editor } from '@tinymce/tinymce-react';
 import { apiService, Article } from '../services/api';
@@ -219,7 +219,7 @@ function EditArticle() {
           <div className="connect-prompt">
             <h1>Connect Your Wallet</h1>
             <p>Connect your wallet to edit articles.</p>
-            <ConnectButton />
+            <AppKitConnectButton />
           </div>
         </div>
       </div>

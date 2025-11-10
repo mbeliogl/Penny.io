@@ -2,6 +2,7 @@
 import { apiService } from './api';
 import { createPaymentHeader as createEncodedPaymentHeader } from 'x402/client';
 import type { WalletClient } from 'viem';
+import type { TransactionSigner } from '@solana/kit';
 
 export interface PaymentRequirement {
   price: string;
@@ -35,30 +36,27 @@ export interface PaymentResponse {
   rawResponse?: any;
 }
 
-type SupportedNetwork = 'base' | 'base-sepolia';
+export type SupportedNetwork = 'base' | 'base-sepolia' | 'solana' | 'solana-devnet';
+
+export interface PaymentExecutionContext {
+  network: SupportedNetwork;
+  evmWalletClient?: WalletClient;
+  solanaSigner?: TransactionSigner;
+}
 
 class X402PaymentService {
   private facilitatorUrl = import.meta.env.VITE_X402_FACILITATOR_URL || 'https://x402.org/facilitator';
-  private network = (import.meta.env.VITE_X402_NETWORK === 'base' ? 'base' : 'base-sepolia') as SupportedNetwork;
+  private network: SupportedNetwork = (import.meta.env.VITE_X402_NETWORK === 'base' ? 'base' : 'base-sepolia');
   private readonly X402_VERSION = 1;
   private readonly apiBase = (import.meta.env.VITE_API_BASE_URL || 'http://localhost:3001/api').replace(/\/$/, '');
 
   private buildRequestUrl(endpoint: string, networkOverride?: SupportedNetwork): string {
     const normalizedEndpoint = endpoint.startsWith('/') ? endpoint : `/${endpoint}`;
-    let url = `${this.apiBase}${normalizedEndpoint}`;
     const targetNetwork = networkOverride || this.network;
-
-    if (targetNetwork) {
-      const separator = normalizedEndpoint.includes('?') ? '&' : '?';
-      url = `${url}${separator}network=${targetNetwork}`;
-    }
-
-    return url;
+    const separator = normalizedEndpoint.includes('?') ? '&' : '?';
+    return `${this.apiBase}${normalizedEndpoint}${separator}network=${targetNetwork}`;
   }
 
-  /**
-   * Get facilitator URL - uses CDP if configured, otherwise falls back to public
-   */
   getFacilitatorUrl(): string {
     const cdpAppId = import.meta.env.VITE_COINBASE_CDP_APP_ID;
     if (cdpAppId) {
@@ -67,18 +65,10 @@ class X402PaymentService {
     return this.facilitatorUrl;
   }
 
-  /**
-   * Check if CDP is enabled
-   */
   isCDPEnabled(): boolean {
     return !!import.meta.env.VITE_COINBASE_CDP_APP_ID;
   }
 
-  /**
-   * Attempt to access a paid resource
-   * If payment is required, returns payment requirements
-   * If payment was successful, returns success
-   */
   async attemptPayment(
     endpoint: string,
     encodedPaymentHeader?: string,
@@ -89,7 +79,6 @@ class X402PaymentService {
         'Content-Type': 'application/json',
       };
 
-      // Add x402 payment header if already prepared (reuse logic)
       if (encodedPaymentHeader) {
         headers['X-PAYMENT'] = encodedPaymentHeader;
       }
@@ -100,25 +89,20 @@ class X402PaymentService {
       });
 
       if (response.status === 402) {
-        // Payment required - extract payment requirements from backend 402 response
         const paymentData = await response.json();
-        console.log('🔍 Received 402 payment response:', paymentData);
-        
-        const paymentSpec: PaymentAccept | undefined = paymentData.accepts?.[0]; // Get first payment option
+        const paymentSpec: PaymentAccept | undefined = paymentData.accepts?.[0];
         const priceInUsd = paymentData.price
           || (paymentSpec?.maxAmountRequired
             ? `$${(parseInt(paymentSpec.maxAmountRequired, 10) / 1_000_000).toFixed(2)}`
             : 'Unknown');
-        console.log('🔍 Backend requirements:', paymentSpec);
-        console.log('🔍 maxTimeoutSeconds from backend:', paymentSpec?.maxTimeoutSeconds);
 
         return {
           success: false,
           paymentRequired: {
             price: priceInUsd,
             network: paymentSpec?.network || networkOverride || this.network,
-            facilitator: this.getFacilitatorUrl(), // Use dynamic CDP-aware facilitator
-            to: paymentSpec?.payTo || '', // Recipient from backend (article author)
+            facilitator: this.getFacilitatorUrl(),
+            to: paymentSpec?.payTo || '',
             accept: paymentSpec || null,
             raw: paymentData
           },
@@ -142,41 +126,57 @@ class X402PaymentService {
     }
   }
 
-  /**
-   * Create an encoded x402 payment header for the selected payment requirements
-   */
   private async createPaymentHeaderFromRequirements(
     requirement: PaymentRequirement,
-    walletClient: WalletClient
+    context: PaymentExecutionContext
   ): Promise<string> {
     if (!requirement.accept) {
       throw new Error('No x402 payment option returned by facilitator');
     }
 
-    const encodedHeader = await createEncodedPaymentHeader(walletClient, this.X402_VERSION, requirement.accept);
+    const requirementNetwork = (requirement.accept.network || context.network) as SupportedNetwork;
+    const isSolana = requirementNetwork.startsWith('solana');
+
+    if (isSolana) {
+      if (!context.solanaSigner) {
+        throw new Error('Please connect a Solana wallet to continue');
+      }
+      const encodedHeader = await createEncodedPaymentHeader(
+        context.solanaSigner,
+        this.X402_VERSION,
+        requirement.accept
+      );
+      console.log('🔐 Encoded x402 payment header (Solana):', encodedHeader);
+      return encodedHeader;
+    }
+
+    if (!context.evmWalletClient) {
+      throw new Error('Please connect a Base-compatible wallet to continue');
+    }
+
+    const encodedHeader = await createEncodedPaymentHeader(
+      context.evmWalletClient,
+      this.X402_VERSION,
+      requirement.accept
+    );
     console.log('🔐 Encoded x402 payment header:', encodedHeader);
     return encodedHeader;
   }
 
-  /**
-   * Purchase an article using x402 payment
-   */
   async purchaseArticle(
     articleId: number,
-    walletClient: WalletClient,
-    networkOverride?: SupportedNetwork
+    context: PaymentExecutionContext
   ): Promise<PaymentResponse> {
     try {
-      // First attempt without payment to trigger 402 response
-      const initialResponse = await this.attemptPayment(`/articles/${articleId}/purchase`, undefined, networkOverride);
+      const initialResponse = await this.attemptPayment(`/articles/${articleId}/purchase`, undefined, context.network);
 
       if (initialResponse.paymentRequired && initialResponse.paymentRequired.accept) {
         const encodedHeader = await this.createPaymentHeaderFromRequirements(
           initialResponse.paymentRequired,
-          walletClient
+          context
         );
 
-        const response = await fetch(this.buildRequestUrl(`/articles/${articleId}/purchase`, networkOverride), {
+        const response = await fetch(this.buildRequestUrl(`/articles/${articleId}/purchase`, context.network), {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
@@ -214,17 +214,12 @@ class X402PaymentService {
     }
   }
 
-  /**
-   * Donate to platform using x402 payment
-   */
   async donate(
     amount: number,
-    walletClient: WalletClient,
-    networkOverride?: SupportedNetwork
+    context: PaymentExecutionContext
   ): Promise<PaymentResponse> {
     try {
-      // First request without payment to get requirements from backend
-      const response1 = await fetch(this.buildRequestUrl('/donate', networkOverride), {
+      const response1 = await fetch(this.buildRequestUrl('/donate', context.network), {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ amount })
@@ -233,7 +228,7 @@ class X402PaymentService {
       if (response1.status === 402) {
         const paymentData = await response1.json();
         const paymentSpec = paymentData.accepts?.[0];
-        
+
         if (!paymentSpec) {
           throw new Error('No payment requirements returned');
         }
@@ -247,14 +242,12 @@ class X402PaymentService {
           raw: paymentData
         };
 
-        // Use backend requirements to create payment header
         const encodedHeader = await this.createPaymentHeaderFromRequirements(
           paymentRequirement,
-          walletClient
+          context
         );
 
-        // Send payment
-        const response2 = await fetch(this.buildRequestUrl('/donate', networkOverride), {
+        const response2 = await fetch(this.buildRequestUrl('/donate', context.network), {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
@@ -292,17 +285,13 @@ class X402PaymentService {
     }
   }
 
-    /**
- * Tip article author using x402 payment */
   async tip(
     articleId: number,
     amount: number,
-    walletClient: WalletClient,
-    networkOverride?: SupportedNetwork
+    context: PaymentExecutionContext
   ): Promise<PaymentResponse> {
     try {
-      // First request without payment to get requirements from backend
-      const response1 = await fetch(this.buildRequestUrl(`/articles/${articleId}/tip`, networkOverride), {
+      const response1 = await fetch(this.buildRequestUrl(`/articles/${articleId}/tip`, context.network), {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ amount })
@@ -311,7 +300,7 @@ class X402PaymentService {
       if (response1.status === 402) {
         const paymentData = await response1.json();
         const paymentSpec = paymentData.accepts?.[0];
-        
+
         if (!paymentSpec) {
           throw new Error('No payment requirements returned');
         }
@@ -325,14 +314,12 @@ class X402PaymentService {
           raw: paymentData
         };
 
-        // Use backend requirements to create payment header
         const encodedHeader = await this.createPaymentHeaderFromRequirements(
           paymentRequirement,
-          walletClient
+          context
         );
 
-        // Send payment
-        const response2 = await fetch(this.buildRequestUrl(`/articles/${articleId}/tip`, networkOverride), {
+        const response2 = await fetch(this.buildRequestUrl(`/articles/${articleId}/tip`, context.network), {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
@@ -354,7 +341,7 @@ class X402PaymentService {
 
         return {
           success: false,
-          error: result?.error || 'Tip failed',
+          error: result?.error || 'Tip failed. Please try again.',
           rawResponse: result
         };
       }
@@ -370,48 +357,34 @@ class X402PaymentService {
     }
   }
 
-  /**
-   * Record article view (NO payment required - views are free)
-   */
-  async payForView(articleId: number): Promise<PaymentResponse> {
-    try {
-      await apiService.incrementArticleViews(articleId);
+  async checkPaymentStatus(articleId: number, userAddress: string): Promise<boolean> {
+    if (!userAddress) {
+      return false;
+    }
 
-      return {
-        success: true,
-        receipt: 'View recorded'
-      };
+    try {
+      const response = await fetch(`${this.apiBase}/payment-status/${articleId}/${userAddress}`);
+      if (!response.ok) {
+        return false;
+      }
+      const result = await response.json();
+      return Boolean(result?.success && result?.data?.hasPaid);
     } catch (error) {
-      console.error('View tracking failed:', error);
-      return {
-        success: false,
-        error: error instanceof Error ? error.message : 'View tracking failed',
-      };
+      console.error('Failed to check payment status:', error);
+      return false;
     }
   }
 
-  /**
-   * Check if x402 is supported in the current browser
-   * We rely on wallet clients with signTypedData support
-   */
-  isX402Supported(): boolean {
-    return true;
-  }
-
-  /**
-   * Check payment status for a user
-   */
-  async checkPaymentStatus(articleId: number, userAddress: string): Promise<boolean> {
+  async payForView(articleId: number): Promise<void> {
     try {
-      const response = await fetch(`http://localhost:3001/api/payment-status/${articleId}/${userAddress}`);
-      const data = await response.json();
-      return data.success ? data.data.hasPaid : false;
+      const response = await apiService.incrementArticleViews(articleId);
+      if (!response.success) {
+        throw new Error(response.error || 'Failed to record view');
+      }
     } catch (error) {
-      console.error('Error checking payment status:', error);
-      return false;
+      console.error('Failed to record article view:', error);
     }
   }
 }
 
 export const x402PaymentService = new X402PaymentService();
-export default x402PaymentService;

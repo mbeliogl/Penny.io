@@ -1,13 +1,15 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { useParams } from 'react-router-dom';
 import { useWallet } from '../contexts/WalletContext';
-import { ConnectButton } from '@rainbow-me/rainbowkit';
 import { Clock, User, Lock, HeartHandshake, Tag } from 'lucide-react';
 import { apiService, Article as ArticleType, SupportedAuthorNetwork } from '../services/api';
-import { x402PaymentService } from '../services/x402PaymentService';
+import { x402PaymentService, type SupportedNetwork } from '../services/x402PaymentService';
 import { useAccount, useWalletClient } from 'wagmi';
+import { useAppKitProvider } from '@reown/appkit/react';
 import LikeButton from '../components/LikeButton';
 import { sanitizeHTML } from '../utils/sanitize';
+import AppKitConnectButton from '../components/AppKitConnectButton';
+import { createSolanaTransactionSigner } from '../utils/solanaSigner';
 
 
 // Article page now uses real API data instead of mock data
@@ -16,6 +18,11 @@ function Article() {
   const { id } = useParams();
   const { isConnected, address } = useWallet();
   const { data: walletClient } = useWalletClient();
+  const { walletProvider: solanaWalletProvider } = useAppKitProvider('solana');
+  const solanaSigner = useMemo(
+    () => createSolanaTransactionSigner(solanaWalletProvider),
+    [solanaWalletProvider]
+  );
   const [article, setArticle] = useState<ArticleType | null>(null);
   const [loading, setLoading] = useState(true);
   const [loadError, setLoadError] = useState<string>('');
@@ -33,6 +40,7 @@ function Article() {
   const [customTipAmount, setCustomTipAmount] = useState('');
   const [tipResult, setTipResult] = useState<{ success: boolean; message: string; txHash?: string } | null>(null);
   const [authorNetworks, setAuthorNetworks] = useState<SupportedAuthorNetwork[]>(['base']);
+  const [selectedNetworkFamily, setSelectedNetworkFamily] = useState<'base' | 'solana'>('base');
 
   // Dynamic chain detection to build correct payload
   const { chain } = useAccount();
@@ -44,10 +52,30 @@ function Article() {
     }
   };
 
-  const getNetworkFamily = (network?: SupportedAuthorNetwork | 'base' | 'base-sepolia'): 'base' | 'solana' => {
+  const SOLANA_NETWORK = (import.meta.env.VITE_SOLANA_NETWORK as SupportedNetwork) || 'solana-devnet';
+
+  const getNetworkFamily = (network?: SupportedAuthorNetwork | SupportedNetwork): 'base' | 'solana' => {
     if (!network) return 'base';
     return network.includes('solana') ? 'solana' : 'base';
   };
+
+  const availableNetworkFamilies = useMemo(() => {
+    const families = new Set<'base' | 'solana'>();
+    authorNetworks.forEach((net) => families.add(getNetworkFamily(net)));
+    return Array.from(families);
+  }, [authorNetworks]);
+
+  useEffect(() => {
+    if (!availableNetworkFamilies.length) {
+      setSelectedNetworkFamily('base');
+      return;
+    }
+    if (!availableNetworkFamilies.includes(selectedNetworkFamily)) {
+      setSelectedNetworkFamily(
+        availableNetworkFamilies.includes('base') ? 'base' : availableNetworkFamilies[0]
+      );
+    }
+  }, [availableNetworkFamilies, selectedNetworkFamily]);
 
   const formatSupportedNetworks = (networks: SupportedAuthorNetwork[]): string => {
     const families = new Set(networks.map(net => getNetworkFamily(net)));
@@ -143,10 +171,10 @@ function Article() {
     );
   }
 
-  const getNetworkFromChain = (chainId?: number): 'base' | 'base-sepolia' => {
-  if (chainId === 8453) return 'base';          // Base mainnet
-  if (chainId === 84532) return 'base-sepolia'; // Base Sepolia
-  return 'base-sepolia'; // Default to testnet for safety
+  const getNetworkFromChain = (chainId?: number): SupportedNetwork => {
+    if (chainId === 8453) return 'base';
+    if (chainId === 84532) return 'base-sepolia';
+    return 'base-sepolia';
   };
   const authorNetworkLabel = formatSupportedNetworks(authorNetworks);
 
@@ -156,22 +184,32 @@ function Article() {
       return;
     }
 
+    const isSolanaSelected = selectedNetworkFamily === 'solana';
+    const selectedNetwork: SupportedNetwork = isSolanaSelected ? SOLANA_NETWORK : getNetworkFromChain(chain?.id);
+
     setIsProcessingPayment(true);
     setPaymentError('');
 
-    if (!walletClient) {
-      console.error('Wallet client not available');
+    if (isSolanaSelected && !solanaSigner) {
+      setPaymentError('Please connect a Solana wallet before paying.');
+      setIsProcessingPayment(false);
+      return;
+    }
+
+    if (!isSolanaSelected && !walletClient) {
       setPaymentError('Unable to access connected wallet. Please reconnect and try again.');
       setIsProcessingPayment(false);
       return;
     }
 
     try {
-      const network = getNetworkFromChain(chain?.id)
       const paymentResult = await x402PaymentService.purchaseArticle(
         article.id,
-        walletClient,
-        network
+        {
+          network: selectedNetwork,
+          evmWalletClient: !isSolanaSelected ? walletClient ?? undefined : undefined,
+          solanaSigner: isSolanaSelected ? solanaSigner : undefined,
+        }
       );
 
       if (paymentResult.success) {
@@ -194,15 +232,23 @@ function Article() {
 
   // x402 tip 
   const handleTip = async () => {
-  const amount = selectedTipAmount || parseFloat(customTipAmount);
-  
-    if (!isConnected || !walletClient) {
-      setTipResult({ success: false, message: 'Please connect your wallet to tip' });
-      return;
-    }
+    const amount = selectedTipAmount || parseFloat(customTipAmount);
 
     if (!amount || amount < 0.01 || amount > 100) {
       setTipResult({ success: false, message: 'Please enter a valid tip amount ($0.01-$100.00)' });
+      return;
+    }
+
+    const isSolanaSelected = selectedNetworkFamily === 'solana';
+    const selectedNetwork: SupportedNetwork = isSolanaSelected ? SOLANA_NETWORK : getNetworkFromChain(chain?.id);
+
+    if (isSolanaSelected && !solanaSigner) {
+      setTipResult({ success: false, message: 'Please connect a Solana wallet to tip' });
+      return;
+    }
+
+    if (!isSolanaSelected && (!isConnected || !walletClient)) {
+      setTipResult({ success: false, message: 'Please connect a wallet to tip' });
       return;
     }
 
@@ -210,8 +256,15 @@ function Article() {
     setTipResult(null);
 
     try {
-      const network = getNetworkFromChain(chain?.id)
-      const result = await x402PaymentService.tip(article.id, amount, walletClient, network);
+      const result = await x402PaymentService.tip(
+        article.id,
+        amount,
+        {
+          network: selectedNetwork,
+          evmWalletClient: !isSolanaSelected ? walletClient ?? undefined : undefined,
+          solanaSigner: isSolanaSelected ? solanaSigner : undefined,
+        }
+      );
 
       if (result.success) {
         setHasTipped(true);
@@ -307,14 +360,40 @@ function Article() {
                   {!isConnected ? (
                     <div className="connect-wallet">
                       <p>Connect your wallet to continue</p>
-                      <ConnectButton />
+                      <AppKitConnectButton />
                     </div>
                   ) : (
                     <>
+                      <div className="network-selector">
+                        {availableNetworkFamilies.includes('base') && (
+                          <button
+                            type="button"
+                            className={`network-option ${selectedNetworkFamily === 'base' ? 'active' : ''}`}
+                            onClick={() => setSelectedNetworkFamily('base')}
+                          >
+                            Base USDC
+                          </button>
+                        )}
+                        {availableNetworkFamilies.includes('solana') && (
+                          <button
+                            type="button"
+                            className={`network-option ${selectedNetworkFamily === 'solana' ? 'active' : ''}`}
+                            onClick={() => setSelectedNetworkFamily('solana')}
+                          >
+                            Solana USDC
+                          </button>
+                        )}
+                      </div>
+                      {selectedNetworkFamily === 'solana' && !solanaSigner && (
+                        <p className="payment-warning">Connect a Solana wallet to use Solana USDC.</p>
+                      )}
                       <button
                         className="pay-button"
                         onClick={handlePayment}
-                        disabled={isProcessingPayment}
+                        disabled={
+                          isProcessingPayment ||
+                          (selectedNetworkFamily === 'solana' && !solanaSigner)
+                        }
                       >
                         {isProcessingPayment ? 'Processing...' : `Pay $${article.price.toFixed(2)}`}
                       </button>
@@ -473,7 +552,7 @@ function Article() {
                   </button>
                 </div>
                 
-                {tipResult && (
+                      {tipResult && (
                   <div className={`donation-result ${tipResult.success ? 'success' : 'error'}`}>
                     <p>{tipResult.message}</p>
                     {tipResult.txHash && (

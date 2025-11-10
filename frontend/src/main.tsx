@@ -1,18 +1,10 @@
 import { StrictMode } from 'react'
 import { createRoot } from 'react-dom/client'
-import { WagmiProvider } from 'wagmi'
-import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
-import { RainbowKitProvider } from '@rainbow-me/rainbowkit'
-import { wagmiConfig } from './wagmi'
-import './index.css'
-import '@rainbow-me/rainbowkit/styles.css'
-import App from './App'
-
-import '@solana/wallet-adapter-react-ui/styles.css';
-import { ConnectionProvider, WalletProvider } from '@solana/wallet-adapter-react';
-import { WalletModalProvider } from '@solana/wallet-adapter-react-ui';
-import { PhantomWalletAdapter } from '@solana/wallet-adapter-wallets';
-import { clusterApiUrl } from '@solana/web3.js';
+import { WagmiProvider } from 'wagmi';
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import { wagmiAdapter } from './appkit';
+import './index.css';
+import App from './App';
 
 
 const queryClient = new QueryClient()
@@ -20,11 +12,9 @@ const queryClient = new QueryClient()
 const rootElement = document.getElementById('root')!;
 createRoot(rootElement).render(
   <StrictMode>
-    <WagmiProvider config={wagmiConfig}>
+    <WagmiProvider config={wagmiAdapter.wagmiConfig}>
       <QueryClientProvider client={queryClient}>
-        <RainbowKitProvider>
-          <App />
-        </RainbowKitProvider>
+        <App />
       </QueryClientProvider>
     </WagmiProvider>
   </StrictMode>,

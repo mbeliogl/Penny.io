@@ -6,18 +6,23 @@
  */
 
 import { z } from 'zod';
-import { normalizeAddress } from './utils/address';
+import { normalizeFlexibleAddress } from './utils/address';
 
 // ============================================
 // ETHEREUM ADDRESS VALIDATION
 // ============================================
 
-/**
- * Ethereum address format: 0x followed by 40 hexadecimal characters
- */
-const ethereumAddressSchema = z.string()
-  .regex(/^0x[a-fA-F0-9]{40}$/, 'Invalid Ethereum address format')
-  .transform((value) => normalizeAddress(value));
+const walletAddressSchema = z.string().transform((value, ctx) => {
+  try {
+    return normalizeFlexibleAddress(value);
+  } catch {
+    ctx.addIssue({
+      code: z.ZodIssueCode.custom,
+      message: 'Invalid wallet address format'
+    });
+    return z.NEVER;
+  }
+});
 
 // ============================================
 // ARTICLE VALIDATION
@@ -72,7 +77,7 @@ export const createArticleSchema = z.object({
     .max(1.00, 'Price must be $1.00 or less')
     .refine(val => Number.isFinite(val), 'Price must be a valid number'),
 
-  authorAddress: ethereumAddressSchema,
+  authorAddress: walletAddressSchema,
 
   categories: z.array(categorySchema)
     .max(5, 'Maximum 5 categories allowed')
@@ -88,7 +93,7 @@ export const createArticleSchema = z.object({
  * Article Update Schema (allows partial updates)
  */
 export const updateArticleSchema = createArticleSchema.partial().extend({
-  authorAddress: ethereumAddressSchema, // Always required for auth
+  authorAddress: walletAddressSchema, // Always required for auth
 });
 
 // ============================================
@@ -117,7 +122,7 @@ export const createDraftSchema = z.object({
     .optional()
     .default(0.05),
 
-  authorAddress: ethereumAddressSchema,
+  authorAddress: walletAddressSchema,
 
   isAutoSave: z.boolean().optional().default(false)
 });
@@ -142,7 +147,7 @@ const articleSortOptions = [
 ] as const;
 
 export const getArticlesQuerySchema = z.object({
-  authorAddress: ethereumAddressSchema.optional(),
+  authorAddress: walletAddressSchema.optional(),
 
   search: z.string()
     .max(200, 'Search query too long')
@@ -186,7 +191,7 @@ export const draftIdSchema = z.object({
  * Like/Unlike Request Body
  */
 export const likeRequestSchema = z.object({
-  userAddress: ethereumAddressSchema
+  userAddress: walletAddressSchema
 });
 
 // ============================================
@@ -197,8 +202,8 @@ export const likeRequestSchema = z.object({
  * x402 Payment Payload
  */
 export const paymentPayloadSchema = z.object({
-  from: ethereumAddressSchema,
-  to: ethereumAddressSchema,
+  from: walletAddressSchema,
+  to: walletAddressSchema,
   value: z.number()
     .int('Payment value must be an integer')
     .positive('Payment value must be positive'),
@@ -225,7 +230,7 @@ export const verifyPaymentSchema = z.object({
  * Delete Article/Draft Request
  */
 export const deleteRequestSchema = z.object({
-  authorAddress: ethereumAddressSchema
+  authorAddress: walletAddressSchema
 });
 
 // ============================================

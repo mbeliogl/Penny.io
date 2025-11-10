@@ -1,25 +1,37 @@
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { useAccount, useWalletClient } from 'wagmi';
 import { Info, BookOpen, PenTool, HelpCircle, Mail, Shield, FileText, LayoutDashboard, Library, Wrench, HeartHandshake, Copy, Check } from 'lucide-react';
-import { x402PaymentService } from '../services/x402PaymentService';
+import { useAppKitProvider } from '@reown/appkit/react';
+import AppKitConnectButton from './AppKitConnectButton';
+import { x402PaymentService, type SupportedNetwork } from '../services/x402PaymentService';
+import { createSolanaTransactionSigner } from '../utils/solanaSigner';
 
 
 function Footer() {
   const [isDonateModalOpen, setIsDonateModalOpen] = useState(false);
   const [copiedAddress, setCopiedAddress] = useState<string | null>(null);
-  const [selectedNetwork, setSelectedNetwork] = useState<'usdc' | 'solana'>('usdc');
+  const [selectedNetworkFamily, setSelectedNetworkFamily] = useState<'base' | 'solana'>('base');
   const [selectedAmount, setSelectedAmount] = useState<number | null>(null);
   const [customAmount, setCustomAmount] = useState('');
   const [isProcessing, setIsProcessing] = useState(false);
   const [donationResult, setDonationResult] = useState<{ success: boolean; message: string; txHash?: string } | null>(null);
-  const { address, isConnected } = useAccount();
+  const { isConnected, chain } = useAccount();
   const { data: walletClient } = useWalletClient();
+  const { walletProvider: solanaWalletProvider } = useAppKitProvider('solana');
+  const solanaSigner = useMemo(
+    () => createSolanaTransactionSigner(solanaWalletProvider),
+    [solanaWalletProvider]
+  );
 
-  // Platform donation address
-  const platformAddress = '0x6945890b1c074414b813c7643ae10117dec1c8e7';
   const solanaAddress = 'AYL9ipxu2fEbNqWHujynNhdBzSVaeXmfimkWkVqEwPEv'; // Placeholder
   const predefinedAmounts = [1, 5, 25, 50];
+  const SOLANA_NETWORK = (import.meta.env.VITE_SOLANA_NETWORK as SupportedNetwork) || 'solana-devnet';
+  const isSolanaSelected = selectedNetworkFamily === 'solana';
+  const isNetworkReady = isSolanaSelected
+    ? Boolean(solanaSigner)
+    : Boolean(isConnected && walletClient);
+  const donationNetworkLabel = isSolanaSelected ? 'Solana USDC (x402)' : 'Base USDC (x402)';
   const handleCopyAddress = async (address: string) => {
     try {
       if (navigator?.clipboard?.writeText) {
@@ -38,42 +50,62 @@ function Footer() {
     setCustomAmount('');
     setIsProcessing(false);
     setDonationResult(null);
-    setSelectedNetwork('usdc');
+    setSelectedNetworkFamily('base');
   };
 
   // Dynamic chain detection to build correct payload
-  const { chain } = useAccount();
-
-  const getNetworkFromChain = (chainId?: number): 'base' | 'base-sepolia' => {
-  if (chainId === 8453) return 'base';          // Base mainnet
-  if (chainId === 84532) return 'base-sepolia'; // Base Sepolia
-  return 'base-sepolia'; // Default to testnet for safety
+  const getNetworkFromChain = (chainId?: number): SupportedNetwork => {
+    if (chainId === 8453) return 'base';          // Base mainnet
+    if (chainId === 84532) return 'base-sepolia'; // Base Sepolia
+    return 'base-sepolia'; // Default to testnet for safety
   };
 
-  // Donation using existing x402paymentservice functions
+  // Donation using x402 payment flow with Base + Solana support
   const handleDonate = async () => {
-    if (!isConnected || !walletClient) {
-      alert('Please connect your wallet first');
+    const amount = selectedAmount ?? parseFloat(customAmount);
+    if (!amount || amount < 0.01 || amount > 100) {
+      setDonationResult({
+        success: false,
+        message: 'Please enter a valid donation amount ($0.01-$100.00)',
+      });
       return;
     }
 
-    const amount = selectedAmount || parseFloat(customAmount);
-    if (!amount || amount < .01 || amount > 100) {
-      alert('Please select or enter a valid donation amount ($0.10-$1.00)');
+    if (isSolanaSelected && !solanaSigner) {
+      setDonationResult({
+        success: false,
+        message: 'Connect a Solana wallet to donate with USDC on Solana.',
+      });
+      return;
+    }
+
+    if (!isSolanaSelected && (!isConnected || !walletClient)) {
+      setDonationResult({
+        success: false,
+        message: 'Connect a Base-compatible wallet to donate.',
+      });
       return;
     }
 
     setIsProcessing(true);
     setDonationResult(null);
 
+    const network = isSolanaSelected ? SOLANA_NETWORK : getNetworkFromChain(chain?.id);
+
     try {
-      const network = getNetworkFromChain(chain?.id);
-      const result = await x402PaymentService.donate(amount, walletClient, network);
+      const result = await x402PaymentService.donate(
+        amount,
+        {
+          network,
+          evmWalletClient: isSolanaSelected ? undefined : walletClient ?? undefined,
+          solanaSigner: isSolanaSelected ? solanaSigner : undefined,
+        }
+      );
 
       if (result.success) {
         setDonationResult({
           success: true,
-          message: `Thank you for your $${amount} donation!`,
+          message: `Thank you for your $${amount.toFixed(2)} donation via ${isSolanaSelected ? 'Solana' : 'Base'}!`,
           txHash: result.rawResponse?.data?.transactionHash,
         });
       } else {
@@ -185,125 +217,118 @@ function Footer() {
             <div className="donation-network-selector">
               <button
                 type="button"
-                className={`network-option ${selectedNetwork === 'usdc' ? 'active' : ''}`}
-                onClick={() => setSelectedNetwork('usdc')}
+                className={`network-option ${!isSolanaSelected ? 'active' : ''}`}
+                onClick={() => setSelectedNetworkFamily('base')}
               >
-                USDC (x402)
+                Base USDC
               </button>
               <button
                 type="button"
-                className={`network-option ${selectedNetwork === 'solana' ? 'active' : ''}`}
-                onClick={() => setSelectedNetwork('solana')}
+                className={`network-option ${isSolanaSelected ? 'active' : ''}`}
+                onClick={() => setSelectedNetworkFamily('solana')}
               >
-                Solana
+                Solana USDC
               </button>
             </div>
-            {/* USDC x402 Payment Flow */}
-            {selectedNetwork === 'usdc' && (
-              <>
-                <p className="donation-modal-description">
-                  Select an amount to donate via x402 protocol.
-                </p>
-                {/* Predefined Amount Buttons */}
-                <div className="donation-amounts">
-                  {predefinedAmounts.map((amount) => (
-                    <button
-                      key={amount}
-                      type="button"
-                      className={`amount-button ${selectedAmount === amount ? 'active' : ''}`}
-                      onClick={() => {
-                        setSelectedAmount(amount);
-                        setCustomAmount('');
-                      }}
-                      disabled={isProcessing}
-                    >
-                      ${amount}
-                    </button>
-                  ))}
-                </div>
-                {/* Custom Amount Input */}
-                <div className="custom-amount-input">
-                  <label htmlFor="custom-amount">Or enter custom amount:</label>
-                  <input
-                    id="custom-amount"
-                    type="number"
-                    min="1"
-                    max="1000"
-                    step="1"
-                    placeholder="Enter amount ($0.10-$1.00)"
-                    value={customAmount}
-                    onChange={(e) => {
-                      setCustomAmount(e.target.value);
-                      setSelectedAmount(null);
+            <>
+              <p className="donation-modal-description">
+                Select an amount to donate via {donationNetworkLabel}.
+              </p>
+              {/* Predefined Amount Buttons */}
+              <div className="donation-amounts">
+                {predefinedAmounts.map((amount) => (
+                  <button
+                    key={amount}
+                    type="button"
+                    className={`amount-button ${selectedAmount === amount ? 'active' : ''}`}
+                    onClick={() => {
+                      setSelectedAmount(amount);
+                      setCustomAmount('');
                     }}
                     disabled={isProcessing}
-                  />
-                </div>
-                {/* Wallet Connection Check */}
-                {!isConnected && (
-                  <p className="donation-warning">
-                    ⚠️ Please connect your wallet to donate
-                  </p>
-                )}
-                {/* Donate Button */}
-                <button
-                  type="button"
-                  className="donation-submit-button"
-                  onClick={handleDonate}
-                  disabled={isProcessing || !isConnected || (!selectedAmount && !customAmount)}
-                >
-                  {isProcessing ? 'Processing...' : 'Donate with x402'}
-                </button>
-                {/* Donation Result */}
-                {donationResult && (
-                  <div className={`donation-result ${donationResult.success ? 'success' : 'error'}`}>
-                    <p>{donationResult.message}</p>
-                    {donationResult.txHash && (
-                      <p className="donation-tx-hash">
-                        Transaction: <code>{donationResult.txHash.slice(0, 10)}...{donationResult.txHash.slice(-8)}</code>
-                      </p>
-                    )}
-                  </div>
-                )}
-              </>
-            )}
-            {/* Solana Coming Soon */}
-            {selectedNetwork === 'solana' && (
-              <>
-                <p className="donation-modal-description">
-                  <strong>SOL USDC Support Coming Soon</strong>
-                </p>
-                <p className="donation-coming-soon-message">
-                  We're working on integrating Solana USDC donations via x402 protocol.
-                  For now, you can manually send SOL or USDC to our Solana address:
-                </p>
-                <div className="donation-address-row">
-                  <code className="donation-address-truncated">
-                    {solanaAddress.slice(0, 6)}...{solanaAddress.slice(-4)}
-                  </code>
-                  <button
-                    type="button"
-                    className="donation-copy-button"
-                    onClick={() => handleCopyAddress(solanaAddress)}
                   >
-                    {copiedAddress === solanaAddress ? (
-                      <>
-                        <Check size={14} />
-                        <span>Copied</span>
-                      </>
-                    ) : (
-                      <>
-                        <Copy size={14} />
-                        <span>Copy</span>
-                      </>
-                    )}
+                    ${amount}
                   </button>
+                ))}
+              </div>
+              {/* Custom Amount Input */}
+              <div className="custom-amount-input">
+                <label htmlFor="custom-amount">Or enter custom amount:</label>
+                <input
+                  id="custom-amount"
+                  type="number"
+                  min="0.01"
+                  max="100"
+                  step="0.01"
+                  placeholder="Enter amount ($0.01-$100.00)"
+                  value={customAmount}
+                  onChange={(e) => {
+                    setCustomAmount(e.target.value);
+                    setSelectedAmount(null);
+                  }}
+                  disabled={isProcessing}
+                />
+              </div>
+              {/* Wallet Connection Check */}
+              {!isNetworkReady && (
+                <div className="donation-warning">
+                  <p>Connect a {isSolanaSelected ? 'Solana' : 'Base'} wallet to donate.</p>
+                  <AppKitConnectButton />
                 </div>
-                <p className="donation-full-address">
-                  <small>Full address: <code>{solanaAddress}</code></small>
-                </p>
-              </>
-            )}
+              )}
+              {/* Donate Button */}
+              <button
+                type="button"
+                className="donation-submit-button"
+                onClick={handleDonate}
+                disabled={isProcessing || !isNetworkReady || (!selectedAmount && !customAmount)}
+              >
+                {isProcessing ? 'Processing...' : `Donate with ${isSolanaSelected ? 'Solana' : 'Base'} USDC`}
+              </button>
+              {/* Donation Result */}
+              {donationResult && (
+                <div className={`donation-result ${donationResult.success ? 'success' : 'error'}`}>
+                  <p>{donationResult.message}</p>
+                  {donationResult.txHash && (
+                    <p className="donation-tx-hash">
+                      Transaction: <code>{donationResult.txHash.slice(0, 10)}...{donationResult.txHash.slice(-8)}</code>
+                    </p>
+                  )}
+                </div>
+              )}
+              {isSolanaSelected && (
+                <div className="donation-manual-transfer">
+                  <p className="donation-coming-soon-message">
+                    Prefer a manual Solana transfer? Send USDC to:
+                  </p>
+                  <div className="donation-address-row">
+                    <code className="donation-address-truncated">
+                      {solanaAddress.slice(0, 6)}...{solanaAddress.slice(-4)}
+                    </code>
+                    <button
+                      type="button"
+                      className="donation-copy-button"
+                      onClick={() => handleCopyAddress(solanaAddress)}
+                    >
+                      {copiedAddress === solanaAddress ? (
+                        <>
+                          <Check size={14} />
+                          <span>Copied</span>
+                        </>
+                      ) : (
+                        <>
+                          <Copy size={14} />
+                          <span>Copy</span>
+                        </>
+                      )}
+                    </button>
+                  </div>
+                  <p className="donation-full-address">
+                    <small>Full address: <code>{solanaAddress}</code></small>
+                  </p>
+                </div>
+              )}
+            </>
           </div>
         </div>
       )}

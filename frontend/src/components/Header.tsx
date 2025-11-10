@@ -1,6 +1,6 @@
 import { Link } from 'react-router-dom';
 import { LayoutDashboard, PenTool, BookOpen } from 'lucide-react';
-import { ConnectButton } from '@rainbow-me/rainbowkit';
+import AppKitConnectButton from './AppKitConnectButton';
 
 function Header() {
   return (
@@ -13,7 +13,7 @@ function Header() {
           <Link to="/explore" className="nav-link"><BookOpen size={16}/>Explore</Link>
           <Link to="/write" className="nav-link"><PenTool size={16}/>Write</Link>
           <Link to="/dashboard" className="nav-link"><LayoutDashboard size={16}/>Dashboard</Link>
-          <ConnectButton />
+          <AppKitConnectButton />
         </nav>
       </div>
     </header>

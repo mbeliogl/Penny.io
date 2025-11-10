@@ -1,5 +1,6 @@
 import { createContext, useContext, ReactNode, useEffect } from 'react';
-import { useAccount, useBalance, useDisconnect } from 'wagmi';
+import { useBalance } from 'wagmi';
+import { useAppKitAccount } from '@reown/appkit/react';
 import { apiService } from '../services/api';
 
 interface WalletContextType {
@@ -17,9 +18,13 @@ interface WalletProviderProps {
 }
 
 export function WalletProvider({ children }: WalletProviderProps) {
-  const { address, isConnected, isConnecting } = useAccount();
-  const { data: balance } = useBalance({ address });
-  const { disconnect } = useDisconnect();
+  const { address, status, isConnected, disconnect } = useAppKitAccount();
+  const isConnecting = status === 'connecting';
+  const isEvmAddress = Boolean(address && address.startsWith('0x'));
+  const { data: balance } = useBalance({
+    address: isEvmAddress ? (address as `0x${string}`) : undefined,
+    query: { enabled: isEvmAddress },
+  });
 
   // Auto-register author when wallet connects
   useEffect(() => {

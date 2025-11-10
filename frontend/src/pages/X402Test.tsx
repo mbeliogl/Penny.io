@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { useAccount, useChainId, useSwitchChain, useWalletClient } from 'wagmi';
 import { base, baseSepolia } from 'wagmi/chains';
-import { x402PaymentService, PaymentRequirement } from '../services/x402PaymentService';
+import { x402PaymentService, type PaymentRequirement, type PaymentExecutionContext, type SupportedNetwork } from '../services/x402PaymentService';
 
 const X402Test: React.FC = () => {
   const { address, isConnected } = useAccount();
@@ -25,7 +25,7 @@ const X402Test: React.FC = () => {
   const isOnBaseSepolia = chainId === baseSepolia.id;
   const isOnCorrectNetwork = isOnBase || isOnBaseSepolia;
   const currentNetworkName = isOnBase ? 'Base Mainnet' : isOnBaseSepolia ? 'Base Sepolia' : 'Unknown';
-  const preferredNetwork: 'base' | 'base-sepolia' = isOnBase ? 'base' : 'base-sepolia';
+  const preferredNetwork: SupportedNetwork = isOnBase ? 'base' : 'base-sepolia';
 
   // Explorer URLs based on network
   const explorerBaseUrl = isOnBase 
@@ -141,10 +141,14 @@ Ready to execute transaction!`;
     try {
       setTestResults(prev => ({ ...prev, payment: '⏳ Preparing x402 payment header...', verificationHtml: undefined }));
 
+      const executionContext: PaymentExecutionContext = {
+        network: preferredNetwork,
+        evmWalletClient: walletClient,
+      };
+
       const purchaseResult = await x402PaymentService.purchaseArticle(
         parseInt(selectedArticle, 10),
-        walletClient,
-        preferredNetwork
+        executionContext
       );
 
       if (purchaseResult.success) {

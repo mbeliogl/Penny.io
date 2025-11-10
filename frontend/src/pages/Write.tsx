@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef, useCallback, FormEvent } from 'react';
 import { useLocation } from 'react-router-dom';
 import { useWallet } from '../contexts/WalletContext';
-import { ConnectButton } from '@rainbow-me/rainbowkit';
+import AppKitConnectButton from '../components/AppKitConnectButton';
 import { Save, Send, FileText, Clock, Eye, CheckCircle, X, AlertTriangle, Loader2, Check, Dot } from 'lucide-react';
 import { apiService, Draft, CreateArticleRequest } from '../services/api';
 import { Editor } from '@tinymce/tinymce-react';
@@ -575,7 +575,7 @@ function Write() {
           <div className="connect-prompt">
             <h1>Connect Your Wallet</h1>
             <p>Connect your wallet to start writing and publishing articles on Penny.io</p>
-            <ConnectButton />
+            <AppKitConnectButton />
           </div>
         </div>
       </div>

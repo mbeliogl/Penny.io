@@ -49,3 +49,30 @@ export function tryNormalizeSolanaAddress(address: string | null | undefined): s
     return null;
   }
 }
+
+/**
+ * Normalize an address that could be either EVM or Solana.
+ * Tries EVM checksum first, then Solana base58.
+ */
+export function normalizeFlexibleAddress(address: string): string {
+  const evm = tryNormalizeAddress(address);
+  if (evm) {
+    return evm;
+  }
+  return normalizeSolanaAddress(address);
+}
+
+/**
+ * Attempt to normalize an address that could be EVM or Solana.
+ * Returns null if both attempts fail.
+ */
+export function tryNormalizeFlexibleAddress(address: string | null | undefined): string | null {
+  if (!address) {
+    return null;
+  }
+  const evm = tryNormalizeAddress(address);
+  if (evm) {
+    return evm;
+  }
+  return tryNormalizeSolanaAddress(address);
+}
