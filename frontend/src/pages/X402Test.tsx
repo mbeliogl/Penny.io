@@ -1,69 +1,103 @@
-import React, { useEffect, useState } from 'react';
-import { useAccount, useChainId, useSwitchChain, useWalletClient } from 'wagmi';
+import React, { useMemo, useState } from 'react';
+import { useChainId, useWalletClient } from 'wagmi';
 import { base, baseSepolia } from 'wagmi/chains';
+import { useAppKitNetwork, useAppKitProvider, useWalletInfo } from '@reown/appkit/react';
 import { x402PaymentService, type PaymentRequirement, type PaymentExecutionContext, type SupportedNetwork } from '../services/x402PaymentService';
+import { useWallet } from '../contexts/WalletContext';
+import { createSolanaTransactionSigner } from '../utils/solanaSigner';
 
 const X402Test: React.FC = () => {
-  const { address, isConnected } = useAccount();
+  const { address, isConnected } = useWallet();
   const chainId = useChainId();
-  const { switchChain } = useSwitchChain();
   const { data: walletClient } = useWalletClient();
+  const { caipNetworkId, chainId: appKitChainId } = useAppKitNetwork();
+  const { walletProvider: solanaWalletProvider } = useAppKitProvider('solana');
+  const { walletInfo } = useWalletInfo();
+  const solanaSigner = useMemo(
+    () => createSolanaTransactionSigner(solanaWalletProvider),
+    [solanaWalletProvider]
+  );
 
   const [currentPaymentReq, setCurrentPaymentReq] = useState<PaymentRequirement | null>(null);
   const [selectedArticle, setSelectedArticle] = useState('92');
   const [lastTxHash, setLastTxHash] = useState<string | null>(null);
   const [testResults, setTestResults] = useState<{
-    network?: string;
     paymentReq?: string;
     payment?: string;
     verification?: string;
     verificationHtml?: string;
   }>({});
 
-  // Auto-detect network (Strategy A)
-  const isOnBase = chainId === base.id;
-  const isOnBaseSepolia = chainId === baseSepolia.id;
-  const isOnCorrectNetwork = isOnBase || isOnBaseSepolia;
-  const currentNetworkName = isOnBase ? 'Base Mainnet' : isOnBaseSepolia ? 'Base Sepolia' : 'Unknown';
-  const preferredNetwork: SupportedNetwork = isOnBase ? 'base' : 'base-sepolia';
+  const SUPPORTED_NETWORKS: Record<string, { label: string; supported: SupportedNetwork; family: 'evm' | 'solana'; explorerUrl: (hash: string) => string }> = {
+    'eip155:8453': {
+      label: 'Base Mainnet',
+      supported: 'base',
+      family: 'evm',
+      explorerUrl: (hash: string) => `https://basescan.org/tx/${hash}`,
+    },
+    'eip155:84532': {
+      label: 'Base Sepolia',
+      supported: 'base-sepolia',
+      family: 'evm',
+      explorerUrl: (hash: string) => `https://sepolia.basescan.org/tx/${hash}`,
+    },
+    'solana:5eykt4UsFv8P8NJdTREpY1vzqKqZKvdp': {
+      label: 'Solana Mainnet',
+      supported: 'solana',
+      family: 'solana',
+      explorerUrl: (hash: string) => `https://solscan.io/tx/${hash}`,
+    },
+    'solana:EtWTRABZaYq6iMfeYKouRu166VU2xqa1': {
+      label: 'Solana Devnet',
+      supported: 'solana-devnet',
+      family: 'solana',
+      explorerUrl: (hash: string) => `https://solscan.io/tx/${hash}?cluster=devnet`,
+    },
+  };
 
-  // Explorer URLs based on network
-  const explorerBaseUrl = isOnBase 
-    ? 'https://basescan.org' 
-    : 'https://sepolia.basescan.org';
+  const fallbackChainId = appKitChainId ?? chainId;
+  const normalizedCaipId =
+    caipNetworkId ||
+    (typeof fallbackChainId === 'number' ? `eip155:${fallbackChainId}` : undefined);
+
+  const currentNetworkInfo = normalizedCaipId
+    ? SUPPORTED_NETWORKS[normalizedCaipId]
+    : undefined;
+
+  const detectedFamily: 'evm' | 'solana' | 'unknown' = normalizedCaipId
+    ? normalizedCaipId.startsWith('solana:')
+      ? 'solana'
+      : normalizedCaipId.startsWith('eip155:')
+        ? 'evm'
+        : 'unknown'
+    : 'unknown';
+
+  const isSolanaNetwork = detectedFamily === 'solana';
+  const isEvmNetwork = detectedFamily === 'evm';
+  const currentNetworkName = currentNetworkInfo?.label
+    ? currentNetworkInfo.label
+    : isSolanaNetwork
+      ? 'Solana Wallet'
+      : isEvmNetwork && fallbackChainId
+        ? `Chain ${fallbackChainId}`
+        : 'Unknown';
+  const preferredNetwork: SupportedNetwork = currentNetworkInfo?.supported ?? 'base';
+  const isSupportedNetwork = Boolean(currentNetworkInfo);
+
+  const explorerUrlBuilder = currentNetworkInfo?.explorerUrl;
+  const networkStatusMessage = isSupportedNetwork
+    ? 'Connected'
+    : isSolanaNetwork
+      ? 'Switch to Solana Mainnet or Devnet inside your wallet.'
+      : isEvmNetwork
+        ? 'Switch to Base Mainnet or Base Sepolia inside your wallet.'
+        : 'Connect a supported Base or Solana network.';
 
   const articles = [
     { id: '92', title: 'Test article 1', price: '$0.01' },
     { id: '93', title: 'Test article 2', price: '$0.01' },
     { id: '94', title: 'Test article 3', price: '$0.01' },
   ];
-
-  useEffect(() => {
-    if (!testResults.network) return;
-    const timer = setTimeout(() => {
-      setTestResults(prev => {
-        const { network, ...rest } = prev;
-        return rest;
-      });
-    }, 3000);
-    return () => clearTimeout(timer);
-  }, [testResults.network]);
-
-  const switchToCorrectNetwork = async () => {
-    try {
-      const targetChain = isOnBase ? base : baseSepolia;
-      await switchChain({ chainId: targetChain.id });
-      setTestResults(prev => ({ 
-        ...prev, 
-        network: `✅ Switched to ${targetChain.name} successfully` 
-      }));
-    } catch (error: any) {
-      setTestResults(prev => ({ 
-        ...prev, 
-        network: `❌ Failed to switch: ${error.message}` 
-      }));
-    }
-  };
 
   const getPaymentRequirements = async () => {
     try {
@@ -129,7 +163,16 @@ Ready to execute transaction!`;
       return;
     }
 
-    if (!walletClient) {
+    if (isSolanaNetwork && !solanaSigner) {
+      setTestResults(prev => ({
+        ...prev,
+        payment: '❌ Please connect a Solana wallet to continue.',
+        verificationHtml: undefined,
+      }));
+      return;
+    }
+
+    if (!isSolanaNetwork && !walletClient) {
       setTestResults(prev => ({ 
         ...prev, 
         payment: '❌ Wallet client unavailable. Please reconnect and retry.' ,
@@ -143,7 +186,8 @@ Ready to execute transaction!`;
 
       const executionContext: PaymentExecutionContext = {
         network: preferredNetwork,
-        evmWalletClient: walletClient,
+        evmWalletClient: isSolanaNetwork ? undefined : walletClient,
+        solanaSigner: isSolanaNetwork ? solanaSigner : undefined,
       };
 
       const purchaseResult = await x402PaymentService.purchaseArticle(
@@ -207,7 +251,9 @@ Encoded Header:
       if (result.success && result.data.hasPaid) {
         const articleTitle = articles.find(a => a.id === selectedArticle)?.title || 'Unknown';
         const articleUrl = `${window.location.origin}/article/${selectedArticle}`;
-        const explorerUrl = lastTxHash ? `${explorerBaseUrl}/tx/${lastTxHash}` : null;
+        const explorerUrl = lastTxHash && explorerUrlBuilder
+          ? explorerUrlBuilder(lastTxHash)
+          : null;
 
         const successLines = [
           '✅ PAYMENT VERIFIED!',
@@ -263,50 +309,68 @@ Encoded Header:
   return (
     <div className="container">
       <div className="content-wrapper">
-        <h1> See the x402 Protocol in Action </h1>
+        <h1> Article Purchase Demo </h1>
         <p className="subtitle"> 
-          <p style={{fontSize:'10px'}}>Powered by Coinbase CDP on {currentNetworkName}</p>
+          <p style={{fontSize:'10px'}}>x402 powered by Coinbase CDP </p>
         </p>
 
         {/* Wallet Status */}
-        <div className="test-section wallet-section">
+        <div className="test-section">
           <h3>🔐 Wallet Connection</h3>
           {isConnected ? (
-            <div className="success-box">
-              ✅ <strong>Wallet Connected</strong><br />
-              <div className="address-display">Address: {address}</div>
-              <div className={`network-indicator ${isOnCorrectNetwork ? 'correct' : 'wrong '}`}>
-                Network: {currentNetworkName} {isOnCorrectNetwork ? '✅' : '❌'}
-                
+            <div className={`wallet-details ${isSupportedNetwork ? 'connected' : 'connected'}`}>
+              <div className="detail-row">
+                <span className="detail-label">Wallet</span>
+                <span className="detail-value wallet-name-value">
+                  {walletInfo?.icon && (
+                    <img src={walletInfo.icon} alt={walletInfo.name} className="wallet-icon" />
+                  )}
+                  {walletInfo?.name || 'Connected'}
+                </span>
+              </div>
+              <div className="detail-row wallet-address-row">
+                <span className="detail-label">Address</span>
+                <span className="detail-value">{address}</span>
               </div>
             </div>
           ) : (
-            <div className="error-box">
-              ❌ Please connect your wallet using the Connect Wallet button in the header
+            <div className="wallet-details disconnected">
+              <div className="detail-row">
+                <span className="detail-label">Status</span>
+                <span className="detail-value">❌ Disconnected</span>
+              </div>
+              <div className="detail-row">
+                <span className="detail-label">Action</span>
+                <span className="detail-value">Connect wallet in header</span>
+              </div>
             </div>
           )}
-          
+
         </div>
 
         {/* Network Check */}
         <div className="test-section">
-          <h3>🌐 Network Verification</h3>
-          <p style={{fontSize:'12px'}}>
-            Current Network: {currentNetworkName} (Chain ID: {chainId})<br />
-            Supported Networks: Base Mainnet ({base.id}) or Base Sepolia ({baseSepolia.id})
-          </p>
-          <button 
-            onClick={switchToCorrectNetwork}
-            disabled={!isConnected || isOnCorrectNetwork}
-            className="test-button"
-          >
-            {isOnCorrectNetwork 
-              ? `On ${currentNetworkName} ✅` 
-              : `Switch to Base Network`}
-          </button>
-          {testResults.network && (
-            <div className="result-box">{testResults.network}</div>
-          )}
+          <h3>🌐 Network Configuration</h3>
+          <div className={`network-details ${isSupportedNetwork ? 'supported' : 'unsupported'}`}>
+            <div className="detail-row">
+              <span className="detail-label">Network</span>
+              <span className="detail-value">{currentNetworkName}</span>
+            </div>
+            <div className="detail-row type-row">
+              <span className="detail-label">Type</span>
+              <span className="detail-value">{isSolanaNetwork ? 'SVM' : isEvmNetwork ? 'EVM' : 'Unknown'}</span>
+            </div>
+            <div className="detail-row identifier-row">
+              <span className="detail-label">Identifier</span>
+              <span className="detail-value identifier">
+                {isSolanaNetwork ? normalizedCaipId || '—' : chainId ?? '—'}
+              </span>
+            </div>
+            <div className="detail-row status">
+              <span className="detail-label">Status</span>
+              <span className="detail-value">{networkStatusMessage}</span>
+            </div>
+          </div>
         </div>
 
         {/* Article Selection */}
@@ -328,7 +392,7 @@ Encoded Header:
           </div>
           <button 
             onClick={getPaymentRequirements}
-            disabled={!isConnected || !isOnCorrectNetwork}
+            disabled={!isConnected || !isSupportedNetwork}
             className="test-button"
           >
             Get Payment Requirements
@@ -347,7 +411,13 @@ Encoded Header:
           </p>
           <button 
             onClick={executePayment}
-            disabled={!isConnected || !isOnCorrectNetwork || !currentPaymentReq}
+            disabled={
+              !isConnected ||
+              !isSupportedNetwork ||
+              !currentPaymentReq ||
+              (isSolanaNetwork && !solanaSigner) ||
+              (!isSolanaNetwork && !walletClient)
+            }
             className="test-button payment-button"
           >
             Execute Transaction
@@ -464,6 +534,117 @@ Encoded Header:
           color: #721c24;
           padding: 15px;
           border-radius: 6px;
+        }
+
+        .network-details {
+          margin-top: 12px;
+          border-radius: 12px;
+          border: 1px solid #dfe5ef;
+          background: white;
+          padding: 16px 22px;
+          display: grid;
+          grid-template-columns: minmax(140px, 0.8fr) minmax(120px, 0.6fr) minmax(280px, 1.6fr);
+          gap: 14px 20px;
+        }
+
+        .network-details.supported {
+          border-color: #8bd0af;
+          box-shadow: 0 0 0 2px rgba(139, 208, 175, 0.15);
+        }
+
+        .network-details.unsupported {
+          border-color: #f4a6a1;
+          box-shadow: 0 0 0 2px rgba(244, 166, 161, 0.12);
+        }
+
+        .detail-row {
+          display: flex;
+          flex-direction: column;
+          gap: 4px;
+          text-align: left;
+        }
+
+        .detail-row.status {
+          grid-column: 1 / -1;
+          padding-top: 8px;
+          border-top: 1px dashed #eceff3;
+        }
+
+        .type-row {
+          max-width: 180px;
+          margin: 0 auto;
+        }
+
+        .detail-row.identifier-row {
+          word-break: break-word;
+          text-align: center;
+        }
+
+        .detail-label {
+          font-size: 12px;
+          text-transform: uppercase;
+          letter-spacing: 0.05em;
+          color: #5f6c7b;
+        }
+
+        .detail-value {
+          font-size: 14px;
+          font-weight: 600;
+          color: #1c1f24;
+        }
+
+        .detail-value.identifier {
+          word-break: break-word;
+          text-align: center;
+        }
+
+        .wallet-details {
+          margin-top: 12px;
+          border-radius: 12px;
+          border: 1px solid #dfe5ef;
+          background: white;
+          padding: 16px 22px;
+          display: grid;
+          grid-template-columns: minmax(140px, 0.8fr) minmax(280px, 1.6fr);
+          gap: 14px 20px;
+        }
+
+        .wallet-details.connected {
+          border-color: #8bd0af;
+          box-shadow: 0 0 0 2px rgba(139, 208, 175, 0.15);
+        }
+
+        .wallet-details.disconnected {
+          border-color: #f4a6a1;
+          box-shadow: 0 0 0 2px rgba(244, 166, 161, 0.12);
+        }
+
+        .wallet-address-row .detail-value {
+          word-break: break-all;
+          font-family: monospace;
+          font-size: 13px;
+        }
+
+        .wallet-name-value {
+          display: flex;
+          align-items: center;
+          gap: 8px;
+        }
+
+        .wallet-icon {
+          width: 20px;
+          height: 20px;
+          border-radius: 4px;
+        }
+
+        @media (max-width: 700px) {
+          .network-details {
+            grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+          }
+
+          .wallet-details {
+            grid-template-columns: 1fr;
+          }
         }
 
         .result-box {
