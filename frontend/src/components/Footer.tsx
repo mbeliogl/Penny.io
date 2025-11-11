@@ -1,7 +1,7 @@
 import { useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { useAccount, useWalletClient } from 'wagmi';
-import { Info, BookOpen, PenTool, HelpCircle, Mail, Shield, FileText, LayoutDashboard, Library, Play, HeartHandshake, Copy, Check } from 'lucide-react';
+import { Info, BookOpen, PenTool, HelpCircle, Mail, Shield, FileText, LayoutDashboard, Library, Laptop, HeartHandshake, Copy, Check } from 'lucide-react';
 import { useAppKitProvider } from '@reown/appkit/react';
 import AppKitConnectButton from './AppKitConnectButton';
 import { x402PaymentService, type SupportedNetwork } from '../services/x402PaymentService';
@@ -148,7 +148,7 @@ function Footer() {
             {/* Action Buttons */}
             <div className="footer-actions">
               <Link to="/x402-test" className="x402-validation-button">
-                <Play size={16} />
+                <Laptop size={16} />
                 <span>Live Demo</span>
               </Link>
               <button
