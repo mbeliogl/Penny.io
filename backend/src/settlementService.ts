@@ -35,28 +35,40 @@ export async function settleAuthorization(
     console.log('🔧 Network:', paymentPayload.network);
     console.log('📋 Scheme:', paymentPayload.scheme);
     
-    console.log('\n--- AUTHORIZATION DETAILS ---');
-    console.log('From (payer):', paymentPayload.payload.authorization.from);
-    console.log('To (recipient):', paymentPayload.payload.authorization.to);
-    console.log('Value (micro USDC):', paymentPayload.payload.authorization.value);
-    console.log('Nonce:', paymentPayload.payload.authorization.nonce);
-    
-    console.log('\n--- TIME WINDOW ---');
-    const validAfter = parseInt(paymentPayload.payload.authorization.validAfter, 10);
-    const validBefore = parseInt(paymentPayload.payload.authorization.validBefore, 10);
-    const windowSeconds = validBefore - validAfter;
-    const maxTimeout = paymentRequirements.maxTimeoutSeconds || 0;
-    const sdkPaddingSeconds = 600; // x402 client backdates validAfter by 10 minutes
-    const allowedWindow = maxTimeout + sdkPaddingSeconds;
+    const payloadData = paymentPayload.payload as any;
+    const hasAuthorization = payloadData && typeof payloadData === 'object' && 'authorization' in payloadData;
+    const hasTransaction = payloadData && typeof payloadData === 'object' && 'transaction' in payloadData;
 
-    console.log('ValidAfter:', validAfter, new Date(validAfter * 1000).toISOString());
-    console.log('ValidBefore:', validBefore, new Date(validBefore * 1000).toISOString());
-    console.log('Window Duration:', windowSeconds, 'seconds');
-    console.log('Allowed Duration (incl. SDK padding):', allowedWindow, 'seconds');
-    console.log('VALIDATION:', windowSeconds <= allowedWindow ? '✅ PASS' : '❌ FAIL - Window too long!');
-    
-    console.log('\n--- SIGNATURE ---');
-    console.log('Signature:', paymentPayload.payload.signature);
+    if (hasAuthorization) {
+      console.log('\n--- AUTHORIZATION DETAILS ---');
+      console.log('From (payer):', payloadData.authorization.from);
+      console.log('To (recipient):', payloadData.authorization.to);
+      console.log('Value (micro USDC):', payloadData.authorization.value);
+      console.log('Nonce:', payloadData.authorization.nonce);
+      
+      console.log('\n--- TIME WINDOW ---');
+      const validAfter = parseInt(payloadData.authorization.validAfter, 10);
+      const validBefore = parseInt(payloadData.authorization.validBefore, 10);
+      const windowSeconds = validBefore - validAfter;
+      const maxTimeout = paymentRequirements.maxTimeoutSeconds || 0;
+      const sdkPaddingSeconds = 600; // x402 client backdates validAfter by 10 minutes
+      const allowedWindow = maxTimeout + sdkPaddingSeconds;
+
+      console.log('ValidAfter:', validAfter, new Date(validAfter * 1000).toISOString());
+      console.log('ValidBefore:', validBefore, new Date(validBefore * 1000).toISOString());
+      console.log('Window Duration:', windowSeconds, 'seconds');
+      console.log('Allowed Duration (incl. SDK padding):', allowedWindow, 'seconds');
+      console.log('VALIDATION:', windowSeconds <= allowedWindow ? '✅ PASS' : '❌ FAIL - Window too long!');
+      
+      console.log('\n--- SIGNATURE ---');
+      console.log('Signature:', payloadData.signature);
+    } else if (hasTransaction) {
+      console.log('\n--- TRANSACTION DETAILS (SVM) ---');
+      const transaction = payloadData.transaction as string;
+      console.log('Transaction (base64, first 120 chars):', transaction.slice(0, 120) + (transaction.length > 120 ? '...' : ''));
+      console.log('Transaction Length:', transaction.length);
+      console.log('Skipping EVM-specific authorization window validation for SVM payload.');
+    }
     
     console.log('\n--- PAYMENT REQUIREMENTS ---');
     console.log('Max Amount Required:', paymentRequirements.maxAmountRequired);

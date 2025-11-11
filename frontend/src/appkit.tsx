@@ -32,12 +32,6 @@ createAppKit({
   networks,
   metadata,
   themeMode: 'light',
-  chainImages: {
-    [base.id]: '/icons/base.png',
-    [baseSepolia.id]: '/icons/base-sepolia.png',
-    [solana.id]: '/icons/solana.png',
-    [solanaDevnet.id]: '/icons/solana-devnet.png',
-  },
   features: {
     swaps: false,
     onramp: false,

@@ -29,6 +29,8 @@ import {
   tryNormalizeAddress,
 } from './utils/address';
 import { settleAuthorization } from './settlementService';
+import { getFacilitatorFeePayer } from './facilitatorSupport';
+import { getCACertificates } from 'tls';
 
 const router = express.Router();
 const db = new Database();
@@ -180,9 +182,11 @@ const SOLANA_USDC_MAINNET =
 const SOLANA_USDC_DEVNET =
   process.env.X402_SOLANA_DEVNET_USDC_ADDRESS ||
   '4zMMC9srt5Ri5X14GAgXhaHii3GnPAEERYPJgZJDncDU';
+
 const PLATFORM_EVM_ADDRESS = normalizeAddress(
   process.env.X402_PLATFORM_EVM_ADDRESS || '0x6945890B1c074414b813C7643aE10117dec1C8e7'
 );
+
 const PLATFORM_SOLANA_ADDRESS = process.env.X402_PLATFORM_SOL_ADDRESS
   ? normalizeSolanaAddress(process.env.X402_PLATFORM_SOL_ADDRESS)
   : null;
@@ -259,21 +263,31 @@ function normalizeRecipientForNetwork(address: string, network: SupportedX402Net
 /**
  * Builds the PaymentRequirements object for purchases, choosing the correct payout address and asset per network.
  */
-function buildPaymentRequirement(
+async function buildPaymentRequirement(
   article: Article,
   payoutProfile: PayoutProfile,
   req: Request,
   network: SupportedX402Network
-): PaymentRequirements {
+): Promise<PaymentRequirements> {
   const priceInCents = Math.round(article.price * 100);
   const priceInMicroUSDC = (priceInCents * 10000).toString();
   const resourceUrl = `${req.protocol}://${req.get('host')}/api/articles/${article.id}/purchase?network=${network}`;
   const displayAssetName = network === 'base' ? 'USD Coin' : 'USDC';
-  const delegateFees = X402_SOLANA_NETWORKS.includes(network);
 
   const payTo = resolvePayTo(payoutProfile, network);
   const asset = resolveAsset(network);
+  let feePayer: string | undefined;
   console.log(`[x402] Building requirement for article ${article.id} on ${network} → payTo ${payTo}, asset ${asset}`);
+
+  // use cached CDP feePayer for solana tx
+  if (getNetworkGroup(network) === 'solana') {
+    const rawFeePayer = await getFacilitatorFeePayer(network);
+    feePayer = rawFeePayer ? normalizeSolanaAddress(rawFeePayer) : undefined;
+    console.log(`Fee Payer Set To: ${feePayer}`);
+    if (!feePayer) {
+      throw new Error('FACILITATOR_FEE_PAYER_UNAVAILABLE');
+    }
+  }
 
   return {
     scheme: 'exact',
@@ -294,7 +308,7 @@ function buildPaymentRequirement(
       serviceName: 'Penny.io Article Access',
       serviceDescription: `Unlock full access to "${article.title}" by ${article.authorAddress.slice(0, 6)}...${article.authorAddress.slice(-4)}`,
       gasLimit: '1000000',
-      ...(delegateFees ? { feePayer: 'facilitator' } : {}),
+      ...(feePayer ? { feePayer } : {}),
       pricing: {
         currency: displayAssetName,
         amount: article.price.toString(),
@@ -768,7 +782,7 @@ router.post('/articles/:id/purchase', criticalLimiter, async (req: Request, res:
     const payoutProfile = buildPayoutProfile(article, authorRecord);
     let paymentRequirement: PaymentRequirements;
     try {
-      paymentRequirement = buildPaymentRequirement(article, payoutProfile, req, networkPreference);
+      paymentRequirement = await buildPaymentRequirement(article, payoutProfile, req, networkPreference);
     } catch (error) {
       if ((error as Error).message === 'AUTHOR_NETWORK_UNSUPPORTED') {
         return res.status(400).json({
@@ -801,8 +815,12 @@ router.post('/articles/:id/purchase', criticalLimiter, async (req: Request, res:
     }
 
     // Basic guard to ensure amounts align before calling facilitator
+    console.log('[x402] Received payment payload:', JSON.stringify(paymentPayload, null, 2));
     const requiredAmount = BigInt(paymentRequirement.maxAmountRequired);
-    const providedAmount = BigInt(paymentPayload.payload.authorization.value);
+    const authorization = paymentPayload.payload.authorization;
+    const providedAmount = authorization && typeof authorization.value !== 'undefined'
+      ? BigInt(authorization.value)
+      : requiredAmount;
 
     if (providedAmount < requiredAmount) {
       return res.status(400).json({
@@ -812,7 +830,50 @@ router.post('/articles/:id/purchase', criticalLimiter, async (req: Request, res:
     }
 
     // Verify payment with facilitator (CDP when configured, public otherwise)
-    const verification = await verifyWithFacilitator(paymentPayload, paymentRequirement);
+    const rawPayload: unknown = paymentPayload.payload;
+    const hasTransaction = typeof rawPayload === 'object' && rawPayload !== null && 'transaction' in rawPayload;
+    const transactionValue = hasTransaction ? (rawPayload as { transaction: string }).transaction : undefined;
+
+    console.log('[x402] Verifying payment payload:', JSON.stringify({
+      articleId,
+      paymentRequirement,
+      payloadPreview: {
+        scheme: paymentPayload.scheme,
+        network: paymentPayload.network,
+        hasTransaction,
+        transactionLength: transactionValue?.length,
+      }
+    }, null, 2));
+
+    let verification;
+    try {
+      verification = await verifyWithFacilitator(paymentPayload, paymentRequirement);
+    } catch (error: any) {
+      let responseBody;
+      if (error?.response?.text) {
+        try {
+          responseBody = await error.response.text();
+        } catch (bodyError) {
+          responseBody = `Failed to read response body: ${bodyError}`;
+        }
+      }
+      const correlationId =
+        (error?.response?.headers?.get && error.response.headers.get('correlation-id')) ||
+        error?.response?.headers?.get?.('x-correlation-id') ||
+        error?.response?.headers?.get?.('Correlation-Context');
+
+      console.error('[x402] Facilitator verify failed:', {
+        message: error?.message,
+        status: error?.response?.status,
+        correlationId,
+        body: responseBody,
+      });
+
+      return res.status(502).json({
+        success: false,
+        error: 'Payment verification failed: facilitator error',
+      });
+    }
     if (!verification.isValid) {
       return res.status(400).json({
         success: false,
@@ -820,10 +881,23 @@ router.post('/articles/:id/purchase', criticalLimiter, async (req: Request, res:
       });
     }
 
-    const paymentRecipient = normalizeRecipientForNetwork(
-      paymentPayload.payload.authorization.to as string,
-      paymentRequirement.network
-    );
+    /**
+     * Recipient comparison based on network.
+     * Solana payloads embed the destination in the transaction, so we rely on the requirement/facilitator check instead.
+     */
+    const networkGroup = getNetworkGroup(paymentRequirement.network as SupportedX402Network);
+    let paymentRecipient: string;
+    if (networkGroup === 'solana') {
+      paymentRecipient = normalizeRecipientForNetwork(
+        paymentRequirement.payTo,
+        paymentRequirement.network
+      );
+    } else {
+      paymentRecipient = normalizeRecipientForNetwork(
+        paymentPayload.payload.authorization.to as string,
+        paymentRequirement.network
+      );
+    }
     const expectedRecipient = normalizeRecipientForNetwork(
       paymentRequirement.payTo,
       paymentRequirement.network
@@ -934,8 +1008,6 @@ router.post('/donate', criticalLimiter, async (req: Request, res: Response) => {
 
     console.log(`[x402] Donation request on ${networkPreference} → payTo ${payTo}, asset ${asset}`);
 
-    const delegateFees = X402_SOLANA_NETWORKS.includes(networkPreference as SupportedX402Network);
-
     const paymentRequirement: PaymentRequirements = {
       scheme: 'exact',
       network: networkPreference,
@@ -961,7 +1033,9 @@ router.post('/donate', criticalLimiter, async (req: Request, res: Response) => {
         tags: ['donation', 'platform-support'],
         serviceName: 'Penny.io Platform Donation',
         serviceDescription: `Support Penny.io platform with a $${amount} donation`,
-        ...(delegateFees ? { feePayer: 'facilitator' } : {}),
+        ...(getNetworkGroup(networkPreference as SupportedX402Network) === 'solana'
+          ? { feePayer: payTo }
+          : {}),
         pricing: {
           currency: 'USD',
           amount: amount.toString(),
@@ -1106,8 +1180,6 @@ router.post('/articles/:id/tip', criticalLimiter, async (req: Request, res: Resp
 
     console.log(`[x402] Tip request for article ${articleId} on ${networkPreference} → payTo ${payTo}, asset ${asset}`);
 
-    const delegateFees = X402_SOLANA_NETWORKS.includes(networkPreference as SupportedX402Network);
-
     const paymentRequirement: PaymentRequirements = {
       scheme: 'exact',
       network: networkPreference,
@@ -1133,7 +1205,9 @@ router.post('/articles/:id/tip', criticalLimiter, async (req: Request, res: Resp
         tags: ['tip', 'author-support', 'article'],
         serviceName: 'Penny.io Article Tip',
         serviceDescription: `Tip the author of "${article.title}" with $${amount}`,
-        ...(delegateFees ? { feePayer: 'facilitator' } : {}),
+        ...(getNetworkGroup(networkPreference as SupportedX402Network) === 'solana'
+          ? { feePayer: payTo }
+          : {}),
         pricing: {
           currency: 'USD',
           amount: amount.toString(),

@@ -2,7 +2,12 @@ import type { Transaction as KitTransaction } from '@solana/transactions';
 import type { TransactionSigner } from '@solana/kit';
 import type { SignatureDictionary } from '@solana/signers';
 import type { Address } from '@solana/addresses';
-import { VersionedTransaction, Transaction as LegacyTransaction } from '@solana/web3.js';
+import {
+  VersionedTransaction,
+  Transaction as LegacyTransaction,
+  VersionedMessage,
+  Message,
+} from '@solana/web3.js';
 
 type SolanaWalletProvider = {
   publicKey?: { toBase58(): string } | { toString(): string } | string | null;
@@ -22,8 +27,11 @@ export function createSolanaTransactionSigner(
   provider?: SolanaWalletProvider | null
 ): TransactionSigner | undefined {
   if (!provider) {
+    console.warn('[SolanaSigner] No provider received');
     return undefined;
   }
+
+  console.log('[SolanaSigner] Provider keys:', Object.keys(provider));
 
   if (typeof (provider as TransactionSigner).signTransactions === 'function') {
     return provider as TransactionSigner;
@@ -83,12 +91,17 @@ function extractAddress(provider: SolanaWalletProvider): string | undefined {
 }
 
 function deserializeTransaction(transaction: KitTransaction): Web3Transaction {
-  const messageBytes = transaction.messageBytes as Uint8Array;
-  try {
-    return VersionedTransaction.deserialize(messageBytes);
-  } catch {
-    return LegacyTransaction.from(messageBytes);
+  const messageBytes = toUint8Array(transaction.messageBytes);
+  const isVersioned = (messageBytes[0] & 0x80) !== 0;
+
+  if (isVersioned) {
+    const message = VersionedMessage.deserialize(messageBytes);
+    return new VersionedTransaction(message);
   }
+
+  const legacyMessage = Message.from(messageBytes);
+  const legacyTx = LegacyTransaction.populate(legacyMessage, []);
+  return legacyTx;
 }
 
 function buildSignatureDictionary(
@@ -120,4 +133,26 @@ function extractSignatureBytes(transaction: Web3Transaction, index: number): Uin
   }
 
   return new Uint8Array(entry.signature);
+}
+
+function toUint8Array(value: unknown): Uint8Array {
+  if (value instanceof Uint8Array) {
+    return value;
+  }
+  if (Array.isArray(value)) {
+    return Uint8Array.from(value as number[]);
+  }
+  if (typeof value === 'string') {
+    try {
+      const binary = atob(value);
+      const bytes = new Uint8Array(binary.length);
+      for (let i = 0; i < binary.length; i++) {
+        bytes[i] = binary.charCodeAt(i);
+      }
+      return bytes;
+    } catch {
+      throw new Error('Invalid base64 string for transaction bytes');
+    }
+  }
+  throw new Error('Unsupported transaction bytes format');
 }

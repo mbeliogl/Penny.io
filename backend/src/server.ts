@@ -4,6 +4,10 @@ import dotenv from 'dotenv';
 import path from 'path';
 import routes from './routes';
 
+// feePayer helper function
+import { ensureFacilitatorSupportLoaded } from './facilitatorSupport';
+
+
 dotenv.config();
 
 const app = express();
@@ -42,6 +46,13 @@ app.get('/api/health', (req: Request, res: Response) => {
     cdpEnabled: !!process.env.CDP_API_KEY_ID
   });
 });
+
+// Warming the fee payer into cache at boot time
+ensureFacilitatorSupportLoaded()
+  .then(() => console.log('✅ Facilitator fee payer cache warm'))
+  .catch(error => {
+    console.error('⚠️ Failed to warm facilitator cache:', error);
+  });
 
 // API routes
 app.use('/api', routes);
