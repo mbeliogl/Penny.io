@@ -773,22 +773,11 @@ router.post('/authors/:address/payout-methods', writeLimiter, async (req: Reques
       author = await ensureAuthorRecord(identifier);
     }
 
-    if (!author.authorUuid) {
+    const authorUuid = author.authorUuid;
+    if (!authorUuid) {
       return res.status(500).json({
         success: false,
         error: 'Author record missing unique id'
-      } satisfies ApiResponse<never>);
-    }
-
-    const existingNetworkWallet = author.wallets?.find(wallet => wallet.network === network);
-    if (existingNetworkWallet) {
-      const message =
-        network === 'solana' || network === 'solana-devnet'
-          ? 'You already have a Solana payout address configured.'
-          : 'You already have a Base payout address configured.';
-      return res.status(400).json({
-        success: false,
-        error: `${message} Remove it before adding another.`,
       } satisfies ApiResponse<never>);
     }
 
@@ -800,7 +789,7 @@ router.post('/authors/:address/payout-methods', writeLimiter, async (req: Reques
     }
 
     await db.setAuthorWallet({
-      authorUuid: author.authorUuid,
+      authorUuid,
       address: normalizedPayoutAddress,
       network,
       isPrimary: false,
@@ -821,6 +810,66 @@ router.post('/authors/:address/payout-methods', writeLimiter, async (req: Reques
     return res.status(500).json({
       success: false,
       error: 'Failed to update payout method'
+    } satisfies ApiResponse<never>);
+  }
+});
+
+// DELETE /api/authors/:identifier/payout-methods - Remove secondary payout method
+router.delete('/authors/:identifier/payout-methods', writeLimiter, async (req: Request, res: Response) => {
+  try {
+    const { identifier } = req.params;
+    const { network } = req.body || {};
+
+    if (!network || !SUPPORTED_PAYOUT_NETWORKS.includes(network)) {
+      return res.status(400).json({
+        success: false,
+        error: 'Unsupported payout network',
+      } satisfies ApiResponse<never>);
+    }
+
+    const canonical = await resolveCanonicalAuthorAddress(identifier).catch(() => null);
+    if (!canonical?.author || !canonical.author.authorUuid) {
+      return res.status(404).json({
+        success: false,
+        error: 'Author not found',
+      } satisfies ApiResponse<never>);
+    }
+
+    const author = canonical.author;
+    const authorUuid = author.authorUuid;
+    if (!authorUuid) {
+      return res.status(500).json({
+        success: false,
+        error: 'Author record missing unique id',
+      } satisfies ApiResponse<never>);
+    }
+
+    if (!author.secondaryPayoutNetwork || author.secondaryPayoutNetwork !== network) {
+      return res.status(400).json({
+        success: false,
+        error: 'No secondary wallet configured for this network',
+      } satisfies ApiResponse<never>);
+    }
+
+    await db.removeAuthorWallet({
+      authorUuid,
+      network,
+    });
+
+    author.secondaryPayoutNetwork = undefined;
+    author.secondaryPayoutAddress = undefined;
+    const updatedAuthor = await db.createOrUpdateAuthor(author);
+
+    return res.json({
+      success: true,
+      data: updatedAuthor,
+      message: 'Secondary payout method removed',
+    } satisfies ApiResponse<Author>);
+  } catch (error) {
+    console.error('Error removing payout method:', error);
+    return res.status(500).json({
+      success: false,
+      error: 'Failed to remove payout method',
     } satisfies ApiResponse<never>);
   }
 });

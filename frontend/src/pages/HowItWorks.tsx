@@ -214,7 +214,7 @@ function HowItWorks() {
             micropayment revolution.
           </p>
           <div className="cta-buttons">
-            <a href="/" className="cta-button primary">Start Reading</a>
+            <a href="/explore" className="cta-button primary">Browse Articles</a>
             <a href="/write" className="cta-button secondary">Start Writing</a>
           </div>
         </section>

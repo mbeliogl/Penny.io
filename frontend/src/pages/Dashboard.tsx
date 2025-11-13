@@ -100,8 +100,8 @@ function Dashboard() {
   const [secondaryAddressInput, setSecondaryAddressInput] = useState('');
   const [payoutStatus, setPayoutStatus] = useState<{ type: 'success' | 'error'; message: string } | null>(null);
   const [isSavingPayout, setIsSavingPayout] = useState(false);
-
   const [secondaryAddressError, setSecondaryAddressError] = useState('');
+  const [isRemovingPayout, setIsRemovingPayout] = useState(false);
 
   // Search and filter state
   const [searchTerm, setSearchTerm] = useState('');
@@ -488,6 +488,44 @@ function Dashboard() {
   const canSaveSecondary =
     !secondaryAddressError && secondaryAddressInput.trim().length > 0;
 
+  const handleRemoveSecondaryPayout = async () => {
+    if (!address || !author?.secondaryPayoutNetwork) return;
+
+    setIsRemovingPayout(true);
+    setPayoutStatus(null);
+
+    try {
+      const response = await apiService.removeSecondaryPayoutMethod(
+        address,
+        author.secondaryPayoutNetwork
+      );
+
+      if (response.success && response.data) {
+        setAuthor(response.data);
+        setShowPayoutForm(false);
+        setSecondaryAddressInput('');
+        setSecondaryAddressError('');
+        setPayoutStatus({
+          type: 'success',
+          message: 'Secondary wallet removed.',
+        });
+      } else {
+        setPayoutStatus({
+          type: 'error',
+          message: response.error || 'Failed to remove secondary wallet.',
+        });
+      }
+    } catch (error) {
+      setPayoutStatus({
+        type: 'error',
+        message:
+          error instanceof Error ? error.message : 'Failed to remove secondary wallet.',
+      });
+    } finally {
+      setIsRemovingPayout(false);
+    }
+  };
+
   // Clear search and filters function
   const clearSearch = () => {
     setSearchTerm('');
@@ -525,7 +563,12 @@ function Dashboard() {
             <div className="wallet-info-card">
               <div className="wallet-info-row">
                 <div>
-                  <p className="wallet-label">Primary wallet • {getNetworkLabel(primaryNetworkFamily)}</p>
+                  <p className="wallet-label">
+                    Primary wallet
+                    <span className={`network-badge network-badge--${primaryNetworkFamily}`}>
+                      {getNetworkLabel(primaryNetworkFamily)}
+                    </span>
+                  </p>
                   <p className="wallet-address">{truncateAddress(author.address || address)}</p>
                 </div>
                 <button
@@ -552,13 +595,29 @@ function Dashboard() {
               <div className={`wallet-secondary ${author.secondaryPayoutAddress ? '' : 'placeholder'}`}>
                 {author.secondaryPayoutAddress ? (
                   <>
-                    <span className="wallet-label">Secondary wallet • {getNetworkLabel(secondaryDisplayFamily)}</span>
+                    <span className="wallet-label">
+                      Secondary wallet
+                      <span className={`network-badge network-badge--${secondaryDisplayFamily}`}>
+                        {getNetworkLabel(secondaryDisplayFamily)}
+                      </span>
+                    </span>
                     <p className="wallet-address">{truncateAddress(author.secondaryPayoutAddress)}</p>
+                    <button
+                      type="button"
+                      className="wallet-remove-btn"
+                      onClick={handleRemoveSecondaryPayout}
+                      disabled={isRemovingPayout}
+                    >
+                      {isRemovingPayout ? 'Removing...' : 'Remove wallet'}
+                    </button>
                   </>
                 ) : (
                   <span>No secondary wallet connected yet.</span>
                 )}
               </div>
+              <p className="wallet-note">
+                Only one wallet per network. Replace or remove your secondary wallet whenever you need.
+              </p>
               {showPayoutForm && (
                 <div className="wallet-form">
                   <p className="wallet-label small">
@@ -678,12 +737,22 @@ function Dashboard() {
                 className="view-drafts-btn"
                 disabled={draftsLoading && showDraftsModal}
               >
-                <FileText size={18} />
-                {draftsLoading && showDraftsModal ? 'Loading Drafts...' : 'View Drafts'}
+                <span className="top-key"></span>
+                <span className="button-text">
+                  <FileText size={18} />
+                  {draftsLoading && showDraftsModal ? 'Loading Drafts...' : 'View Drafts'}
+                </span>
+                <span className="bottom-key-1"></span>
+                <span className="bottom-key-2"></span>
               </button>
               <Link to="/write" className="write-new-btn">
-                <Edit3 size={18} />
-                Write New Article
+                <span className="top-key"></span>
+                <span className="button-text">
+                  <Edit3 size={18} />
+                  Write New Article
+                </span>
+                <span className="bottom-key-1"></span>
+                <span className="bottom-key-2"></span>
               </Link>
             </div>
           </div>
@@ -797,7 +866,8 @@ function Dashboard() {
               <div className="table-cell">Rate</div>
               <div className="table-cell">Actions</div>
             </div>
-            
+
+            <div className="articles-table-scroll">
             {loading ? (
               <div className="loading-state">
                 <p>Loading your articles...</p>
@@ -809,7 +879,6 @@ function Dashboard() {
                     <Link to={`/article/${article.id}`} className="article-title-link">
                       <div className="article-title">{article.title}</div>
                     </Link>
-                    <div className="article-meta">{article.readTime}</div>
                   </div>
                   <div className="table-cell">
                     <div className="date-info">
@@ -835,14 +904,14 @@ function Dashboard() {
                   </div>
                   <div className="table-cell actions">
                     <Link to={`/edit/${article.id}`} className="action-btn edit-btn" title="Edit article">
-                      <Edit size={12} />
+                      <Edit />
                     </Link>
-                    <button 
+                    <button
                       onClick={() => setDeleteConfirm({ show: true, article })}
-                      className="action-btn delete-btn" 
+                      className="action-btn delete-btn"
                       title="Delete article"
                     >
-                      <Trash2 size={12} />
+                      <Trash2 />
                     </button>
                   </div>
                 </div>
@@ -864,6 +933,7 @@ function Dashboard() {
                 </div>
               </div>
             )}
+            </div>
           </div>
         </div>
       </div>

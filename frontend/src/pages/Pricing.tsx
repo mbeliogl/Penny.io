@@ -172,7 +172,7 @@ function Pricing() {
                 </div>
               </div>
               <div className="total-fee positive-total">
-                <span>Total fees: ~0.1-1%</span>
+                <span>Total fees: 0%</span>
               </div>
             </div>
           </div>
@@ -204,7 +204,7 @@ function Pricing() {
             
             <p className="network-note">
               Penny.io uses the Coinbase native x402 Facilitator.
-              Coinbase pays all netwok fees on Base. 
+              Coinbase pays all netwok fees. 
             </p>
           </div>
         </section>
@@ -246,7 +246,7 @@ function Pricing() {
             Join the micropayment revolution. No setup fees, no monthly costs, no hidden charges.
           </p>
           <div className="cta-buttons">
-            <a href="/" className="cta-button primary">Browse Articles</a>
+            <a href="/explore" className="cta-button primary">Browse Articles</a>
             <a href="/write" className="cta-button secondary">Start Writing</a>
           </div>
         </section>

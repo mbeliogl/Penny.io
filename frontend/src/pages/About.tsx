@@ -185,8 +185,8 @@ function About() {
             quality content without subscription commitments, Penny.io is built for you.
           </p>
           <div className="cta-buttons">
-            <a href="/write" className="cta-button primary">Start Writing</a>
-            <a href="/explore" className="cta-button secondary">Explore Articles</a>
+            <a href="/explore" className="cta-button primary">Browse Articles</a>
+            <a href="/write" className="cta-button secondary">Start Writing</a>
           </div>
         </section>
       </div>

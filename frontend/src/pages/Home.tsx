@@ -108,9 +108,8 @@ function Home() {
             </Link>
           </div>
         </div>
-      </div>
-      
-      <div className="featured-articles">
+
+        <div className="featured-articles">
         <h2></h2>
         <h2>Recently Published</h2>
         <div className="article-grid">
@@ -156,6 +155,7 @@ function Home() {
             <span className="bottom-key-1"></span>
             <span className="bottom-key-2"></span>
           </Link>
+        </div>
         </div>
       </div>
     </div>

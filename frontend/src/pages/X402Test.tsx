@@ -311,405 +311,645 @@ Encoded Header:
   };
 
   return (
-    <div className="container">
-      <div className="content-wrapper">
-        <h1> Article Purchase Demo </h1>
-        <p className="subtitle"> 
-          <p style={{fontSize:'10px'}}>x402 powered by Coinbase CDP </p>
-        </p>
+    <div className="circuit-wrapper">
+      <div className="circuit-background"></div>
+      <div className="container">
+        {/* Hero Section */}
+        <div className="hero-section">
+        <div className="hero-meta">
+          <span className="hero-powered-label">Powered by</span>
+          <span className="hero-powered-brand">Coinbase x402</span>
+        </div>
+        <h1 className="hero-title">x402 Payment Protocol</h1>
+        <p className="hero-subtitle">Live Demo</p>
+      </div>
 
+      {/* Main Content */}
+      <div className="content-wrapper">
         {/* Wallet Status */}
         <div className="test-section">
-          <h3>🔐 Wallet Connection</h3>
+          <div className="section-header">
+            <h2 className="section-title">Wallet Connection</h2>
+            {isConnected && (
+              <span className={`status-badge ${isSupportedNetwork ? 'success' : 'warning'}`}>
+                {isSupportedNetwork ? 'Connected' : 'Wrong Network'}
+              </span>
+            )}
+          </div>
           {isConnected ? (
-            <div className={`wallet-details ${isSupportedNetwork ? 'connected' : 'connected'}`}>
-              <div className="detail-row">
-                <span className="detail-label">Wallet</span>
-                <span className="detail-value wallet-name-value">
-                  {walletInfo?.icon && (
-                    <img src={walletInfo.icon} alt={walletInfo.name} className="wallet-icon" />
-                  )}
-                  {walletInfo?.name || 'Connected'}
-                </span>
-              </div>
-              <div className="detail-row wallet-address-row">
-                <span className="detail-label">Address</span>
-                <span className="detail-value">{address}</span>
+            <div className={`info-card ${isSupportedNetwork ? 'success' : 'warning'}`}>
+              <div className="info-row-horizontal">
+                <div className="info-column">
+                  <span className="info-label">Wallet</span>
+                  <span className="info-value wallet-name">
+                    {walletInfo?.icon && (
+                      <img src={walletInfo.icon} alt={walletInfo.name} className="wallet-icon" />
+                    )}
+                    {walletInfo?.name || 'Connected'}
+                  </span>
+                </div>
+                <div className="info-column">
+                  <span className="info-label">Address</span>
+                  <span className="info-value mono-text">{address}</span>
+                </div>
               </div>
             </div>
           ) : (
-            <div className="wallet-details disconnected">
-              <div className="detail-row">
-                <span className="detail-label">Status</span>
-                <span className="detail-value">❌ Disconnected</span>
+            <div className="info-card error">
+              <div className="info-row">
+                <span className="info-label">Status</span>
+                <span className="info-value">Disconnected</span>
               </div>
-              <div className="detail-row">
-                <span className="detail-label">Action</span>
-                <span className="detail-value">Connect wallet in header</span>
+              <div className="info-row">
+                <span className="info-label">Action Required</span>
+                <span className="info-value">Connect wallet using the button in the header</span>
               </div>
             </div>
           )}
-
         </div>
 
         {/* Network Check */}
         <div className="test-section">
-          <h3>🌐 Network Configuration</h3>
-          <div className={`network-details ${isSupportedNetwork ? 'supported' : 'unsupported'}`}>
-            <div className="detail-row">
-              <span className="detail-label">Network</span>
-              <span className="detail-value">{currentNetworkName}</span>
-            </div>
-            <div className="detail-row type-row">
-              <span className="detail-label">Type</span>
-              <span className="detail-value">{isSolanaNetwork ? 'SVM' : isEvmNetwork ? 'EVM' : 'Unknown'}</span>
-            </div>
-            <div className="detail-row identifier-row">
-              <span className="detail-label">Identifier</span>
-              <span className="detail-value identifier">
-                {isSolanaNetwork ? normalizedCaipId || '—' : chainId ?? '—'}
+          <div className="section-header">
+            <h2 className="section-title">Network Configuration</h2>
+            {isConnected && (
+              <span className={`status-badge ${isSupportedNetwork ? 'success' : 'error'}`}>
+                {isSupportedNetwork ? 'Supported' : 'Unsupported'}
               </span>
+            )}
+          </div>
+          <div className={`info-card ${isSupportedNetwork ? 'success' : 'error'}`}>
+            <div className="info-grid">
+              <div className="info-row">
+                <span className="info-label">Network</span>
+                <span className="info-value">{currentNetworkName}</span>
+              </div>
+              <div className="info-row">
+                <span className="info-label">Type</span>
+                <span className="info-value">{isSolanaNetwork ? 'SVM' : isEvmNetwork ? 'EVM' : 'Unknown'}</span>
+              </div>
+              <div className="info-row">
+                <span className="info-label">Identifier</span>
+                <span className="info-value mono-text small">
+                  {isSolanaNetwork ? normalizedCaipId || '—' : chainId ?? '—'}
+                </span>
+              </div>
             </div>
-            <div className="detail-row status">
-              <span className="detail-label">Status</span>
-              <span className="detail-value">{networkStatusMessage}</span>
+            <div className="info-row status-row">
+              <span className="info-label">Status</span>
+              <span className="info-value">{networkStatusMessage}</span>
             </div>
           </div>
         </div>
 
         {/* Article Selection */}
         <div className="test-section">
-          <h3>📖 Select Article to Purchase</h3>
-          <div className="form-group">
-            <select 
-              id="articleSelect" 
-              value={selectedArticle} 
-              onChange={(e) => setSelectedArticle(e.target.value)}
-              className="article-select"
-            >
-              {articles.map(article => (
-                <option key={article.id} value={article.id}>
-                  {article.title} ({article.price})
-                </option>
-              ))}
-            </select>
+          <div className="section-header">
+            <h2 className="section-title">Article Selection</h2>
+            <span className="step-badge">Step 1</span>
           </div>
-          <button 
-            onClick={getPaymentRequirements}
-            disabled={!isConnected || !isSupportedNetwork}
-            className="test-button"
-          >
-            Get Payment Requirements
-          </button>
-          {testResults.paymentReq && (
-            <div className="result-box">{testResults.paymentReq}</div>
-          )}
+          <div className="action-card">
+            <div className="form-group">
+              <label htmlFor="articleSelect" className="form-label">Choose an article to purchase</label>
+              <select
+                id="articleSelect"
+                value={selectedArticle}
+                onChange={(e) => setSelectedArticle(e.target.value)}
+                className="select-input"
+              >
+                {articles.map(article => (
+                  <option key={article.id} value={article.id}>
+                    {article.title} ({article.price})
+                  </option>
+                ))}
+              </select>
+            </div>
+            <button
+              onClick={getPaymentRequirements}
+              disabled={!isConnected || !isSupportedNetwork}
+              className="action-button primary"
+            >
+              Get Payment Requirements
+            </button>
+            {testResults.paymentReq && (
+              <div className="result-box">{testResults.paymentReq}</div>
+            )}
+          </div>
         </div>
 
         {/* Payment Flow */}
         <div className="test-section">
-          <h3>💰 x402 Payment Flow (CDP Settlement)</h3>
-          <p style={{fontSize:'12px'}}>
-            This will send the x402 payload (header) to your wallet for authorization.<br />
-            Once confirmed, the Coinbase x402 Facilitator will automatically settle your payment on-chain (gas-free).
-          </p>
-          <button 
-            onClick={executePayment}
-            disabled={
-              !isConnected ||
-              !isSupportedNetwork ||
-              !currentPaymentReq ||
-              (isSolanaNetwork && !solanaSigner) ||
-              (!isSolanaNetwork && !walletClient)
-            }
-            className="test-button payment-button"
-          >
-            Execute Transaction
-          </button>
-          {testResults.payment && (
-            <div className="result-box">{testResults.payment}</div>
-          )}
+          <div className="section-header">
+            <h2 className="section-title">Payment Execution</h2>
+            <span className="step-badge">Step 2</span>
+          </div>
+          <div className="action-card">
+            <p className="description">
+              This will send the x402 payload to your wallet for authorization.
+              Once confirmed, the Coinbase x402 Facilitator will automatically settle your payment on-chain (gas-free).
+            </p>
+            <button
+              onClick={executePayment}
+              disabled={
+                !isConnected ||
+                !isSupportedNetwork ||
+                !currentPaymentReq ||
+                (isSolanaNetwork && !solanaSigner) ||
+                (!isSolanaNetwork && !walletClient)
+              }
+              className="action-button accent"
+            >
+              Execute Transaction
+            </button>
+            {testResults.payment && (
+              <div className="result-box">{testResults.payment}</div>
+            )}
+          </div>
         </div>
 
         {/* Verification */}
         <div className="test-section">
-          <h3>✅ Transaction Proof</h3>
-          <p style={{fontSize:'12px'}}>Check that payment was executed on-chain and you now have access to the article.</p>
-          <button 
-            onClick={verifyPayment}
-            disabled={!isConnected || !address}
-            className="test-button"
-          >
-            Verify Transaction
-          </button>
-          {testResults.verificationHtml ? (
-            <div
-              className="result-box"
-              dangerouslySetInnerHTML={{ __html: testResults.verificationHtml }}
-            />
-          ) : testResults.verification ? (
-            <div className="result-box">{testResults.verification}</div>
-          ) : null}
+          <div className="section-header">
+            <h2 className="section-title">Transaction Verification</h2>
+            <span className="step-badge">Step 3</span>
+          </div>
+          <div className="action-card">
+            <p className="description">
+              Verify that your payment was executed on-chain and you now have access to the article.
+            </p>
+            <button
+              onClick={verifyPayment}
+              disabled={!isConnected || !address}
+              className="action-button primary"
+            >
+              Verify Transaction
+            </button>
+            {testResults.verificationHtml ? (
+              <div
+                className="result-box"
+                dangerouslySetInnerHTML={{ __html: testResults.verificationHtml }}
+              />
+            ) : testResults.verification ? (
+              <div className="result-box">{testResults.verification}</div>
+            ) : null}
+          </div>
         </div>
       </div>
 
       <style jsx>{`
         .container {
-          max-width: 900px;
+          max-width: 1000px;
           margin: 0 auto;
-          padding: 20px;
+          padding: 40px 20px 80px;
+          position: relative;
+          z-index: 1;
         }
 
-        .content-wrapper {
-          background: white;
-          padding: 30px;
-          border-radius: 12px;
-          box-shadow: 0 2px 20px rgba(0,0,0,0.1);
-        }
-
-        h1 {
-          color: #1a1a1a;
-          margin-bottom: 10px;
-        }
-
-        .subtitle {
-          color: #666;
-          margin-bottom: 30px;
-        }
-
-        .test-section {
-          margin: 20px 0;
-          padding: 20px;
-          border: 1px solid #e1e8ed;
-          border-radius: 8px;
-          background: #f8f9fa;
-        }
-
-        .wallet-section {
-          background: #e3f2fd;
-          border: 1px solid #90caf9;
-        }
-
-        .test-section h3 {
-          margin-top: 0;
-          color: #1a1a1a;
-        }
-
-        .test-button {
-          background: #1a1a1a;
-          color: white;
-          border: none;
-          padding: 12px 24px;
-          border-radius: 6px;
-          cursor: pointer;
-          font-size: 14px;
-          font-weight: 600;
-          margin: 5px 0;
-        }
-
-        .test-button:hover:not(:disabled) {
-          background: #2a2a2a;
-        }
-
-        .test-button:disabled {
-          background: #ccc;
-          cursor: not-allowed;
-        }
-
-        .payment-button {
-          background: #0052FF;
-        }
-
-        .payment-button:hover:not(:disabled) {
-          background: #0041CC;
-        }
-
-        .success-box {
-          background: #d4edda;
-          border: 1px solid #c3e6cb;
-          color: #155724;
-          padding: 15px;
-          border-radius: 6px;
-        }
-
-        .error-box {
-          background: #f8d7da;
-          border: 1px solid #f5c6cb;
-          color: #721c24;
-          padding: 15px;
-          border-radius: 6px;
-        }
-
-        .network-details {
-          margin-top: 12px;
-          border-radius: 12px;
-          border: 1px solid #dfe5ef;
-          background: white;
-          padding: 16px 22px;
-          display: grid;
-          grid-template-columns: minmax(140px, 0.8fr) minmax(120px, 0.6fr) minmax(280px, 1.6fr);
-          gap: 14px 20px;
-        }
-
-        .network-details.supported {
-          border-color: #8bd0af;
-          box-shadow: 0 0 0 2px rgba(139, 208, 175, 0.15);
-        }
-
-        .network-details.unsupported {
-          border-color: #f4a6a1;
-          box-shadow: 0 0 0 2px rgba(244, 166, 161, 0.12);
-        }
-
-        .detail-row {
+        /* Hero Section */
+        .hero-section {
+          text-align: center;
+          margin-bottom: 48px;
           display: flex;
           flex-direction: column;
-          gap: 4px;
-          text-align: left;
+          align-items: center;
+          justify-content: center;
         }
 
-        .detail-row.status {
-          grid-column: 1 / -1;
-          padding-top: 8px;
-          border-top: 1px dashed #eceff3;
-        }
-
-        .type-row {
-          max-width: 180px;
-          margin: 0 auto;
-        }
-
-        .detail-row.identifier-row {
-          word-break: break-word;
-          text-align: center;
-        }
-
-        .detail-label {
-          font-size: 12px;
-          text-transform: uppercase;
-          letter-spacing: 0.05em;
-          color: #5f6c7b;
-        }
-
-        .detail-value {
-          font-size: 14px;
-          font-weight: 600;
-          color: #1c1f24;
-        }
-
-        .detail-value.identifier {
-          word-break: break-word;
-          text-align: center;
-        }
-
-        .wallet-details {
-          margin-top: 12px;
-          border-radius: 12px;
-          border: 1px solid #dfe5ef;
-          background: white;
-          padding: 16px 22px;
-          display: grid;
-          grid-template-columns: minmax(140px, 0.8fr) minmax(280px, 1.6fr);
-          gap: 14px 20px;
-        }
-
-        .wallet-details.connected {
-          border-color: #8bd0af;
-          box-shadow: 0 0 0 2px rgba(139, 208, 175, 0.15);
-        }
-
-        .wallet-details.disconnected {
-          border-color: #f4a6a1;
-          box-shadow: 0 0 0 2px rgba(244, 166, 161, 0.12);
-        }
-
-        .wallet-address-row .detail-value {
-          word-break: break-all;
-          font-family: monospace;
-          font-size: 13px;
-        }
-
-        .wallet-name-value {
+        .hero-meta {
           display: flex;
           align-items: center;
           gap: 8px;
+          margin-bottom: 16px;
+          font-size: 14px;
         }
 
-        .wallet-icon {
-          width: 20px;
-          height: 20px;
-          border-radius: 4px;
+        .hero-powered-label {
+          font-size: 0.8rem;
+          text-transform: uppercase;
+          letter-spacing: 0.08em;
+          color: #94a3b8;
+          font-weight: 600;
         }
 
-        @media (max-width: 700px) {
-          .network-details {
-            grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
-          }
-
-          .wallet-details {
-            grid-template-columns: 1fr;
-          }
+        .hero-powered-brand {
+          font-size: 0.9rem;
+          font-weight: 600;
+          color: #0f172a;
         }
 
-        .result-box {
-          margin-top: 15px;
-          padding: 15px;
-          border-radius: 6px;
-          font-family: monospace;
-          font-size: 12px;
-          white-space: pre-wrap;
-          overflow-x: auto;
-          background: #d1ecf1;
-          border: 1px solid #bee5eb;
-          color: #0c5460;
+        .hero-title {
+          font-size: 42px;
+          font-weight: 700;
+          color: #1a1a1a;
+          margin: 0 0 12px 0;
+          letter-spacing: -0.02em;
         }
 
-        .address-display {
-          font-family: monospace;
-          background: #f8f9fa;
-          padding: 8px;
-          border-radius: 4px;
-          border: 1px solid #ddd;
-          word-break: break-all;
-          margin: 8px 0;
+        .hero-subtitle {
+          font-size: 18px;
+          color: #666;
+          margin: 0;
+          font-weight: 400;
+          text-align: center;
         }
 
-        .network-indicator {
-          padding: 5px 10px;
-          border-radius: 4px;
-          font-size: 12px;
+        /* Content Wrapper */
+        .content-wrapper {
+          display: flex;
+          flex-direction: column;
+          gap: 32px;
+        }
+
+        /* Test Section */
+        .test-section {
+          background: white;
+          border-radius: 12px;
+          padding: 32px;
+          box-shadow: 0 1px 3px rgba(0, 0, 0, 0.06);
+          border: 1px solid #e1e8ed;
+          transition: box-shadow 0.2s ease;
+        }
+
+        .test-section:hover {
+          box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+        }
+
+        /* Section Header */
+        .section-header {
+          display: flex;
+          align-items: center;
+          justify-content: space-between;
+          margin-bottom: 24px;
+          padding-bottom: 16px;
+          border-bottom: 1px solid #e1e8ed;
+        }
+
+        .section-title {
+          font-size: 20px;
+          font-weight: 600;
+          color: #1a1a1a;
+          margin: 0;
+        }
+
+        /* Status Badges */
+        .status-badge {
           display: inline-block;
-          margin: 5px 0;
+          padding: 4px 12px;
+          border-radius: 12px;
+          font-size: 12px;
+          font-weight: 600;
+          text-transform: uppercase;
+          letter-spacing: 0.05em;
+        }
+
+        .status-badge.success {
+          background: rgba(16, 185, 129, 0.1);
+          color: #059669;
+        }
+
+        .status-badge.warning {
+          background: rgba(245, 158, 11, 0.1);
+          color: #d97706;
+        }
+
+        .status-badge.error {
+          background: rgba(239, 68, 68, 0.1);
+          color: #dc2626;
+        }
+
+        .step-badge {
+          display: inline-block;
+          padding: 4px 12px;
+          border-radius: 12px;
+          font-size: 11px;
+          font-weight: 700;
+          text-transform: uppercase;
+          letter-spacing: 0.05em;
+          background: #1a1a1a;
           color: white;
         }
 
-        .network-indicator.correct {
-          background: #28a745;
+        /* Info Card */
+        .info-card {
+          background: #f8f9fa;
+          border: 2px solid #e1e8ed;
+          border-radius: 10px;
+          padding: 24px;
+          transition: all 0.2s ease;
+          display: flex;
+          flex-direction: column;
+          gap: 16px;
         }
 
-        .network-indicator.wrong {
-          background: #dc3545;
+        .info-card.success {
+          background: rgba(16, 185, 129, 0.03);
+          border-color: rgba(16, 185, 129, 0.3);
         }
 
-        .form-group {
-          margin: 15px 0;
+        .info-card.warning {
+          background: rgba(245, 158, 11, 0.03);
+          border-color: rgba(245, 158, 11, 0.3);
         }
 
-        label {
-          display: block;
-          margin-bottom: 5px;
+        .info-card.error {
+          background: rgba(239, 68, 68, 0.03);
+          border-color: rgba(239, 68, 68, 0.3);
+        }
+
+        .info-grid {
+          display: grid;
+          grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+          gap: 20px;
+          margin-bottom: 16px;
+          padding-bottom: 16px;
+          border-bottom: 1px solid rgba(0, 0, 0, 0.06);
+        }
+
+        .info-row {
+          display: flex;
+          flex-direction: column;
+          gap: 8px;
+        }
+
+        .info-row.status-row {
+          margin-top: 8px;
+        }
+
+        .info-row-horizontal {
+          display: flex;
+          flex-direction: row;
+          gap: 32px;
+          align-items: flex-start;
+        }
+
+        .info-column {
+          display: flex;
+          flex-direction: column;
+          gap: 8px;
+          flex: 1;
+        }
+
+        .info-label {
+          font-size: 11px;
+          font-weight: 700;
+          text-transform: uppercase;
+          letter-spacing: 0.08em;
+          color: #666;
+        }
+
+        .info-value {
+          font-size: 15px;
           font-weight: 600;
-          color: #333;
+          color: #1a1a1a;
+          word-break: break-word;
         }
 
-        .article-select {
+        .info-value.mono-text {
+          font-family: 'Monaco', 'Menlo', 'Courier New', monospace;
+          font-size: 13px;
+          font-weight: 500;
+          color: #0052FF;
+        }
+
+        .info-value.mono-text.small {
+          font-size: 12px;
+        }
+
+        .wallet-name {
+          display: flex;
+          align-items: center;
+          gap: 10px;
+        }
+
+        .wallet-icon {
+          width: 24px;
+          height: 24px;
+          border-radius: 6px;
+        }
+
+        /* Action Card */
+        .action-card {
+          display: flex;
+          flex-direction: column;
+          gap: 20px;
+        }
+
+        .description {
+          font-size: 14px;
+          line-height: 1.6;
+          color: #666;
+          margin: 0;
+        }
+
+        /* Form Elements */
+        .form-group {
+          display: flex;
+          flex-direction: column;
+          gap: 10px;
+        }
+
+        .form-label {
+          font-size: 13px;
+          font-weight: 600;
+          color: #1a1a1a;
+          margin: 0;
+        }
+
+        .select-input {
           width: 100%;
-          padding: 8px 12px;
-          border: 1px solid #ddd;
-          border-radius: 4px;
-          margin: 5px 0;
+          padding: 12px 16px;
+          font-size: 14px;
+          font-weight: 500;
+          color: #1a1a1a;
+          background: white;
+          border: 2px solid #e1e8ed;
+          border-radius: 8px;
+          cursor: pointer;
+          transition: all 0.2s ease;
+          appearance: none;
+          background-image: url("data:image/svg+xml,%3Csvg width='12' height='8' viewBox='0 0 12 8' fill='none' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M1 1.5L6 6.5L11 1.5' stroke='%231a1a1a' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
+          background-repeat: no-repeat;
+          background-position: right 16px center;
+          padding-right: 48px;
+        }
+
+        .select-input:hover {
+          border-color: #1a1a1a;
+        }
+
+        .select-input:focus {
+          outline: none;
+          border-color: #0052FF;
+          box-shadow: 0 0 0 3px rgba(0, 82, 255, 0.1);
+        }
+
+        /* Action Buttons */
+        .action-button {
+          width: 100%;
+          padding: 14px 24px;
+          font-size: 15px;
+          font-weight: 600;
+          border: none;
+          border-radius: 8px;
+          cursor: pointer;
+          transition: all 0.2s ease;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          gap: 8px;
+        }
+
+        .action-button.primary {
+          background: #1a1a1a;
+          color: white;
+        }
+
+        .action-button.primary:hover:not(:disabled) {
+          background: #2a2a2a;
+          transform: translateY(-1px);
+          box-shadow: 0 4px 12px rgba(26, 26, 26, 0.3);
+        }
+
+        .action-button.accent {
+          background: #0052FF;
+          color: white;
+        }
+
+        .action-button.accent:hover:not(:disabled) {
+          background: #0041CC;
+          transform: translateY(-1px);
+          box-shadow: 0 4px 12px rgba(0, 82, 255, 0.4);
+        }
+
+        .action-button:disabled {
+          background: #e1e8ed;
+          color: #999;
+          cursor: not-allowed;
+          transform: none;
+          box-shadow: none;
+        }
+
+        .action-button:active:not(:disabled) {
+          transform: translateY(0);
+        }
+
+        /* Result Box */
+        .result-box {
+          margin-top: 8px;
+          padding: 20px;
+          background: #f8f9fa;
+          border: 1px solid #e1e8ed;
+          border-radius: 8px;
+          font-family: 'Monaco', 'Menlo', 'Courier New', monospace;
+          font-size: 12px;
+          line-height: 1.6;
+          color: #1a1a1a;
+          white-space: pre-wrap;
+          overflow-x: auto;
+          max-height: 500px;
+          overflow-y: auto;
+        }
+
+        .result-box :global(a) {
+          color: #0052FF;
+          text-decoration: none;
+          font-weight: 600;
+        }
+
+        .result-box :global(a:hover) {
+          text-decoration: underline;
+        }
+
+        /* Responsive Design */
+        @media (max-width: 768px) {
+          .container {
+            padding: 24px 16px 60px;
+          }
+
+          .hero-title {
+            font-size: 32px;
+          }
+
+          .hero-subtitle {
+            font-size: 16px;
+          }
+
+          .test-section {
+            padding: 24px 20px;
+          }
+
+          .section-header {
+            flex-direction: column;
+            align-items: flex-start;
+            gap: 12px;
+          }
+
+          .info-grid {
+            grid-template-columns: 1fr;
+          }
+
+          .info-row-horizontal {
+            flex-direction: column;
+            gap: 16px;
+          }
+        }
+
+        /* Circuit Board Background */
+        .circuit-wrapper {
+          min-height: 100vh;
+          width: 100%;
+          position: relative;
+          background-color: white;
+        }
+
+        .circuit-background {
+          position: absolute;
+          top: 0;
+          right: 0;
+          bottom: 0;
+          left: 0;
+          z-index: 0;
+          pointer-events: none;
+          background-image: repeating-linear-gradient(
+              0deg,
+              transparent,
+              transparent 19px,
+              rgba(75, 85, 99, 0.08) 19px,
+              rgba(75, 85, 99, 0.08) 20px,
+              transparent 20px,
+              transparent 39px,
+              rgba(75, 85, 99, 0.08) 39px,
+              rgba(75, 85, 99, 0.08) 40px
+            ),
+            repeating-linear-gradient(
+              90deg,
+              transparent,
+              transparent 19px,
+              rgba(75, 85, 99, 0.08) 19px,
+              rgba(75, 85, 99, 0.08) 20px,
+              transparent 20px,
+              transparent 39px,
+              rgba(75, 85, 99, 0.08) 39px,
+              rgba(75, 85, 99, 0.08) 40px
+            ),
+            radial-gradient(
+              circle at 20px 20px,
+              rgba(55, 65, 81, 0.12) 2px,
+              transparent 2px
+            ),
+            radial-gradient(
+              circle at 40px 40px,
+              rgba(55, 65, 81, 0.12) 2px,
+              transparent 2px
+            );
+          background-size:
+            40px 40px,
+            40px 40px,
+            40px 40px,
+            40px 40px;
         }
       `}</style>
+      </div>
     </div>
   );
 };

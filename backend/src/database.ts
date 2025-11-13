@@ -554,6 +554,22 @@ class Database {
     if (error) throw error;
   }
 
+  async removeAuthorWallet(options: {
+    authorUuid: string;
+    network: SupportedAuthorNetwork;
+  }): Promise<void> {
+    const { error } = await supabase
+      .from('author_wallets')
+      .delete()
+      .eq('author_uuid', options.authorUuid)
+      .eq('network', options.network)
+      .eq('is_primary', false);
+
+    if (error && error.code !== 'PGRST116') {
+      throw error;
+    }
+  }
+
   // ============================================
   // DRAFT METHODS
   // ============================================

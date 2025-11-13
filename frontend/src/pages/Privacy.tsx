@@ -128,7 +128,7 @@ function Privacy() {
           <div className="privacy-footer">
             <h2>Questions About Privacy?</h2>
             <p>If you have any questions about our privacy practices, please contact us at:</p>
-            <a href="mailto:privacy@penny.io" className="privacy-contact">support@penny.io</a>
+            <a href="/contact" className="privacy-contact">Send Message</a>
             <div className="last-updated">
               <p>Last updated: October 28, 2025</p>
             </div>

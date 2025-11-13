@@ -183,7 +183,7 @@ function Terms() {
           <div className="terms-footer">
             <h2>Questions About Terms?</h2>
             <p>If you have questions about these terms or need clarification, please contact us:</p>
-            <a href="mailto:legal@penny.io" className="terms-contact">support@penny.io</a>
+            <a href="/contact" className="terms-contact">Send Message</a>
             <div className="last-updated">
               <p>Last updated: October 28, 2025</p>
               <p>These terms are effective immediately upon posting.</p>

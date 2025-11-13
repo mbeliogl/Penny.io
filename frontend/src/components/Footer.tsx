@@ -149,8 +149,13 @@ function Footer() {
             {/* Action Buttons */}
             <div className="footer-actions">
               <Link to="/x402-test" className="x402-validation-button">
-                <span className="button-icon"><Laptop size={20} /></span>
-                <span className="button-text">Live Demo</span>
+                <span className="top-key"></span>
+                <span className="button-text">
+                  <Laptop size={18} />
+                  Live Demo
+                </span>
+                <span className="bottom-key-1"></span>
+                <span className="bottom-key-2"></span>
               </Link>
               <button
                 type="button"
@@ -160,8 +165,13 @@ function Footer() {
                   setIsDonateModalOpen(true);
                 }}
               >
-                <span className="button-icon"><HeartHandshake size={20} /></span>
-                <span className="button-text">Donate</span>
+                <span className="top-key"></span>
+                <span className="button-text">
+                  <HeartHandshake size={18} />
+                  Donate
+                </span>
+                <span className="bottom-key-1"></span>
+                <span className="bottom-key-2"></span>
               </button>
             </div>
           </div>

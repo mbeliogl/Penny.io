@@ -206,6 +206,16 @@ class ApiService {
     });
   }
 
+  async removeSecondaryPayoutMethod(
+    address: string,
+    network: SupportedAuthorNetwork
+  ): Promise<ApiResponse<Author>> {
+    return this.request<Author>(`/authors/${address}/payout-methods`, {
+      method: 'DELETE',
+      body: JSON.stringify({ network }),
+    });
+  }
+
   // Health check
   async healthCheck(): Promise<ApiResponse<{ message: string; timestamp: string; version: string }>> {
     return this.request<{ message: string; timestamp: string; version: string }>('/health');

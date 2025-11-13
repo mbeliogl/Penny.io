@@ -41,32 +41,45 @@ function LikeButton({ articleId, userAddress, initialLikes, className = '', onLi
   const handleLikeToggle = async () => {
     if (!userAddress || isLoading) return;
 
+    // Store previous state for rollback
+    const previousIsLiked = isLiked;
+    const previousLikes = likes;
+
+    // Optimistic update - update UI immediately
+    const newIsLiked = !isLiked;
+    const newCount = newIsLiked ? likes + 1 : likes - 1;
+
+    setIsLiked(newIsLiked);
+    setLikes(newCount);
+    onLikeChange?.(articleId, newCount);
+
     setIsLoading(true);
     try {
-      if (isLiked) {
+      if (previousIsLiked) {
         // Unlike the article
         const response = await apiService.unlikeArticle(articleId, userAddress);
-        if (response.success) {
-          setIsLiked(false);
-          const newCount = likes - 1;
-          setLikes(newCount);
-          onLikeChange?.(articleId, newCount);
+        if (!response.success) {
+          // Rollback on failure
+          setIsLiked(previousIsLiked);
+          setLikes(previousLikes);
+          onLikeChange?.(articleId, previousLikes);
         }
       } else {
         // Like the article
         const response = await apiService.likeArticle(articleId, userAddress);
-        if (response.success && response.data) {
-          if (response.data.liked) {
-            setIsLiked(true);
-            const newCount = likes + 1;
-            setLikes(newCount);
-            onLikeChange?.(articleId, newCount);
-          }
-          // If response.data.liked is false, it means already liked (no change needed)
+        if (!response.success || !response.data?.liked) {
+          // Rollback on failure or if already liked
+          setIsLiked(previousIsLiked);
+          setLikes(previousLikes);
+          onLikeChange?.(articleId, previousLikes);
         }
       }
     } catch (error) {
       console.error('Error toggling like:', error);
+      // Rollback on error
+      setIsLiked(previousIsLiked);
+      setLikes(previousLikes);
+      onLikeChange?.(articleId, previousLikes);
     } finally {
       setIsLoading(false);
     }
