@@ -2,7 +2,7 @@ import { useState, useEffect, useRef, useCallback, FormEvent } from 'react';
 import { useLocation } from 'react-router-dom';
 import { useWallet } from '../contexts/WalletContext';
 import AppKitConnectButton from '../components/AppKitConnectButton';
-import { Save, Send, FileText, Clock, Eye, CheckCircle, X, AlertTriangle, Loader2, Check, Dot, ChevronDown, Search } from 'lucide-react';
+import { Save, Send, FileText, Clock, Eye, LayoutDashboard, PenTool, CheckCircle, X, AlertTriangle, Loader2, Check, Dot, ChevronDown, Search, Share2, Copy } from 'lucide-react';
 import { apiService, Draft, CreateArticleRequest } from '../services/api';
 import { Editor } from '@tinymce/tinymce-react';
 import { extractPlainText } from '../utils/htmlUtils';
@@ -65,6 +65,7 @@ function Write() {
   const categoryDropdownRef = useRef<HTMLDivElement>(null);
   const [publishedArticleId, setPublishedArticleId] = useState<number | null>(null);
   const [publishedArticleTitle, setPublishedArticleTitle] = useState<string>('');
+  const [shareLinkCopied, setShareLinkCopied] = useState(false);
 
   // Content limits
   const MAX_TITLE_LENGTH = 200;
@@ -151,7 +152,7 @@ function Write() {
   };
 
   const getShareText = () => {
-    return `Check out my Penny.io article: ${publishedArticleTitle}`;
+    return `Check out my Penny.io article ... ${publishedArticleTitle}`;
   };
 
   const shareOnX = () => {
@@ -180,7 +181,8 @@ function Write() {
     const url = getArticleUrl();
     try {
       await navigator.clipboard.writeText(url);
-      alert('Link copied to clipboard!');
+      setShareLinkCopied(true);
+      window.setTimeout(() => setShareLinkCopied(false), 2000);
     } catch (err) {
       console.error('Failed to copy link:', err);
     }
@@ -722,75 +724,69 @@ function Write() {
                   <h4>Article Published Successfully! 🎉</h4>
                   <p>Your article is now live and available for readers to discover.</p>
 
-                  {/* Share Section */}
-                  <div className="success-share-section">
-                    <div className="success-share-label">Share your article:</div>
-                    <div className="success-share-buttons">
-                      <button
-                        type="button"
-                        onClick={shareOnX}
-                        className="share-btn share-btn-x"
-                        title="Share on X"
-                      >
-                        <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
-                          <path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/>
-                        </svg>
-                        X
-                      </button>
-                      <button
-                        type="button"
-                        onClick={shareOnFacebook}
-                        className="share-btn share-btn-facebook"
-                        title="Share on Facebook"
-                      >
-                        <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
-                          <path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z"/>
-                        </svg>
-                        Facebook
-                      </button>
-                      <button
-                        type="button"
-                        onClick={shareOnLinkedIn}
-                        className="share-btn share-btn-linkedin"
-                        title="Share on LinkedIn"
-                      >
-                        <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
-                          <path d="M20.447 20.452h-3.554v-5.569c0-1.328-.027-3.037-1.852-3.037-1.853 0-2.136 1.445-2.136 2.939v5.667H9.351V9h3.414v1.561h.046c.477-.9 1.637-1.85 3.37-1.85 3.601 0 4.267 2.37 4.267 5.455v6.286zM5.337 7.433c-1.144 0-2.063-.926-2.063-2.065 0-1.138.92-2.063 2.063-2.063 1.14 0 2.064.925 2.064 2.063 0 1.139-.925 2.065-2.064 2.065zm1.782 13.019H3.555V9h3.564v11.452zM22.225 0H1.771C.792 0 0 .774 0 1.729v20.542C0 23.227.792 24 1.771 24h20.451C23.2 24 24 23.227 24 22.271V1.729C24 .774 23.2 0 22.222 0h.003z"/>
-                        </svg>
-                        LinkedIn
-                      </button>
-                      <button
-                        type="button"
-                        onClick={shareOnThreads}
-                        className="share-btn share-btn-threads"
-                        title="Share on Threads"
-                      >
-                        <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
-                          <path d="M12.186 24h-.007c-3.581-.024-6.334-1.205-8.184-3.509C2.35 18.44 1.5 15.586 1.472 12.01v-.017c.03-3.579.879-6.43 2.525-8.482C5.845 1.205 8.6.024 12.18 0h.014c2.746.02 5.043.725 6.826 2.098 1.677 1.29 2.858 3.13 3.509 5.467l-2.04.569c-1.104-3.96-3.898-5.984-8.304-6.015-2.91.022-5.11.936-6.54 2.717C4.307 6.504 3.616 8.914 3.589 12c.027 3.086.718 5.496 2.057 7.164 1.43 1.781 3.631 2.695 6.54 2.717 2.623-.02 4.358-.631 5.8-2.045 1.647-1.613 1.618-3.593 1.09-4.798-.31-.71-.873-1.3-1.634-1.75-.192 1.352-.622 2.446-1.284 3.272-.886 1.102-2.14 1.704-3.73 1.79-1.202.065-2.361-.218-3.259-.801-1.063-.689-1.685-1.74-1.752-2.964-.065-1.19.408-2.285 1.33-3.082.88-.76 2.119-1.207 3.583-1.291a13.853 13.853 0 0 1 3.02.142l-.126 2.006c-.907-.123-1.819-.184-2.714-.184h-.008c-1.205.084-2.199.396-2.961.928-.75.523-1.08 1.14-1.039 1.941.042.812.43 1.42 1.090 1.763.571.297 1.273.426 2.092.384 1.07-.054 1.861-.465 2.429-1.27.453-.642.71-1.515.766-2.604a4.485 4.485 0 0 0-.48-.233c-.963-.403-2.237-.628-3.79-.667a8.556 8.556 0 0 0-2.414.244c-1.235.341-2.223.944-2.935 1.794-1.237 1.476-1.663 3.264-1.268 5.317.394 2.04 1.501 3.722 3.298 5.002 1.797 1.281 3.95 1.93 6.41 1.93 2.886-.024 5.347-1.021 7.313-2.966 1.966-1.945 2.97-4.51 2.985-7.627l-.003-.033c-.022-2.01-.647-3.746-1.856-5.16-1.209-1.415-2.92-2.353-5.082-2.79-.002 0-.002-.002-.002-.002z"/>
-                        </svg>
-                        Threads
-                      </button>
-                      <button
-                        type="button"
-                        onClick={copyArticleLink}
-                        className="share-btn share-btn-copy"
-                        title="Copy link"
-                      >
-                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                          <path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/>
-                          <path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/>
-                        </svg>
-                        Copy Link
-                      </button>
-                    </div>
-                  </div>
-
                   {/* Quick Actions */}
                   <div className="success-actions">
-                    <a href={`/article/${publishedArticleId}`} className="action-btn view-btn">
+                    <div className="success-share-trigger">
+                      <div className="btn-cssbuttons" role="group" aria-label="Share article">
+                        <span className="share-trigger-label">
+                          Share
+                        </span>
+                        <span className="share-trigger-icon">
+                          <Share2 size={16} aria-hidden="true" />
+                        </span>
+                        <ul>
+                          <li>
+                            <button type="button" onClick={shareOnX} aria-label="Share on X">
+                              <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
+                                <path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/>
+                              </svg>
+                            </button>
+                          </li>
+                          <li>
+                            <button type="button" onClick={shareOnFacebook} aria-label="Share on Facebook">
+                              <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
+                                <path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z"/>
+                              </svg>
+                            </button>
+                          </li>
+                          <li>
+                            <button type="button" onClick={shareOnLinkedIn} aria-label="Share on LinkedIn">
+                              <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
+                                <path d="M20.447 20.452h-3.554v-5.569c0-1.328-.027-3.037-1.852-3.037-1.853 0-2.136 1.445-2.136 2.939v5.667H9.351V9h3.414v1.561h.046c.477-.9 1.637-1.85 3.37-1.85 3.601 0 4.267 2.37 4.267 5.455v6.286zM5.337 7.433c-1.144 0-2.063-.926-2.063-2.065 0-1.138.92-2.063 2.063-2.063 1.14 0 2.064.925 2.064 2.063 0 1.139-.925 2.065-2.064 2.065zm1.782 13.019H3.555V9h3.564v11.452zM22.225 0H1.771C.792 0 0 .774 0 1.729v20.542C0 23.227.792 24 1.771 24h20.451C23.2 24 24 23.227 24 22.271V1.729C24 .774 23.2 0 22.222 0h.003z"/>
+                              </svg>
+                            </button>
+                          </li>
+                          <li>
+                            <button type="button" onClick={shareOnThreads} aria-label="Share on Threads">
+                              <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
+                                <path d="M12.186 24h-.007c-3.581-.024-6.334-1.205-8.184-3.509C2.35 18.44 1.5 15.586 1.472 12.01v-.017c.03-3.579.879-6.43 2.525-8.482C5.845 1.205 8.6.024 12.18 0h.014c2.746.02 5.043.725 6.826 2.098 1.677 1.29 2.858 3.13 3.509 5.467l-2.04.569c-1.104-3.96-3.898-5.984-8.304-6.015-2.91.022-5.11.936-6.54 2.717C4.307 6.504 3.616 8.914 3.589 12c.027 3.086.718 5.496 2.057 7.164 1.43 1.781 3.631 2.695 6.54 2.717 2.623-.02 4.358-.631 5.8-2.045 1.647-1.613 1.618-3.593 1.09-4.798-.31-.71-.873-1.3-1.634-1.75-.192 1.352-.622 2.446-1.284 3.272-.886 1.102-2.14 1.704-3.73 1.79-1.202.065-2.361-.218-3.259-.801-1.063-.689-1.685-1.74-1.752-2.964-.065-1.19.408-2.285 1.33-3.082.88-.76 2.119-1.207 3.583-1.291a13.853 13.853 0 0 1 3.02.142l-.126 2.006c-.907-.123-1.819-.184-2.714-.184h-.008c-1.205.084-2.199.396-2.961.928-.75.523-1.08 1.14-1.039 1.941.042.812.43 1.42 1.09 1.763.571.297 1.273.426 2.092.384 1.07-.054 1.861-.465 2.429-1.27.453-.642.71-1.515.766-2.604a4.485 4.485 0 0 0-.48-.233c-.963-.403-2.237-.628-3.79-.667a8.556 8.556 0 0 0-2.414.244c-1.235.341-2.223.944-2.935 1.794-1.237 1.476-1.663 3.264-1.268 5.317.394 2.04 1.501 3.722 3.298 5.002 1.797 1.281 3.95 1.93 6.41 1.93 2.886-.024 5.347-1.021 7.313-2.966 1.966-1.945 2.97-4.51 2.985-7.627l-.003-.033c-.022-2.01-.647-3.746-1.856-5.16-1.209-1.415-2.92-2.353-5.082-2.79-.002 0-.002-.002-.002-.002z"/>
+                              </svg>
+                            </button>
+                          </li>
+                          <li>
+                            <button
+                              type="button"
+                              onClick={copyArticleLink}
+                              aria-label={shareLinkCopied ? 'Link copied' : 'Copy article link'}
+                              className={shareLinkCopied ? 'copy-success' : undefined}
+                            >
+                              {shareLinkCopied ? (
+                                <Check size={18} aria-hidden="true" />
+                              ) : (
+                                <Copy size={18} aria-hidden="true" />
+                              )}
+                            </button>
+                          </li>
+                        </ul>
+                      </div>
+                    </div>
+                    <div className="success-actions-spacer" aria-hidden="true"></div>
+                    <a href={`/article/${publishedArticleId}`} className="action-btn save-btn">
+                      <Eye size={18} />
                       View Article
                     </a>
-                    <a href="/dashboard" className="action-btn secondary-btn">
+                    <a href="/dashboard" className="action-btn save-btn">
+                      <LayoutDashboard size={18} />
                       Dashboard
                     </a>
                     <button
@@ -800,8 +796,9 @@ function Write() {
                         setPublishedArticleId(null);
                         setPublishedArticleTitle('');
                       }}
-                      className="action-btn draft-btn"
+                      className="action-btn save-btn"
                     >
+                      <PenTool size={18} />
                       Write Another
                     </button>
                   </div>

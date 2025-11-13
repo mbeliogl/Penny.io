@@ -2823,7 +2823,6 @@ main {
 .donation-typing-section {
   margin-top: 20px;
   padding: 16px 20px;
-  
   border-radius: 10px;
   text-align: center;
   min-height: 60px;
@@ -4326,6 +4325,7 @@ main {
   background: #ffffff;
   color: #374151;
   border: 1px solid #d1d5db;
+  text-decoration: none;
 }
 
 .save-btn:hover:not(:disabled) {
@@ -5210,6 +5210,7 @@ main {
   align-items: flex-start;
   gap: 16px;
   position: relative;
+  flex-wrap: wrap;
 }
 
 .success-icon {
@@ -5218,15 +5219,23 @@ main {
   margin-top: 2px;
 }
 
+.success-content {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
 .success-content h4 {
-  margin: 0 0 8px 0;
+  margin: 0 0 2px 0;
   font-size: 1.125rem;
   font-weight: 600;
   color: #065f46;
 }
 
 .success-content p {
-  margin: 0 0 16px 0;
+  margin: 0 0 8px 0;
   line-height: 1.5;
   color: #047857;
 }
@@ -5235,11 +5244,17 @@ main {
   display: flex;
   gap: 12px;
   flex-wrap: wrap;
+  align-items: center;
+  margin-top: 8px;
 }
 
 .success-actions .action-btn {
   font-size: 0.875rem;
   padding: 8px 16px;
+}
+
+.success-actions-spacer {
+  flex: 1;
 }
 
 .success-close-btn {
@@ -5263,110 +5278,219 @@ main {
   color: #374151;
 }
 
-/* Success Share Section */
-.success-share-section {
-  margin: 16px 0;
-  padding: 16px;
-  background: rgba(255, 255, 255, 0.6);
-  border-radius: 8px;
-  border: 1px solid rgba(167, 243, 208, 0.5);
-}
-
-.success-share-label {
-  font-size: 0.875rem;
-  font-weight: 600;
-  color: #065f46;
-  margin-bottom: 12px;
-}
-
-.success-share-buttons {
-  display: flex;
-  gap: 8px;
-  flex-wrap: wrap;
-}
-
-.share-btn {
+.success-share-trigger {
   display: flex;
   align-items: center;
-  gap: 6px;
-  padding: 8px 14px;
-  border: 1px solid;
-  border-radius: 8px;
-  font-size: 0.875rem;
-  font-weight: 500;
-  cursor: pointer;
-  transition: all 0.2s ease;
-  background: white;
+  position: relative;
+  z-index: 1;
 }
 
-.share-btn svg {
-  flex-shrink: 0;
-}
-
-.share-btn-x {
-  border-color: #e5e7eb;
-  color: #1f2937;
-}
-
-.share-btn-x:hover {
-  background: #000000;
-  border-color: #000000;
+.btn-cssbuttons {
+  --btn-color: #ffffff;
+  position: relative;
+  padding: 16px 32px;
+  font-family: inherit;
+  font-weight: 600;
+  font-size: 0.95rem;
+  line-height: 1;
   color: white;
-}
-
-.share-btn-facebook {
-  border-color: #e5e7eb;
-  color: #1877f2;
-}
-
-.share-btn-facebook:hover {
-  background: #1877f2;
-  border-color: #1877f2;
-  color: white;
-}
-
-.share-btn-linkedin {
-  border-color: #e5e7eb;
-  color: #0a66c2;
-}
-
-.share-btn-linkedin:hover {
-  background: #0a66c2;
-  border-color: #0a66c2;
-  color: white;
-}
-
-.share-btn-threads {
-  border-color: #e5e7eb;
-  color: #1f2937;
-}
-
-.share-btn-threads:hover {
-  background: #000000;
-  border-color: #000000;
-  color: white;
-}
-
-.share-btn-copy {
-  border-color: #e5e7eb;
-  color: #6b7280;
-}
-
-.share-btn-copy:hover {
-  background: #f3f4f6;
-  border-color: #d1d5db;
-  color: #374151;
-}
-
-.success-actions .view-btn {
-  background: #00ba7c;
-  color: white;
+  background: none;
   border: none;
-  text-decoration: none;
+  outline: none;
+  overflow: hidden;
+  filter: drop-shadow(0 2px 8px rgba(39, 94, 254, 0.32));
+  transition: 0.3s cubic-bezier(0.215, 0.61, 0.355, 1);
+  border-radius: 8px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 220px;
+  cursor: pointer;
 }
 
-.success-actions .view-btn:hover {
-  background: #047857;
+.success-share-trigger .btn-cssbuttons {
+  --btn-color: #ffffff;
+  color: #374151;
+  border: 1px solid #d1d5db;
+  background: #ffffff;
+  filter: drop-shadow(0 1px 2px rgba(15, 23, 42, 0.08));
+  min-width: 140px;
+  width: 140px;
+  padding: 12px 20px;
+  justify-content: center;
+  gap: 8px;
+  flex-shrink: 0;
+  overflow: hidden;
+  transition: width 0.3s cubic-bezier(0.4, 0, 0.2, 1), filter 0.25s ease, border-color 0.2s ease, color 0.2s ease;
+}
+
+.success-share-trigger .btn-cssbuttons:hover {
+  width: 220px;
+  filter: drop-shadow(0 4px 12px rgba(15, 23, 42, 0.2));
+  overflow: visible;
+}
+
+.btn-cssbuttons::before {
+  position: absolute;
+  content: "";
+  top: 0;
+  left: 0;
+  z-index: 0;
+  width: 100%;
+  height: 100%;
+  background: var(--btn-color);
+  border-radius: 8px;
+  transition: 0.3s cubic-bezier(0.215, 0.61, 0.355, 1);
+}
+
+.btn-cssbuttons span,
+.btn-cssbuttons span span {
+  display: inline-flex;
+  vertical-align: middle;
+  transition: 0.3s cubic-bezier(0.215, 0.61, 0.355, 1);
+  position: relative;
+  z-index: 1;
+}
+
+.success-share-trigger .btn-cssbuttons span,
+.success-share-trigger .btn-cssbuttons span span {
+  align-items: center;
+  justify-content: center;
+  transition: opacity 0.2s ease, transform 0.2s ease;
+}
+
+.btn-cssbuttons span:first-child {
+  padding-right: 7px;
+}
+
+.btn-cssbuttons span span {
+  margin-left: 8px;
+}
+
+.success-share-trigger .btn-cssbuttons .share-trigger-label,
+.success-share-trigger .btn-cssbuttons .share-trigger-icon {
+  color: inherit;
+}
+
+.success-share-trigger .btn-cssbuttons:hover .share-trigger-label,
+.success-share-trigger .btn-cssbuttons:hover .share-trigger-icon {
+  opacity: 0;
+  transform: translateY(-6px);
+}
+
+.btn-cssbuttons ul {
+  position: absolute;
+  left: 50%;
+  bottom: 0;
+  display: flex;
+  justify-content: center;
+  gap: 8px;
+  margin: 0;
+  padding: 0 12px;
+  list-style-type: none;
+  transform: translate(-50%, 52px);
+  z-index: 2;
+  pointer-events: none;
+  transition: transform 0.25s cubic-bezier(0.4, 0, 0.2, 1), opacity 0.25s ease;
+  opacity: 0;
+}
+
+.success-share-trigger .btn-cssbuttons:hover ul {
+  transform: translate(-50%, -8px);
+  opacity: 1;
+  pointer-events: auto;
+}
+
+.btn-cssbuttons ul li {
+  display: flex;
+  justify-content: center;
+}
+
+.btn-cssbuttons ul li button {
+  display: inline-flex;
+  vertical-align: middle;
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  border: none;
+  background: white;
+  color: #0f172a;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transform: translateY(10px) scale(0.8);
+  transition: transform 0.1s ease-out, box-shadow 0.1s ease-out, background 0.1s ease-out, filter 0.1s ease-out;
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.12);
+}
+
+.success-share-trigger .btn-cssbuttons ul li button.copy-success {
+  background: #10b981;
+  color: #ffffff;
+  box-shadow: 0 6px 14px rgba(16, 185, 129, 0.35);
+}
+
+.success-share-trigger .btn-cssbuttons ul li button.copy-success:hover {
+  background: #0d9c6d;
+  box-shadow: 0 10px 20px rgba(16, 185, 129, 0.5);
+}
+
+.btn-cssbuttons ul li button svg {
+  pointer-events: none;
+}
+
+.btn-cssbuttons:hover ul li button {
+  transform: translateY(-10px) scale(0.95);
+  box-shadow: 0 5px 14px rgba(0, 0, 0, 0.15);
+}
+
+.btn-cssbuttons ul li button:hover {
+  opacity: 1;
+  transform: translateY(-8px) scale(1.2);
+  box-shadow: 0 12px 24px rgba(0, 0, 0, 0.28);
+  background: #f3f4f6;
+}
+
+.success-share-trigger .btn-cssbuttons:hover ul li button:hover {
+  transform: translateY(-10px) scale(1.2);
+  box-shadow: 0 14px 26px rgba(0, 0, 0, 0.32);
+  transition-duration: 0.1s;
+}
+
+.btn-cssbuttons:hover::before {
+  transform: scale(1.05);
+}
+
+.btn-cssbuttons:hover span,
+.btn-cssbuttons:hover span span {
+  transform: translateY(-55px);
+}
+
+.btn-cssbuttons:hover ul li button {
+  transform: translateY(0) scale(0.95);
+}
+
+.btn-cssbuttons:hover ul li:nth-child(1) button {
+  transition-delay: 0.05s;
+}
+
+.btn-cssbuttons:hover ul li:nth-child(2) button {
+  transition-delay: 0.08s;
+}
+
+.btn-cssbuttons:hover ul li:nth-child(3) button {
+  transition-delay: 0.11s;
+}
+
+.btn-cssbuttons:hover ul li:nth-child(4) button {
+  transition-delay: 0.14s;
+}
+
+.btn-cssbuttons:hover ul li:nth-child(5) button {
+  transition-delay: 0.17s;
+}
+
+.btn-cssbuttons:hover ul li button:hover {
+  transition-delay: 0s !important;
 }
 
 .write-preview {
