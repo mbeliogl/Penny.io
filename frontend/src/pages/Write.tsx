@@ -49,6 +49,7 @@ function Write() {
   const [content, setContent] = useState<string>('');
   const [price, setPrice] = useState<string>('0.05');
   const [selectedCategories, setSelectedCategories] = useState<string[]>([]);
+  const [activeMetaTab, setActiveMetaTab] = useState<'price' | 'categories'>('price');
   const [isDraft, setIsDraft] = useState<boolean>(false);
   const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
   const [submitError, setSubmitError] = useState<string>('');
@@ -1038,15 +1039,21 @@ function Write() {
 
             {/* Article Details */}
             <div className="article-inputs">
-              <div className="title-section">
-                <label htmlFor="title" className="input-label">Article Title</label>
+              <section className="article-title-panel" aria-label="Article title">
+                <div className="article-title-panel-head">
+                  <div>
+                    <h3>Article Title</h3>
+                  </div>
+                  <span className={`title-counter ${title.length > MAX_TITLE_LENGTH * 0.9 ? 'char-warning' : ''}`}>
+                    {title.length}/{MAX_TITLE_LENGTH} characters
+                  </span>
+                </div>
                 <textarea
                   id="title"
                   value={title}
                   onChange={(e) => {
                     setTitle(e.target.value);
                     clearSubmitError();
-                    // Auto-resize height
                     e.target.style.height = 'auto';
                     e.target.style.height = e.target.scrollHeight + 'px';
                   }}
@@ -1055,194 +1062,214 @@ function Write() {
                       e.stopPropagation();
                     }
                   }}
-                  placeholder="Enter your article title..."
+                  placeholder="Enter a title..."
                   className="title-input-auto"
                   rows={1}
                   style={{ resize: 'none', overflow: 'hidden' }}
                   maxLength={MAX_TITLE_LENGTH}
                 />
-                <div className="title-counter">
-                  <span className={title.length > MAX_TITLE_LENGTH * 0.9 ? 'char-warning' : ''}>
-                    {title.length}/{MAX_TITLE_LENGTH} characters
-                  </span>
+              </section>
+
+              {/* Price & Categories Panel */}
+              <section className="article-meta-panel" aria-label="Price and categories controls">
+                <div className="article-meta-panel-head">
+                  <div>
+                    <p className="article-meta-panel-eyebrow"></p>
+                    <h3>Price & Categories</h3>
+                  </div>
                 </div>
-              </div>
-
-              {/* Price and Categories Row */}
-              <div className="article-meta-row">
-                <div className="price-section-enhanced">
-                  <label htmlFor="price" className="input-label">Price</label>
-
-                  {/* Quick Presets */}
-                  <div className="price-presets">
-                    <div className="price-presets-label">Quick Presets:</div>
-                    <div className="price-presets-buttons">
-                      {pricePresets.map((presetValue) => (
-                        <button
-                          key={presetValue}
-                          type="button"
-                          className={`price-preset-btn ${parseFloat(price) === presetValue ? 'active' : ''}`}
-                          onClick={() => handlePresetClick(presetValue)}
-                        >
-                          ${presetValue.toFixed(2)}
-                        </button>
-                      ))}
-                    </div>
-                  </div>
-
-                  {/* Custom Price Input */}
-                  <div className="price-custom-input">
-                    <label htmlFor="price-custom" className="price-custom-label">Custom:</label>
-                    <div className="price-input-simple">
-                      <span>$</span>
-                      <input
-                        type="number"
-                        id="price-custom"
-                        value={price}
-                        onChange={(e) => {
-                          setPrice(e.target.value);
-                          clearSubmitError();
-                        }}
-                        step="0.01"
-                        min="0.01"
-                        max="1.00"
-                        placeholder="0.05"
-                      />
-                    </div>
-                  </div>
-
-                  {/* Earnings Preview */}
-                  <div className="price-earnings-preview">
-                    <div className="earnings-preview-icon">💡</div>
-                    <div className="earnings-preview-content">
-                      <div className="earnings-preview-label">Earnings Preview:</div>
-                      <div className="earnings-preview-values">
-                        <div>At 100 reads: <strong>${calculateEarnings(parseFloat(price) || 0.05, 100)}</strong></div>
-                        <div>At 1,000 reads: <strong>${calculateEarnings(parseFloat(price) || 0.05, 1000)}</strong></div>
-                      </div>
-                    </div>
-                  </div>
-
-                  {/* Price Range Info - Only show when invalid */}
-                  {(parseFloat(price) < 0.01 || parseFloat(price) > 1.00) && (
-                    <div className="price-range-info price-range-error">
-                      <span className="price-range-text">
-                        Price must be between $0.01 and $1.00
-                      </span>
-                    </div>
-                  )}
+                <div className="article-meta-tabs" role="tablist" aria-label="Switch between price and categories">
+                  <button
+                    type="button"
+                    role="tab"
+                    aria-selected={activeMetaTab === 'price'}
+                    aria-controls="price-meta-pane"
+                    id="price-meta-tab"
+                    onClick={() => setActiveMetaTab('price')}
+                  >
+                    Price
+                  </button>
+                  <button
+                    type="button"
+                    role="tab"
+                    aria-selected={activeMetaTab === 'categories'}
+                    aria-controls="category-meta-pane"
+                    id="category-meta-tab"
+                    onClick={() => setActiveMetaTab('categories')}
+                  >
+                    Categories
+                  </button>
                 </div>
-
-                {/* Categories Section - New Dropdown Design */}
-                <div className="category-dropdown-container" ref={categoryDropdownRef}>
-                <label className="input-label">Categories (Optional)</label>
-                <p className="categories-description">
-                  Select up to {MAX_CATEGORIES} categories that best describe your article. This helps readers discover your content.
-                </p>
-
-                {/* Selected Category Chips */}
-                {selectedCategories.length > 0 && (
-                  <div className="category-selected-chips">
-                    {selectedCategories.map(category => (
-                      <div key={category} className="category-chip">
-                        <span className="category-chip-emoji">{categoryEmojis[category]}</span>
-                        <span>{category}</span>
-                        <button
-                          type="button"
-                          className="category-chip-remove"
-                          onClick={() => removeCategory(category)}
-                          aria-label={`Remove ${category}`}
-                        >
-                          ×
-                        </button>
-                      </div>
-                    ))}
-                  </div>
-                )}
-
-                {/* Dropdown Trigger */}
-                <div
-                  className={`category-dropdown-trigger ${showCategoryDropdown ? 'open' : ''}`}
-                  onClick={() => setShowCategoryDropdown(!showCategoryDropdown)}
-                >
-                  <span className="category-dropdown-trigger-text">
-                    {selectedCategories.length === 0 ? (
-                      'Select categories...'
-                    ) : (
-                      <span>{selectedCategories.length}/{MAX_CATEGORIES} selected</span>
-                    )}
-                  </span>
-                  <ChevronDown
-                    size={18}
-                    className={`category-dropdown-icon ${showCategoryDropdown ? 'open' : ''}`}
-                  />
-                </div>
-
-                {/* Dropdown Menu */}
-                {showCategoryDropdown && (
-                  <div className="category-dropdown-menu">
-                    {/* Search */}
-                    <div className="category-search">
-                      <div style={{ position: 'relative' }}>
-                        <Search
-                          size={16}
-                          style={{ position: 'absolute', left: '10px', top: '50%', transform: 'translateY(-50%)', color: '#94a3b8' }}
-                        />
-                        <input
-                          type="text"
-                          className="category-search-input"
-                          placeholder="Search categories..."
-                          value={categorySearchQuery}
-                          onChange={(e) => setCategorySearchQuery(e.target.value)}
-                          style={{ paddingLeft: '32px' }}
-                          onClick={(e) => e.stopPropagation()}
-                        />
-                      </div>
-                    </div>
-
-                    {/* Category Groups */}
-                    {Object.keys(getFilteredCategories()).length > 0 ? (
-                      Object.entries(getFilteredCategories()).map(([groupName, categories]) => (
-                        <div key={groupName} className="category-group">
-                          <div className="category-group-header">
-                            {groupName} ({categories.length})
-                          </div>
-                          {categories.map(category => {
-                            const isSelected = selectedCategories.includes(category);
-                            const isDisabled = !isSelected && selectedCategories.length >= MAX_CATEGORIES;
-                            return (
-                              <div
-                                key={category}
-                                className={`category-dropdown-item ${isSelected ? 'selected' : ''} ${isDisabled ? 'disabled' : ''}`}
-                                onClick={() => {
-                                  if (!isDisabled) {
-                                    toggleCategory(category);
-                                  }
-                                }}
-                              >
-                                <div className="category-dropdown-item-content">
-                                  <span className="category-dropdown-item-emoji">{categoryEmojis[category]}</span>
-                                  <span>{category}</span>
-                                </div>
-                                {isSelected && (
-                                  <span className="category-dropdown-checkmark">✓</span>
-                                )}
-                              </div>
-                            );
-                          })}
+                <div className="article-meta-panel-body">
+                  <div
+                    className={`article-meta-pane ${activeMetaTab === 'categories' ? 'is-hidden-mobile' : ''}`}
+                    role="tabpanel"
+                    aria-labelledby="price-meta-tab"
+                    id="price-meta-pane"
+                  >
+                    <div className="price-section-enhanced">
+                      <label htmlFor="price" className="input-label">Price</label>
+                      <div className="price-presets">
+                        <div className="price-presets-label">Quick Presets:</div>
+                        <div className="price-presets-buttons">
+                          {pricePresets.map((presetValue) => (
+                            <button
+                              key={presetValue}
+                              type="button"
+                              className={`price-preset-btn ${parseFloat(price) === presetValue ? 'active' : ''}`}
+                              onClick={() => handlePresetClick(presetValue)}
+                            >
+                              ${presetValue.toFixed(2)}
+                            </button>
+                          ))}
                         </div>
-                      ))
-                    ) : (
-                      <div className="category-dropdown-empty">
-                        No categories match "{categorySearchQuery}"
                       </div>
-                    )}
+                      <div className="price-custom-input">
+                        <label htmlFor="price-custom" className="price-custom-label">Custom:</label>
+                        <div className="price-input-simple">
+                          <span>$</span>
+                          <input
+                            type="number"
+                            id="price-custom"
+                            value={price}
+                            onChange={(e) => {
+                              setPrice(e.target.value);
+                              clearSubmitError();
+                            }}
+                            step="0.01"
+                            min="0.01"
+                            max="1.00"
+                            placeholder="0.05"
+                          />
+                        </div>
+                      </div>
+                      <div className="price-earnings-preview">
+                        <div className="earnings-preview-icon">💡</div>
+                        <div className="earnings-preview-content">
+                          <div className="earnings-preview-label">Earnings Preview:</div>
+                          <div className="earnings-preview-values">
+                            <div>At 100 reads: <strong>${calculateEarnings(parseFloat(price) || 0.05, 100)}</strong></div>
+                            <div>At 1,000 reads: <strong>${calculateEarnings(parseFloat(price) || 0.05, 1000)}</strong></div>
+                          </div>
+                        </div>
+                      </div>
+                      {(parseFloat(price) < 0.01 || parseFloat(price) > 1.00) && (
+                        <div className="price-range-info price-range-error">
+                          <span className="price-range-text">
+                            Price must be between $0.01 and $1.00
+                          </span>
+                        </div>
+                      )}
+                    </div>
                   </div>
-                )}
-                </div>
-              </div>
+                  <div className="article-meta-divider" aria-hidden="true"></div>
+                  <div
+                    className={`article-meta-pane ${activeMetaTab === 'price' ? 'is-hidden-mobile' : ''}`}
+                    role="tabpanel"
+                    aria-labelledby="category-meta-tab"
+                    id="category-meta-pane"
+                  >
+                    <div className="category-dropdown-container" ref={categoryDropdownRef}>
+                      <label className="input-label">Categories (Optional)</label>
+                      <p className="categories-description">
+                        Select up to {MAX_CATEGORIES} categories that best describe your article. This helps readers discover your content.
+                      </p>
+                      {selectedCategories.length > 0 && (
+                        <div className="category-selected-chips">
+                          {selectedCategories.map(category => (
+                            <div key={category} className="category-chip">
+                              <span className="category-chip-emoji">{categoryEmojis[category]}</span>
+                              <span>{category}</span>
+                              <button
+                                type="button"
+                                className="category-chip-remove"
+                                onClick={() => removeCategory(category)}
+                                aria-label={`Remove ${category}`}
+                              >
+                                ×
+                              </button>
+                            </div>
+                          ))}
+                        </div>
+                      )}
+                      <div
+                        className={`category-dropdown-trigger ${showCategoryDropdown ? 'open' : ''}`}
+                        onClick={() => setShowCategoryDropdown(!showCategoryDropdown)}
+                      >
+                        <span className="category-dropdown-trigger-text">
+                          {selectedCategories.length === 0 ? (
+                            'Select categories...'
+                          ) : (
+                            <span>{selectedCategories.length}/{MAX_CATEGORIES} selected</span>
+                          )}
+                        </span>
+                        <ChevronDown
+                          size={18}
+                          className={`category-dropdown-icon ${showCategoryDropdown ? 'open' : ''}`}
+                        />
+                      </div>
+                      {showCategoryDropdown && (
+                        <div className="category-dropdown-menu">
+                          <div className="category-search">
+                            <div style={{ position: 'relative' }}>
+                              <Search
+                                size={16}
+                                style={{ position: 'absolute', left: '10px', top: '50%', transform: 'translateY(-50%)', color: '#94a3b8' }}
+                              />
+                              <input
+                                type="text"
+                                className="category-search-input"
+                                placeholder="Search categories..."
+                                value={categorySearchQuery}
+                                onChange={(e) => setCategorySearchQuery(e.target.value)}
+                                style={{ paddingLeft: '32px' }}
+                                onClick={(e) => e.stopPropagation()}
+                              />
+                            </div>
+                          </div>
+                          {Object.keys(getFilteredCategories()).length > 0 ? (
+                            Object.entries(getFilteredCategories()).map(([groupName, categories]) => (
+                              <div key={groupName} className="category-group">
+                                <div className="category-group-header">
+                                  {groupName} ({categories.length})
+                                </div>
+                                {categories.map(category => {
+                                  const isSelected = selectedCategories.includes(category);
+                                  const isDisabled = !isSelected && selectedCategories.length >= MAX_CATEGORIES;
+                                  return (
+                                    <div
+                                      key={category}
+                                      className={`category-dropdown-item ${isSelected ? 'selected' : ''} ${isDisabled ? 'disabled' : ''}`}
+                                      onClick={() => {
+                                        if (!isDisabled) {
+                                          toggleCategory(category);
+                                        }
+                                      }}
+                                    >
+                                      <div className="category-dropdown-item-content">
+                                        <span className="category-dropdown-item-emoji">{categoryEmojis[category]}</span>
+                                        <span>{category}</span>
+                                      </div>
+                                      {isSelected && (
+                                        <span className="category-dropdown-checkmark">✓</span>
+                                      )}
+                                    </div>
+                                  );
+                                })}
+                              </div>
+                            ))
+                          ) : (
+                            <div className="category-dropdown-empty">
+                              No categories match "{categorySearchQuery}"
+                            </div>
+                          )}
+                        </div>
+                      )}
+                   </div>
+                 </div>
+               </div>
+             </section>
             </div>
-
             {/* Content Editor */}
             <div className="form-group">
               <div className="content-header">
@@ -1270,7 +1297,7 @@ function Write() {
                     resize: false,
                     statusbar: false,
                     plugins: [
-                      'image', 'link', 'lists', 'code', 'table', 'media', 'codesample', 'autolink', 'powerpaste', 'wordcount'
+                      'image', 'link', 'lists', 'code', 'table', 'media', 'codesample', 'autolink', 'wordcount'
                     ],
                     toolbar: 'undo redo | blocks | bold italic underline | link image media table | code codesample | bullist numlist outdent indent | removeformat',
                     

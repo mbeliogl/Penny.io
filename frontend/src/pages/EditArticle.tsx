@@ -452,7 +452,7 @@ function EditArticle() {
                     resize: false,
                     statusbar: false,
                     plugins: [
-                      'image', 'link', 'lists', 'code', 'table', 'media', 'codesample', 'autolink', 'powerpaste', 'wordcount'
+                      'image', 'link', 'lists', 'code', 'table', 'media', 'codesample', 'autolink', 'wordcount'
                     ],
                     toolbar: 'undo redo | blocks | bold italic underline | link image media table | code codesample | bullist numlist outdent indent | removeformat',
                     

@@ -130,7 +130,7 @@ function About() {
                   className='x-link'
                 >
                   <XLogo size={20} />
-                  follow @devinggold
+                  @devinggold
                 </a>
               </div>
             

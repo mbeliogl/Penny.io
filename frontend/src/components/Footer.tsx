@@ -1,9 +1,8 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { useAccount, useWalletClient } from 'wagmi';
-import { Info, BookOpen, PenTool, HelpCircle, Mail, Shield, FileText, LayoutDashboard, Library, Laptop, HeartHandshake, Copy, Check } from 'lucide-react';
+import { Info, BookOpen, PenTool, HelpCircle, Mail, Shield, FileText, LayoutDashboard, Library, Laptop, HeartHandshake, Copy, Check, Coins } from 'lucide-react';
 import { useAppKitProvider } from '@reown/appkit/react';
-import AppKitConnectButton from './AppKitConnectButton';
 import { x402PaymentService, type SupportedNetwork } from '../services/x402PaymentService';
 import { createSolanaTransactionSigner } from '../utils/solanaSigner';
 import { useAppKitNetwork } from '@reown/appkit/react';
@@ -19,6 +18,9 @@ function Footer() {
   const [donationResult, setDonationResult] = useState<{ success: boolean; message: string; txHash?: string; networkFamily?: 'base' | 'solana'; network?: SupportedNetwork } | null>(null);
   const [isWalletStateReady, setIsWalletStateReady] = useState(false);
   const [shareLinkCopied, setShareLinkCopied] = useState(false);
+  const [displayText, setDisplayText] = useState('');
+  const [isTyping, setIsTyping] = useState(true);
+  const [currentMessageIndex, setCurrentMessageIndex] = useState(0);
   const { isConnected, chain } = useAccount();
   const { data: walletClient } = useWalletClient();
   const { walletProvider: solanaWalletProvider } = useAppKitProvider('solana');
@@ -42,34 +44,28 @@ function Footer() {
     []
   );
 
+  const thankYouMessages = [
+    "Thank you for your support!",
+    "Every donation helps!",
+    "You're making a difference!",
+    "We appreciate you!",
+    "Thanks for believing in us!"
+  ];
+
   const solanaAddress = 'cAXdcMFHK6y9yTP7AMETzXC7zvTeDBbQ5f4nvSWDx51';
   const baseAddress = '0x6945890b1c074414b813c7643ae10117dec1c8e7';
   const predefinedAmounts = [1, 5, 25, 50];
   const DONATION_STORAGE_KEY = 'penny:lastDonation';
-  const DONATION_NETWORK_META: Record<'base' | 'solana', { title: string; helper: string; icon: string; speed: string }> = {
+  const DONATION_NETWORK_META: Record<'base' | 'solana', { title: string; icon: string }> = {
     base: {
       title: 'Base · USDC',
-      helper: 'Secure · low fees · L2 finality',
       icon: '/icons/base.png',
-      speed: '~15s settlement',
     },
     solana: {
       title: 'Solana · USDC',
-      helper: 'Ultra-fast · minimal fees',
       icon: '/icons/solana.png',
-      speed: '~400ms finality',
     },
   };
-  const DONATION_IMPACT_TIERS = [
-    { label: 'Supporter', amount: 5, description: 'Helps cover hosting costs for a day.' },
-    { label: 'Champion', amount: 25, description: 'Backs new creator tooling this week.' },
-    { label: 'Patron', amount: 50, description: 'Funds growth experiments + support.' },
-  ];
-  const DONATION_QUICK_ACTIONS = [
-    { label: '+ $5 boost', delta: 5 },
-    { label: '+ $10 boost', delta: 10 },
-    { label: 'Reset', delta: null },
-  ];
   const isSolanaSelected = selectedNetworkFamily === 'solana';
   const isSelectedNetworkReady = isSolanaSelected
     ? Boolean(solanaSigner)
@@ -100,9 +96,8 @@ function Footer() {
       return {
         family,
         title: meta.title,
-        helper: meta.helper,
+        helperText: meta.helperText,
         icon: meta.icon,
-        speed: meta.speed,
         ...status,
       };
     });
@@ -227,6 +222,37 @@ function Footer() {
     };
   }, [isDonateModalOpen, closeDonateModal]);
 
+  // Typing animation effect
+  useEffect(() => {
+    if (!isDonateModalOpen) return;
+
+    const currentText = thankYouMessages[currentMessageIndex];
+
+    if (isTyping) {
+      if (displayText.length < currentText.length) {
+        const timeout = setTimeout(() => {
+          setDisplayText(currentText.slice(0, displayText.length + 1));
+        }, 80);
+        return () => clearTimeout(timeout);
+      } else {
+        const timeout = setTimeout(() => {
+          setIsTyping(false);
+        }, 2000);
+        return () => clearTimeout(timeout);
+      }
+    } else {
+      if (displayText.length > 0) {
+        const timeout = setTimeout(() => {
+          setDisplayText(displayText.slice(0, -1));
+        }, 40);
+        return () => clearTimeout(timeout);
+      } else {
+        setCurrentMessageIndex((prev) => (prev + 1) % thankYouMessages.length);
+        setIsTyping(true);
+      }
+    }
+  }, [displayText, isTyping, currentMessageIndex, thankYouMessages, isDonateModalOpen]);
+
   const persistDonationPreferences = (preferences: Partial<{ amount: number | null; customAmount: string; networkFamily: 'base' | 'solana' }>) => {
     if (typeof window === 'undefined') return;
     try {
@@ -253,18 +279,6 @@ function Footer() {
     persistDonationPreferences({ amount, customAmount: customValue });
   };
 
-  const handleQuickAction = (delta: number | null) => {
-    if (delta === null) {
-      setAmountSelection(null, '');
-      return;
-    }
-    const baseValue = selectedAmount ?? normalizedCustomAmount ?? 0;
-    const nextAmount = clampAmount(baseValue + delta);
-    setSelectedAmount(nextAmount);
-    setCustomAmount('');
-    persistDonationPreferences({ amount: nextAmount, customAmount: '' });
-  };
-
   const getExplorerUrl = (hash?: string, network?: SupportedNetwork) => {
     if (!hash || !network) return null;
     if (network.includes('solana')) {
@@ -276,14 +290,6 @@ function Footer() {
     return `${baseUrl}/tx/${hash}`;
   };
 
-  const liveSummary = useMemo(() => {
-    if (!activeAmountValue || activeAmountValue <= 0) {
-      return 'Select an amount to see the impact.';
-    }
-    const networkLabel = isSolanaSelected ? 'Solana USDC' : 'Base USDC';
-    const feeHint = isSolanaSelected ? '≈ 0.0005 SOL fees' : '≈ $0.02 gas';
-    return `You're sending $${activeAmountValue.toFixed(2)} via ${networkLabel} · ${feeHint}`;
-  }, [activeAmountValue, isSolanaSelected]);
   const donationExplorerUrl = useMemo(() => {
     if (!donationResult?.txHash) return null;
     return getExplorerUrl(donationResult.txHash, donationResult.network || undefined);
@@ -304,24 +310,6 @@ function Footer() {
         success: false,
         message: 'Please enter a valid donation amount ($0.01-$100.00)',
         networkFamily: selectedNetworkFamily,
-      });
-      return;
-    }
-
-    if (isSolanaSelected && !solanaSigner) {
-      setDonationResult({
-        success: false,
-        message: 'Connect a Solana wallet to donate with USDC on Solana.',
-        networkFamily: 'solana',
-      });
-      return;
-    }
-
-    if (!isSolanaSelected && (!isConnected || !walletClient)) {
-      setDonationResult({
-        success: false,
-        message: 'Connect a Base-compatible wallet to donate.',
-        networkFamily: 'base',
       });
       return;
     }
@@ -474,90 +462,104 @@ function Footer() {
             <div className="donation-modal-grid">
               <section className="donation-summary-column">
                 <div className="donation-impact-card">
-                  <p className="donation-impact-eyebrow">Community impact</p>
-                  <h4>Every dollar keeps independent media open.</h4>
-                  <p>Donations fuel creator payouts, audits, and new reader experiences.</p>
+                  <h4>Thank you for using Penny.io</h4>
+                  <p>Donations cover hosting fees, improvements, and new features.</p>
                 </div>
-                <ul className="donation-benefits">
-                  <li>Direct onchain support—no middlemen.</li>
-                  <li>Transparent x402 flows with instant receipts.</li>
-                  <li>Supports Base + Solana ecosystems.</li>
-                </ul>
-                <div className="donation-accepted-networks">
-                  <span>Accepts</span>
-                  <div className="donation-accepted-icons">
-                    <img src="/icons/base.png" alt="Base network icon" />
-                    <img src="/icons/solana.png" alt="Solana network icon" />
+
+                <div className="donation-typing-section">
+                  <div className="donation-typing-text">
+                    {displayText}
+                    <span className="cursor">|</span>
                   </div>
                 </div>
-                <div className="donation-trust-card">
-                  <p className="donation-trust-eyebrow">Powered by Coinbase x402</p>
-                  <p>Audited smart contracts, MPC custody, and hardware-backed signer flows.</p>
-                </div>
+
                 <div className="donation-manual-section">
-                  <h5>Prefer manual transfer?</h5>
+                  <h5>Prefer the old-school way?</h5>
                   <div className="donation-manual-grid">
                     <div className="donation-manual-card">
                       <div className="donation-manual-card__header">
-                        <span>Solana address</span>
                         <span className="donation-manual-network">Solana</span>
                       </div>
-                      <code className="donation-address-truncated">
-                        {solanaAddress.slice(0, 6)}...{solanaAddress.slice(-4)}
-                      </code>
-                      <button
-                        type="button"
-                        className="donation-copy-button"
-                        onClick={() => handleCopyAddress(solanaAddress)}
-                      >
-                        {copiedAddress === solanaAddress ? (
-                          <>
-                            <Check size={14} aria-hidden="true" />
-                            <span>Copied</span>
-                          </>
-                        ) : (
-                          <>
-                            <Copy size={14} aria-hidden="true" />
-                            <span>Copy</span>
-                          </>
-                        )}
-                        <span className="sr-only">Copy Solana donation address</span>
-                      </button>
-                      <p className="donation-full-address">
-                        <small>Full: <code>{solanaAddress}</code></small>
-                      </p>
+                      <div className="donation-address-row">
+                        <code className="donation-address-truncated">
+                          {solanaAddress.slice(0, 6)}...{solanaAddress.slice(-4)}
+                        </code>
+                        <button
+                          type="button"
+                          className="donation-copy-button"
+                          onClick={() => handleCopyAddress(solanaAddress)}
+                        >
+                          {copiedAddress === solanaAddress ? (
+                            <>
+                              <Check size={14} aria-hidden="true" />
+                              <span>Copied</span>
+                            </>
+                          ) : (
+                            <>
+                              <Copy size={14} aria-hidden="true" />
+                              <span>Copy</span>
+                            </>
+                          )}
+                          <span className="sr-only">Copy Solana donation address</span>
+                        </button>
+                      </div>
+                      <p className="donation-full-address"></p>
                     </div>
                     <div className="donation-manual-card">
                       <div className="donation-manual-card__header">
-                        <span>Base address</span>
                         <span className="donation-manual-network">Base</span>
                       </div>
-                      <code className="donation-address-truncated">
-                        {baseAddress.slice(0, 6)}...{baseAddress.slice(-4)}
-                      </code>
-                      <button
-                        type="button"
-                        className="donation-copy-button"
-                        onClick={() => handleCopyAddress(baseAddress)}
-                      >
-                        {copiedAddress === baseAddress ? (
-                          <>
-                            <Check size={14} aria-hidden="true" />
-                            <span>Copied</span>
-                          </>
-                        ) : (
-                          <>
-                            <Copy size={14} aria-hidden="true" />
-                            <span>Copy</span>
-                          </>
-                        )}
-                        <span className="sr-only">Copy Base donation address</span>
-                      </button>
-                      <p className="donation-full-address">
-                        <small>Full: <code>{baseAddress}</code></small>
-                      </p>
+                      <div className="donation-address-row">
+                        <code className="donation-address-truncated">
+                          {baseAddress.slice(0, 6)}...{baseAddress.slice(-4)}
+                        </code>
+                        <button
+                          type="button"
+                          className="donation-copy-button"
+                          onClick={() => handleCopyAddress(baseAddress)}
+                        >
+                          {copiedAddress === baseAddress ? (
+                            <>
+                              <Check size={14} aria-hidden="true" />
+                              <span>Copied</span>
+                            </>
+                          ) : (
+                            <>
+                              <Copy size={14} aria-hidden="true" />
+                              <span>Copy</span>
+                            </>
+                          )}
+                          <span className="sr-only">Copy Base donation address</span>
+                        </button>
+                      </div>
+                      <p className="donation-full-address"></p>
                     </div>
                   </div>
+                </div>
+
+                <div className="donation-social-links">
+                  <a
+                    href="https://x.com/devvinggold"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="donation-social-link"
+                  >
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+                      <path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"></path>
+                    </svg>
+                    @devinggold
+                  </a>
+                  <a
+                    href="https://github.com/Max-the-dev/Penny.io"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="donation-social-link"
+                  >
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+                      <path d="M12 0c-6.626 0-12 5.373-12 12 0 5.302 3.438 9.8 8.207 11.387.599.111.793-.261.793-.577v-2.234c-3.338.726-4.033-1.416-4.033-1.416-.546-1.387-1.333-1.756-1.333-1.756-1.089-.745.083-.729.083-.729 1.205.084 1.839 1.237 1.839 1.237 1.07 1.834 2.807 1.304 3.492.997.107-.775.418-1.305.762-1.604-2.665-.305-5.467-1.334-5.467-5.931 0-1.311.469-2.381 1.236-3.221-.124-.303-.535-1.524.117-3.176 0 0 1.008-.322 3.301 1.23.957-.266 1.983-.399 3.003-.404 1.02.005 2.047.138 3.006.404 2.291-1.552 3.297-1.23 3.297-1.23.653 1.653.242 2.874.118 3.176.77.84 1.235 1.911 1.235 3.221 0 4.609-2.807 5.624-5.479 5.921.43.372.823 1.102.823 2.222v3.293c0 .319.192.694.801.576 4.765-1.589 8.199-6.086 8.199-11.386 0-6.627-5.373-12-12-12z"/>
+                    </svg>
+                    Max-the-dev
+                  </a>
                 </div>
               </section>
               <section className="donation-action-column">
@@ -577,8 +579,8 @@ function Footer() {
                     >
                       <div className="method-header">
                         <div>
-                          <p>Pick your network</p>
-                          <span>Base + Solana both settle in USDC.</span>
+                          <p>Select Chain</p>
+                          <span>More options coming soon</span>
                         </div>
                       </div>
                       <div className="method-grid">
@@ -591,25 +593,24 @@ function Footer() {
                               role="radio"
                               aria-checked={isActive}
                               aria-label={option.title}
-                              className={`method-card donation-method-card${isActive ? ' is-active' : ''}`}
+                              className={`method-card${isActive ? ' is-active' : ''}`}
                               onClick={() => {
                                 setSelectedNetworkFamily(option.family);
                                 persistDonationPreferences({ networkFamily: option.family });
                               }}
-                              disabled={!option.isReady && !isActive}
-                              title={option.tooltip}
                             >
                               <span className="method-card__icon" aria-hidden="true">
                                 <img src={option.icon} alt="" />
                               </span>
                               <span className="method-card__body">
                                 <span className="method-card__title">{option.title}</span>
-                                <span className="method-card__helper">{option.helper}</span>
-                                <span className="method-card__meta">{option.speed}</span>
+                                <span className="method-card__helper">{option.helperText}</span>
                               </span>
-                              <span className={`method-card__badge ${option.badgeVariant === 'warning' ? 'is-warning' : 'is-success'}`}>
-                                {option.badgeText}
-                              </span>
+                              {isActive && (
+                                <span className="method-card__badge">
+                                  Selected
+                                </span>
+                              )}
                             </button>
                           );
                         })}
@@ -617,7 +618,7 @@ function Footer() {
                     </section>
                     <section className="donation-amount-module">
                       <p className="donation-modal-description">
-                        Select an amount to donate via {donationNetworkLabel}.
+                        Select an amount to donate:
                       </p>
                       <div
                         className="donation-amount-scroller"
@@ -638,79 +639,38 @@ function Footer() {
                           </button>
                         ))}
                       </div>
-                      <div
-                        className="donation-quick-actions"
-                        role="group"
-                        aria-label="Quick amount adjustments"
-                      >
-                        {DONATION_QUICK_ACTIONS.map(action => (
-                          <button
-                            key={action.label}
-                            type="button"
-                            className="donation-quick-action"
-                            onClick={() => handleQuickAction(action.delta)}
-                            disabled={isProcessing}
-                          >
-                            {action.label}
-                          </button>
-                        ))}
-                      </div>
                       <div className="custom-amount-input donation-custom-input">
-                        <label htmlFor="custom-amount">Or enter custom amount</label>
-                        <input
-                          id="custom-amount"
-                          type="number"
-                          min="0.01"
-                          max="100"
-                          step="0.01"
-                          placeholder="Enter amount ($0.01-$100.00)"
-                          value={customAmount}
-                          onChange={(e) => {
-                            setAmountSelection(null, e.target.value);
-                          }}
-                          disabled={isProcessing}
-                        />
+                        <label htmlFor="custom-amount" className="donation-modal-description">Custom amount:</label>
+                        <div className="donation-custom-field">
+                          <span aria-hidden="true">$</span>
+                          <input
+                            id="custom-amount"
+                            type="number"
+                            min="0.01"
+                            max="100"
+                            step="0.01"
+                            placeholder="10.00"
+                            value={customAmount}
+                            onChange={(e) => {
+                              setAmountSelection(null, e.target.value);
+                            }}
+                            disabled={isProcessing}
+                            inputMode="decimal"
+                          />
+                        </div>
                         <small>Min $0.01 · Max $100.00</small>
                       </div>
-                      <div className="donation-impact-tiers">
-                        {DONATION_IMPACT_TIERS.map(tier => (
-                          <button
-                            key={tier.label}
-                            type="button"
-                            className="donation-impact-tier"
-                            onClick={() => setAmountSelection(tier.amount, '')}
-                            disabled={isProcessing}
-                          >
-                            <span className="donation-impact-tier__label">{tier.label}</span>
-                            <span className="donation-impact-tier__amount">${tier.amount}</span>
-                            <span className="donation-impact-tier__description">{tier.description}</span>
-                          </button>
-                        ))}
-                      </div>
                     </section>
-                    <p className="donation-live-summary" aria-live="polite">
-                      {liveSummary}
-                    </p>
-                    {!isSelectedNetworkReady && (
-                      <div className="donation-warning" role="alert">
-                        <p>
-                          {isSolanaSelected
-                            ? 'Connect a Solana wallet to donate in Solana USDC.'
-                            : 'Connect an EVM wallet to donate in Base USDC.'}
-                        </p>
-                        <div className="donation-warning__hint">
-                          <AppKitConnectButton />
-                          <span>Connect wallet</span>
-                        </div>
-                      </div>
-                    )}
                     <button
                       type="button"
-                      className="donation-submit-button"
+                      className="pay-button donation-submit-button"
                       onClick={handleDonate}
-                      disabled={isProcessing || !isSelectedNetworkReady || !activeAmountValue}
+                      disabled={isProcessing || !activeAmountValue}
                     >
-                      {isProcessing ? 'Processing...' : `Send ${donationNetworkLabel}`}
+                      <span className="pay-button__label">
+                        {isProcessing ? 'Processing...' : activeAmountValue ? `Donate $${activeAmountValue.toFixed(2)}` : 'Donate'}
+                      </span>
+                      <Coins size={18} aria-hidden="true" className="pay-button__icon" />
                     </button>
                     <div className="donation-status-region" aria-live="polite" aria-atomic="true">
                       {donationResult && (
