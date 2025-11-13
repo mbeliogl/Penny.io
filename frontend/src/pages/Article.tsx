@@ -12,6 +12,21 @@ import AppKitConnectButton from '../components/AppKitConnectButton';
 import { createSolanaTransactionSigner } from '../utils/solanaSigner';
 import { useAppKitNetwork } from '@reown/appkit/react';
 
+type NetworkFamily = 'base' | 'solana';
+
+const NETWORK_META: Record<NetworkFamily, { title: string; helperText: string; icon: string }> = {
+  base: {
+    title: 'Base · USDC',
+    helperText: '',
+    icon: '/icons/base.png',
+  },
+  solana: {
+    title: 'Solana · USDC',
+    helperText: '',
+    icon: '/icons/solana.png',
+  },
+};
+
 
 
 
@@ -44,8 +59,8 @@ function Article() {
   const [customTipAmount, setCustomTipAmount] = useState('');
   const [tipResult, setTipResult] = useState<{ success: boolean; message: string; txHash?: string } | null>(null);
   const [authorNetworks, setAuthorNetworks] = useState<SupportedAuthorNetwork[]>(['base']);
-  const [selectedNetworkFamily, setSelectedNetworkFamily] = useState<'base' | 'solana'>('base');
-  const [selectedTipNetworkFamily, setSelectedTipNetworkFamily] = useState<'base' | 'solana'>('base');
+  const [selectedNetworkFamily, setSelectedNetworkFamily] = useState<NetworkFamily>('base');
+  const [selectedTipNetworkFamily, setSelectedTipNetworkFamily] = useState<NetworkFamily>('base');
   const [authorWallets, setAuthorWallets] = useState<AuthorWallet[]>([]);
   const [isPaymentStatusLoaded, setIsPaymentStatusLoaded] = useState(false);
 
@@ -75,10 +90,24 @@ function Article() {
   };
 
   const availableNetworkFamilies = useMemo(() => {
-    const families = new Set<'base' | 'solana'>();
+    const families = new Set<NetworkFamily>();
     authorNetworks.forEach((net) => families.add(getNetworkFamily(net)));
     return Array.from(families);
   }, [authorNetworks]);
+
+  const paymentMethodOptions = useMemo(() => {
+    return availableNetworkFamilies.map(family => {
+      const meta = NETWORK_META[family];
+      return {
+        family,
+        title: meta.title,
+        helperText: meta.helperText,
+        icon: meta.icon,
+      };
+    });
+  }, [availableNetworkFamilies]);
+
+  const selectedNetworkLabel = selectedNetworkFamily === 'solana' ? 'Solana USDC' : 'Base USDC';
 
   const isTipNetworkReady = selectedTipNetworkFamily === 'solana'
     ? Boolean(solanaSigner)
@@ -274,7 +303,7 @@ function Article() {
     setPaymentError('');
 
     if (isSolanaSelected && !solanaSigner) {
-      setPaymentError('Please connect a Solana wallet before paying.');
+      setPaymentError('Connect a Solana USDC-compatible wallet to complete this payment.');
       setIsProcessingPayment(false);
       return;
     }
@@ -445,84 +474,125 @@ function Article() {
 
             {!hasPaid && isPaymentStatusLoaded && !isAuthor && (
               <div className="payment-gate">
-                <div className="payment-overlay">
-                  <Lock size={48} />
-                  <h3>Continue Reading</h3>
-                  <p>Unlock the full article with a one-time payment of <strong>${article.price.toFixed(2)}</strong></p>
-
-                  {!isConnected ? (
-                    <div className="connect-wallet">
-                      <p>Connect your wallet to continue</p>
-                      <AppKitConnectButton />
-                    </div>
-                  ) : (
-                    <>
-                      <div className="network-selector">
-                        {availableNetworkFamilies.includes('base') && (
-                          <button
-                            type="button"
-                            className={`network-option ${selectedNetworkFamily === 'base' ? 'active' : ''}`}
-                            onClick={() => setSelectedNetworkFamily('base')}
-                          >
-                            Base USDC
-                          </button>
-                        )}
-                        {availableNetworkFamilies.includes('solana') && (
-                          <button
-                            type="button"
-                            className={`network-option ${selectedNetworkFamily === 'solana' ? 'active' : ''}`}
-                            onClick={() => setSelectedNetworkFamily('solana')}
-                          >
-                            Solana USDC
-                          </button>
-                        )}
+                <div className="paywall-card">
+                  <div className="paywall-body">
+                  <section className="paywall-summary">
+                    <div className="paywall-summary__headline">
+                      <div className="paywall-summary__icon">
+                        <Lock size={28} />
                       </div>
-                      {selectedNetworkFamily === 'solana' && !solanaSigner && (
-                        <p className="payment-warning">Connect a Solana wallet to use Solana USDC.</p>
-                      )}
+                      <div className="paywall-summary__content">
+                        <h3>Keep Reading</h3>
+                        <p>
+                          Unlock full article for{' '}
+                          <strong>${article.price.toFixed(2)}</strong>
+                        </p>
+                      </div>
+                    </div>
+
+                    {!isConnected && (
+                      <div className="connect-wallet">
+                        <p>Connect your wallet to continue</p>
+                        <AppKitConnectButton />
+                      </div>
+                    )}
+
+                    <ul className="payment-benefits">
+                      <li>Instant access to full article</li>
+                      <li>Direct x402 payment to author's wallet</li>
+                      <li>No subscription required </li>
+                    </ul>
+                  </section>
+
+                  {isConnected && paymentMethodOptions.length > 0 && <div className="paywall-divider" aria-hidden="true" />}
+
+                  {isConnected && paymentMethodOptions.length > 0 && (
+                    <section
+                      className="paywall-methods"
+                      role="radiogroup"
+                      aria-label="Select payment network"
+                    >
+                      <div className="method-header">
+                        <div>
+                          <p>Complete purchase</p>
+                          <span>Available payment options:</span>
+                        </div>
+                      </div>
+
+                      <div className="method-grid">
+                        {paymentMethodOptions.map(option => {
+                          const isActive = selectedNetworkFamily === option.family;
+                          return (
+                            <button
+                              key={option.family}
+                              type="button"
+                              role="radio"
+                              aria-checked={isActive}
+                              aria-label={option.title}
+                              className={`method-card${isActive ? ' is-active' : ''}`}
+                              onClick={() => setSelectedNetworkFamily(option.family)}
+                            >
+                              <span className="method-card__icon" aria-hidden="true">
+                                <img src={option.icon} alt="" />
+                              </span>
+                              <span className="method-card__body">
+                                <span className="method-card__title">{option.title}</span>
+                                <span className="method-card__helper">{option.helperText}</span>
+                              </span>
+                              {isActive && (
+                                <span className="method-card__badge">
+                                  Selected
+                                </span>
+                              )}
+                            </button>
+                          );
+                        })}
+                      </div>
+
                       <button
                         className="pay-button"
                         onClick={handlePayment}
-                        disabled={
-                          isProcessingPayment ||
-                          (selectedNetworkFamily === 'solana' && !solanaSigner)
-                        }
+                        disabled={isProcessingPayment}
                       >
-                        {isProcessingPayment ? 'Processing...' : `Pay $${article.price.toFixed(2)}`}
+                        {isProcessingPayment
+                          ? 'Processing...'
+                          : `Pay $${article.price.toFixed(2)}`}
                       </button>
-
-                      <div className="network-support-compact">
-                        <span className="network-label">Author Accepts</span>
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                          {availableNetworkFamilies.includes('base') && (
-                            <img
-                              src="/icons/base.png"
-                              alt="Base"
-                              style={{ width: '28px', height: '28px', borderRadius: '50%' }}
-                            />
-                          )}
-                          {availableNetworkFamilies.includes('solana') && (
-                            <img
-                              src="/icons/solana.png"
-                              alt="Solana"
-                              style={{ width: '28px', height: '28px', borderRadius: '50%' }}
-                            />
-                          )}
-                        </div>
-                      </div>
 
                       {paymentError && (
                         <div className="payment-error">
                           <p>{paymentError}</p>
                         </div>
                       )}
-                    </>
-                  )}
+                      <p className="paywall-footnote">Blockchain transactions are final.</p>
 
-                  <div className="payment-benefits">
-                    <p>✓ Instant access to full article</p>
-                    <p>✓ Support the author directly</p>
-                    <p>✓ No subscription required</p>
+                    </section>
+                  )}
+                  </div>
+
+                  <div className="paywall-footer">
+                    <div className="paywall-footer__row">
+                      <div className="paywall-accepts-line">
+                        <span className="network-label">Author accepts:</span>
+                        <div className="paywall-accepts__badges">
+                          {availableNetworkFamilies.includes('base') && (
+                            <span className="network-badge" key="base">
+                              <img src="/icons/base.png" alt="Base icon" />
+                            </span>
+                          )}
+                          {availableNetworkFamilies.includes('solana') && (
+                            <span className="network-badge" key="solana">
+                              <img src="/icons/solana.png" alt="Solana icon" />
+              
+                            </span>
+                          )}
+                        </div>
+                      </div>
+                      <div className="paywall-powered hero-meta">
+                        <span className="hero-powered-label">Powered by</span>
+                        <span className="hero-powered-brand">Coinbase x402</span>
+                      </div>
+                    </div>
                   </div>
                 </div>
               </div>

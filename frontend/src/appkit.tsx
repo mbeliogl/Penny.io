@@ -34,6 +34,25 @@ const modal = createAppKit({
   networks,
   metadata,
   themeMode: 'light',
+  themeVariables: {
+    '--apkt-font-family': '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif',
+    '--apkt-accent': '#1a1a1a',                 // Black accent for buttons/interactions
+    '--apkt-color-mix': '#1a1a1a',
+    '--apkt-color-mix-strength': 0,             // Minimal color mixing - keep it clean B&W
+    '--apkt-border-radius-master': '0px',       // Completely square - no rounded corners
+    '--apkt-border-radius-xl': '0px',
+    '--apkt-border-radius-l': '0px',
+    '--apkt-border-radius-m': '0px',
+    '--apkt-border-radius-s': '0px',
+    '--apkt-border-radius-xs': '0px',
+    '--apkt-z-index': 1000,
+    '--apkt-gray-glass-001': 'rgba(255, 255, 255, 1)',  // Clean white backgrounds
+    '--apkt-gray-glass-002': 'rgba(248, 249, 250, 1)',  // Match nav hover (#f8f9fa)
+    '--apkt-gray-glass-005': 'rgba(225, 232, 237, 1)',  // Match borders (#e1e8ed)
+    '--apkt-gray-glass-010': 'rgba(26, 26, 26, 0.08)',  // Subtle hover states
+    '--apkt-gray-glass-015': 'rgba(26, 26, 26, 0.12)',  // Slightly darker hover
+    '--apkt-gray-glass-020': 'rgba(26, 26, 26, 0.15)',  // Dividers
+  },
   features: {
     swaps: false,
     onramp: false,

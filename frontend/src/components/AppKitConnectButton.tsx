@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import { useAppKitAccount, useAppKitNetwork, useAppKitProvider } from '@reown/appkit/react';
+import { useAppKit, useWalletInfo } from '@reown/appkit/react';
 import { Connection, PublicKey } from '@solana/web3.js';
 
 // USDC contract addresses for EVM chains
@@ -122,30 +123,73 @@ const AppKitConnectButton = () => {
     return () => clearInterval(interval);
   }, [isConnected, address, chainId, caipNetworkId, evmProvider, solanaProvider]);
 
+  const { open } = useAppKit();
+  const { walletInfo } = useWalletInfo();
   const showUsdcBalance = isConnected && usdcBalance !== null;
 
+  // Format address for display (0x1234...5678)
+  const formatAddress = (addr: string) => {
+    return `${addr.slice(0, 6)}...${addr.slice(-4)}`;
+  };
+
+  // Get network icon URL
+  const getNetworkIcon = () => {
+    if (!caipNetworkId) return null;
+
+    // Solana networks
+    if (caipNetworkId.startsWith('solana:')) {
+      return 'https://avatars.githubusercontent.com/u/35608259?s=200&v=4'; // Solana logo
+    }
+
+    // Base networks
+    if (chainId === 8453 || chainId === 84532) {
+      return 'https://avatars.githubusercontent.com/u/108554348?s=200&v=4'; // Base logo
+    }
+
+    return null;
+  };
+
+  const networkIcon = getNetworkIcon();
+
   return (
-    <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-      <appkit-button balance="hide" />
-      {showUsdcBalance && (
-        <div
-          style={{
-            backgroundColor: 'rgba(243, 243, 243, 0.65)',
-            color: '#202020',
-            padding: '10px 18px',
-            borderRadius: '20px',
-            fontSize: '13px',
-            fontWeight: '500',
-            whiteSpace: 'nowrap',
-            boxShadow: 'none',
-            transition: 'all 0.2s ease',
-            border: '1px solid rgba(233, 233, 233, 0.4)',
-          }}
-        >
-          {usdcBalance} USDC
-        </div>
+    <button
+      onClick={() => open()}
+      className="wallet-connect-button"
+      type="button"
+    >
+      {isConnected && address ? (
+        <>
+          <div className="wallet-info">
+            {walletInfo?.icon && (
+              <img
+                src={walletInfo.icon}
+                alt={walletInfo.name || 'Wallet'}
+                className="wallet-icon"
+              />
+            )}
+            {networkIcon && (
+              <img
+                src={networkIcon}
+                alt="Network"
+                className="network-icon"
+              />
+            )}
+            <span className="wallet-address">{formatAddress(address)}</span>
+          </div>
+          {showUsdcBalance && (
+            <>
+              <div className="wallet-divider" aria-hidden="true" />
+              <div className="wallet-balance-inline" aria-live="polite">
+                <span className="wallet-balance__value">{usdcBalance}</span>
+                <span className="wallet-balance__ticker">USDC</span>
+              </div>
+            </>
+          )}
+        </>
+      ) : (
+        'Connect Wallet'
       )}
-    </div>
+    </button>
   );
 };
 
