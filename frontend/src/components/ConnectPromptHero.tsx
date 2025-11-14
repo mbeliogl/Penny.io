@@ -116,12 +116,12 @@ export const dashboardHighlights: Highlight[] = [
   {
     icon: <Coins size={16} />,
     title: 'Multi-chain payouts',
-    detail: 'Control your payout wallets',
+    detail: 'Control your payout wallets.',
   },
   {
     icon: <BookOpen size={16} />,
     title: 'Manage your articles',
-    detail: 'Edit or delete your articles',
+    detail: 'Edit or delete your articles.',
   },
 ];
 

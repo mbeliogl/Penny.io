@@ -735,7 +735,7 @@ function Write() {
 
   if (!isConnected) {
     return (
-      <div className="write connect-state">
+      <div className="connect-state connect-state--full">
         <ConnectPromptHero
           title="Connect Your Wallet"
           description="Experience a modern, responsive, and lightweight writing studio with full control over your content."

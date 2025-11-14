@@ -11248,13 +11248,16 @@ main {
 }
 
 .connect-state {
+  width: 100%;
+}
+
+.connect-state--full {
   padding: 0 16px;
   min-height: calc(100vh - 64px);
   display: flex;
   align-items: center;
   justify-content: center;
 }
-
 @keyframes pulseGlow {
   0% {
     transform: scale(1);

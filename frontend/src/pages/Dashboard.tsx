@@ -541,7 +541,7 @@ function Dashboard() {
 
   if (!isConnected) {
     return (
-      <div className="dashboard connect-state">
+      <div className="connect-state connect-state--full">
         <ConnectPromptHero
           title="Connect your wallet"
           description="A single screen view for everything that matters—review your metrics, manage your articles, and control your wallets."
