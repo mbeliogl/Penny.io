@@ -1,6 +1,6 @@
 <div align="center">
 
-# Penny.io – Wallet‑Native Micropayments for Web Publishing
+# Penny.io – A New Way to Monetize Written Content
 
 Pay‑per‑article access, instant author payouts, and dual‑network wallet support powered by the x402 payment protocol.
 
@@ -26,42 +26,53 @@ Pay‑per‑article access, instant author payouts, and dual‑network wallet su
 
 ## About Penny.io
 
-Penny.io is a fully wallet‑native publishing platform aimed at technical and crypto writers who want precise control over pricing and payouts. Instead of subscriptions, readers unlock individual articles for $0.01–$1.00 using the **x402 HTTP payment protocol**. Writers get paid in seconds (not weeks) and can manage payouts across **Base** and **Solana** with a dual‑wallet workflow.
+Penny.io is a fully blockchain-native publishing platform designed to solve one problem. We've all encountered it - not being able to read an article, get an answer to your math problem, or read a code snippet you so desperately need because you get smacked with a 'create an account or subscribe to continue reading' blocker.  
+
+We get it. Platforms have hosting expenses. Writers give them a cut of their earnings in return for exposure. Readers have to maintain a subscription even when they rarely use the resource. 
+
+Penny flips the script (haha, yes pun is intended). Writes set article prices ranging from $0.01–$1.00. Readers unlock individual articles using the **x402 HTTP payment protocol**. Writers get paid in seconds (not weeks) and can manage payouts across **Base** and **Solana** with our proprietory dual-network support. Readers maintained perpetual access validated by the blockchain. 
+
+You read that right. Penny delivers:
+  - No ads 
+  - No subscriptions 
+  - No platform fees 
+  - Not gas or transaction fees (thanks to Coinbase x402 facilitator services)
+  - Blockchain-level security, privacy, and modularity 
 
 Why it matters:
 
-- Traditional platforms force monthly paywalls or keep large revenue shares.
-- Micropayments were impractical before x402 due to gas costs and latency.
-- Penny.io combines a modern reader UX, a professional editor, analytics, and instant settlement over USDC.
+- Traditional platforms force monthly subs or keep large revenue shares.
+- Micropayments were impractical before x402 due to transaction/gas fees and latency.
+- Penny.io combines a modern UX, a professional editor, analytics, blockchain security, and instant settlement with x402.
 
 ---
 
 ## Key Features
 
 ### Payments & Wallets
-- 🔐 **x402 Micropayments** – Per‑article pricing with instant signature verification and optional Coinbase CDP settlement.  
-- 🌉 **Multichain Support** – Base + Solana USDC payouts, including automatic ATA detection for Solana authors.  
-- 🔁 **Dual‑Wallet Management** – Authors can add a complementary network payout wallet, replace/remove it via a guarded modal, and stay in sync with canonical author records.  
-- 🎁 **Tipping & Donations** – Dedicated modals let readers send extra USDC on either supported network.  
-- 🧾 **Payment Status Caching** – Unlocks persist across refreshes using local storage plus backend verification.
+- 🔐 **x402 Micropayments** – Per‑article pricing with signature verification and instant settlement via Coinbase CDP x402 facilitator.  
+- 🌉 **Multichain Support** – Base & Solana USDC, including automatic ATA detection for Solana wallets.  
+- 🔁 **Dual‑Wallet Feature** – Authors can add a complementary network payout wallet, enabling them to receive payments on both chains.
+- 🎁 **Tipping & Donations** – Dedicated modals let readers tip writers or donate to Penny via x402 on either chain.  
+- 🧾 **Payment Status** – Payment data is stored directly on-chain which ensures perpetual access and accuracy. Dual wallet support means you never lose access to your account. 
 
 ### Author Experience
-- ✍️ **TinyMCE Editor** with autosave drafts, image uploads (Supabase Storage), and preview/paywall controls.  
-- 📊 **Real‑time Dashboard** showing lifetime earnings, conversion rate, weekly purchase stats, and wallet health.  
-- 🧮 **Popularity & Analytics** – Views, purchases, likes, and time‑decayed popularity scoring for discovery.  
-- 👛 **Wallet Insights** – Hero section highlights primary/secondary wallets with network badges and copy buttons.
+- ✍️ **Rich Editor** - Autosave & manual drafts, image uploads code snippets, rich formatting, and preview/paywall controls.  
+- 📊 **Real‑time Dashboard** - Track lifetime earnings, conversion rate, and weekly purchase stats. Review and manage articles .  
+- 🧮 **Popularity & Analytics** – Views, purchases, likes, and time‑decayed popularity scoring algorithm for discovery.  
+- 👛 **Wallet Management** – Manage your payout wallets directly from the dashboard. 
 
 ### Reader Experience
-- 📚 **Preview + Paywall** – First paragraphs free; unlock the rest via x402 in one wallet popup.  
+- 📚 **Preview + Paywall** – First paragraphs free; unlock the rest via x402 in one click.  
 - 🔎 **Explore Page** – Faceted search, category filters, grid/list views, and infinite scroll.  
 - ❤️ **Likes System** – Wallet‑based dedupe to surface trending content.  
-- 🧭 **X402 Test Harness** – `/x402-test` page walks through fetching requirements, building headers, and verifying access.
+- 🧭 **X402 Test Harness** – `/x402-test` page walks through fetching requirements, payment headers, and verifying access.
 
 ### Operations & Security
 - 🗄️ **Supabase PostgreSQL** with `author_wallets`, payment tables, pg_cron jobs, and CDN storage.  
 - 🧼 **DOMPurify Sanitization** for all user generated content.  
-- 🧪 **Scripts** for Solana ATA creation, wallet backfills, and Supabase maintenance.  
-- 🔁 **Author Lifetime Metrics** – Totals never decrement; reconciliation helper fixes historical data if needed.
+- 🧪 **Scripts** for Solana ATA creation, wallet backfills, and database maintenance.  
+- 🔁 **Lifetime Metrics** – Author & article metadata reconciliation helpers. 
 
 ---
 
@@ -79,34 +90,33 @@ Penny_dev/
 │   ├── src/spamPrevention.ts# rate limiting + content safety
 │   └── scripts/             # backfills, Solana helpers, etc.
 ├── Dev_Notes/   # working session notes & wallet commands
-├── CLAUDE.md    # coding guidelines & architecture summary
-└── x402_*       # protocol whitepaper + diagrams (PDF / markdown)
+└── x402_*       # Implementation whitepaper + diagrams (PDF / markdown)
 ```
 
 - **Frontend**: React 18 + TypeScript, React Router, AppKit (WalletConnect), Wagmi/Viem, Tailored modals.  
-- **Backend**: Node.js/Express, Supabase client for CRUD, Coinbase CDP facilitator hooks, settlement service, and spam/rate-limiting middleware.  
+- **Backend**: Node.js/Express, Supabase client for CRUD, Coinbase CDP facilitator hooks, CDP settlement service, and custom middleware.  
 - **Database**: Supabase PostgreSQL with JSONB categories, `author_wallets`, payment logs, and scheduled pg_cron jobs.  
 - **Storage**: Supabase Storage for media, served via CDN.  
-- **Payments**: x402 HTTP protocol, Base & Solana USDC mints, optional auto-settlement via Coinbase CDP.
+- **Payments**: x402 HTTP protocol, Base & Solana USDC mints, auto-settlement via Coinbase CDP.
 
 ---
 
-## x402 Payment Flow
+## Middleware Flow 
 
 ```
-┌──────────┐         ┌─────────────┐         ┌──────────────┐
-│  Reader  │         │  Frontend   │         │   Backend    │
-│ (Wallet) │         │             │         │              │
-└────┬─────┘         └──────┬──────┘         └──────┬───────┘
-     │ 1. Click Purchase    │                       │
-     ├─────────────────────>│                       │
-     │                      │ 2. POST /purchase     │
-     │                      │    (no X-PAYMENT)     │
-     │                      ├──────────────────────>│
-     │                      │ 3. 402 Requirements   │
-     │                      │<──────────────────────┤
-     │ 4. Sign Authorization│                       │
-     │    (single popup)    │                       │
+┌──────────┐         ┌─────────────┐         ┌──────────────┐  
+│  Reader  │         │  Frontend   │         │   Backend    │            
+│ (Wallet) │         │             │         │              │                 
+└────┬─────┘         └──────┬──────┘         └──────┬───────┘   
+     │ 1. Click Purchase    │                       │                  
+     ├─────────────────────>│                       │                  
+     │                      │ 2. POST /purchase     │                  
+     │                      │    (no X-PAYMENT)     │                  
+     │                      ├──────────────────────>│                  
+     │                      │ 3. 402 Requirements   │                  
+     │                      │<──────────────────────┤                  
+     │ 4. Sign Authorization│                       │                  
+     │    (single popup)    │                       │                  
      │<─────────────────────┤                       │
      │                      │ 5. Return signature   │
      ├─────────────────────>│                       │
@@ -120,9 +130,109 @@ Penny_dev/
      │10. Content unlocked  │                       │
 ```
 
-**Why it’s fast:** authorization happens off-chain via signed payloads, so readers unlock content immediately and settlement can batch later. The facilitator (public endpoint or Coinbase CDP) validates headers and enforces price, asset, and timeout requirements per article.
+## x402 Payment Flow 
 
-For a deeper dive (authorization vs settlement, gas math, code samples), see [`x402-technical-documentation.pdf`](./x402-technical-documentation.pdf).
+```
+┌──────────┐         ┌─────────────┐         ┌──────────────┐         ┌─────────────┐
+
+│  Reader  │         │  Frontend   │         │   Backend    │         │ Blockchain  │
+
+│ (Wallet) │         │             │         │              │         │ (Base L2)   │
+
+└────┬─────┘         └──────┬──────┘         └──────┬───────┘         └──────┬──────┘
+
+     │                      │                       │                        │
+
+     │ 1. Click Purchase    │                       │                        │
+
+     ├─────────────────────>│                       │                        │
+
+     │                      │                       │                        │
+
+     │                      │ 2. POST /purchase     │                        │
+
+     │                      │   (no X-PAYMENT)      │                        │
+
+     │                      ├──────────────────────>│                        │
+
+     │                      │                       │                        │
+
+     │                      │ 3. 402 Requirements   │                        │
+
+     │                      │<──────────────────────┤                        │
+
+     │                      │                       │                        │
+
+     │ 4. Sign Authorization│                       │                        │
+
+     │   (ONE popup!)       │                       │                        │
+
+     │<─────────────────────┤                       │                        │
+
+     │                      │                       │                        │
+
+     │ 5. Signature         │                       │                        │
+
+     ├─────────────────────>│                       │                        │
+
+     │                      │                       │                        │
+
+     │                      │ 6. POST /purchase     │                        │
+
+     │                      │   + X-PAYMENT header  │                        │
+
+     │                      ├──────────────────────>│                        │
+
+     │                      │                       │                        │
+
+     │                      │                       │ 7. Verify with         │
+
+     │                      │                       │    CDP facilitator     │
+
+     │                      │                       │                        │
+
+     │                      │                       │ 8. [OK] Valid!           │
+
+     │                      │                       │                        │
+
+     │                      │                       │ 9. Submit authorization│
+
+     │                      │                       │    on-chain (platform  │
+
+     │                      │                       │    wallet pays gas)    │
+
+     │                      │                       ├───────────────────────>│
+
+     │                      │                       │                        │
+
+     │                      │                       │ 10. Transaction hash   │
+
+     │                      │                       │<───────────────────────┤
+
+     │                      │                       │                        │
+
+     │                      │                       │ 11. Update DB with     │
+
+     │                      │                       │     tx hash            │
+
+     │                      │                       │                        │
+
+     │                      │ 12. Success + receipt │                        │
+
+     │                      │<──────────────────────┤                        │
+
+     │                      │                       │                        │
+
+     │ 13. Content unlocked │                       │                        │
+
+     │<─────────────────────┤                       │                        │
+
+
+```
+
+**Why it’s fast:** authorization happens off-chain via signed payloads, so readers unlock content immediately and settlement can batch later. The facilitator (Coinbase CDP) validates headers and enforces price, asset, and timeout requirements per article.
+
+For a deeper dive (authorization vs settlement, gas math, code samples), see [`x402-technical-documentation.pdf`].
 
 ---
 
@@ -134,7 +244,7 @@ For a deeper dive (authorization vs settlement, gas math, code samples), see [`x
 - Supabase project (or Postgres) with the schema from `/backend/supabase/migrations`  
 - WalletConnect/AppKit project ID for the frontend  
 - Coinbase CDP API keys (optional, only if you want automated settlement)  
-- Solana devnet fee payer + ATA for USDC testing (see `Dev_Notes/My_Notes.md`)
+- Solana devnet fee payer + ATA for USDC testing (see `Dev_Notes/`)
 
 ### Installation
 
@@ -186,8 +296,6 @@ Create `.env` files in both `backend/` and `frontend/` (the repo intentionally k
 | Frontend   | `VITE_SOLANA_DEVNET_RPC_URL`, `VITE_SOLANA_MAINNET_RPC_URL` | Wallet balance & ATA checks. |
 | Frontend   | `VITE_COINBASE_CDP_APP_ID` | Enables Coinbase-specific purchase UX. |
 
-See `CLAUDE.md` and `Dev_Notes/My_Notes.md` for additional scripts (Solana fee payer, ATA creation, Supabase backfills, etc.).
-
 ---
 
 ## Wallet & Payment Experience
@@ -197,6 +305,7 @@ See `CLAUDE.md` and `Dev_Notes/My_Notes.md` for additional scripts (Solana fee p
   - They can add exactly one complementary network wallet via the dashboard modal.  
   - Removal/replacement is gated by a confirmation modal that warns users they’ll be signed out if they’re connected with the wallet being removed.  
   - After API success, the frontend compares the currently connected wallet (normalized EVM checksum or Solana base58) with the author’s canonical addresses and disconnects if it’s no longer valid.
+  - Secondary wallet becomes an accepted payout method *and* a secondary authentication method. 
 
 - **Tipping & Donations**  
   - Donation modal adapts button text + wallet prompts per network.  
@@ -244,29 +353,24 @@ For x402 end-to-end verification, use the `/x402-test` page to simulate:
 
 ## Roadmap
 
-Tracked in `Dev_Notes/My_Notes.md` and the dashboard UI:
-
 - 🔜 **Dark Mode & Theming** – system-based toggles for all pages.  
 - 🔜 **Author Insights** – category analytics, per-article funnels, weekly cohort stats.  
 - 🔜 **Profile Pages & Bundles** – follow authors, buy 24hr access bundles, show proof-of-read.  
-- 🔜 **Merge Tooling** – Admin CLI to merge two author UUIDs when users publish from multiple wallets before linking.  
-- 🔜 **AI Agent Integrations** – x402-protected API endpoints so agents can fetch and pay for content autonomously.  
-- 🧭 **Launch Prep** – see `Dev_Notes` for marketing + documentation tasks (whitepaper, writer toolkit, dev.fun incubator application).
+- 🔜 **AI Agent Integrations** – Dedicated resource pages for agentic discovery and payments. 
+- 🔜 **AI Agent Integrations** - AI writing & content helper. 
+- 🔜 **AI Agent Integrations** - Dedicated Q&A platform module (knowledge db)
+
 
 ---
 
 ## Additional Resources
 
-- [`CLAUDE.md`](./CLAUDE.md) – architecture deep dive, coding conventions, x402 notes.  
-- [`Dev_Notes/My_Notes.md`](./Dev_Notes/My_Notes.md) – wallet management flows, Solana/Supabase commands, roadmap.  
-- [`x402-technical-documentation.pdf`](./x402-technical-documentation.pdf) – protocol whitepaper with diagrams.  
-- [`SECURITY_IMPLEMENTATION_PLAN.md`](./SECURITY_IMPLEMENTATION_PLAN.md) – XSS mitigation, spam prevention, wallet safety.  
-- [`WALLET_AUTO_CONNECT.md`](./WALLET_AUTO_CONNECT.md) – UX decisions around AppKit/RainbowKit behavior.
-
-If you add new docs, link them here so contributors can find the latest references quickly.
+- [`x402-technical-documentation] - In depth x402 protocol / technical implementation doc.
+- [Writer's Toolkit] - Short guide on how to success as a writer on Penny.
+- [Wallet_Mgmt] - How to safely manage your platform-connected wallets. 
 
 ---
 
 ## License
 
-Released under the [MIT License](./LICENSE). Contributions are welcome—open an issue or pull request once you’ve followed the coding guidelines in `CLAUDE.md`.
+Released under the [MIT License](./LICENSE). Contributions are welcome—open an issue or pull request once you’ve followed the coding guidelines.
