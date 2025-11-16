@@ -346,7 +346,7 @@ function RevealGroup({ children }: { children: React.ReactNode }) {
   return (
     <div className="editor-section-body">
       {items.map((child, index) => {
-        const delay = `${index * 120}ms`;
+        const delay = `${index * 240}ms`;
         if (!isValidElement(child)) {
           return (
             <p key={index} className="text-reveal" style={{ '--reveal-delay': delay } as CSSProperties}>
@@ -369,6 +369,7 @@ function RevealGroup({ children }: { children: React.ReactNode }) {
 function Whitepaper() {
   const lineNumbers = useMemo(() => Array.from({ length: 120 }, (_, index) => index + 1), []);
   const sectionRefs = useRef<Record<SectionKey, HTMLElement | null>>({} as Record<SectionKey, HTMLElement | null>);
+  const revealTimeouts = useRef<Record<SectionKey, number>>({} as Record<SectionKey, number>);
   // Tracks which sections have been “pasted” into the faux editor
   const [revealedSections, setRevealedSections] = useState<Record<SectionKey | 'abstract', boolean>>(() => {
     const initial: Record<SectionKey | 'abstract', boolean> = { abstract: true };
@@ -396,16 +397,19 @@ function Whitepaper() {
         entries.forEach((entry) => {
           if (entry.isIntersecting) {
             const key = entry.target.getAttribute('data-section-key') as SectionKey | null;
-            if (key) {
-              setRevealedSections((prev) => {
-                if (prev[key]) return prev;
-                return { ...prev, [key]: true };
-              });
+            if (key && !revealTimeouts.current[key]) {
+              revealTimeouts.current[key] = window.setTimeout(() => {
+                setRevealedSections((prev) => {
+                  if (prev[key]) return prev;
+                  return { ...prev, [key]: true };
+                });
+                delete revealTimeouts.current[key];
+              }, 350);
             }
           }
         });
       },
-      { threshold: 0.35 },
+      { threshold: 1, rootMargin: '0px 0px -100px 0px' },
     );
 
     SECTION_DEFINITIONS.forEach((section) => {
@@ -415,7 +419,11 @@ function Whitepaper() {
       }
     });
 
-    return () => observer.disconnect();
+    return () => {
+      observer.disconnect();
+      Object.values(revealTimeouts.current).forEach((timeoutId) => window.clearTimeout(timeoutId));
+      revealTimeouts.current = {} as Record<SectionKey, number>;
+    };
   }, [revealedSections]);
 
   const registerSectionRef = (key: SectionKey) => (node: HTMLElement | null) => {
