@@ -28,6 +28,7 @@
     "react-dom": "^19.1.1",
     "react-router-dom": "^7.9.4",
     "react-syntax-highlighter": "^16.1.0",
+    "siwe": "^2.3.2",
     "viem": "^2.38.6",
     "wagmi": "^2.19.2",
     "x402": "^0.7.1"

@@ -117,7 +117,7 @@ const readLimiter = rateLimit({
   },
   standardHeaders: true, // Return rate limit info in `RateLimit-*` headers
   legacyHeaders: false,  // Disable `X-RateLimit-*` headers
-  skip: () => !isProduction, // Disable limiter entirely outside production
+  skip: () => !isProduction // Disable limiter entirely outside production
 });
 
 /**

@@ -1,6 +1,6 @@
 // API service for communicating with the backend
 
-const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:3001/api';
+export const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:3001/api';
 
 export interface Article {
   id: number;
@@ -100,19 +100,42 @@ export interface AuthorStats {
   purchases7d: number;
 }
 
+type AuthHeaderProvider = () => Record<string, string> | null | undefined;
+
 class ApiService {
+  private authHeaderProvider: AuthHeaderProvider | null = null;
+
+  setAuthHeaderProvider(provider: AuthHeaderProvider | null) {
+    this.authHeaderProvider = provider;
+  }
+
   private async request<T>(
     endpoint: string,
-    options: RequestInit = {}
+    options: RequestInit = {},
+    requireAuth = false
   ): Promise<ApiResponse<T>> {
     try {
       const url = `${API_BASE_URL}${endpoint}`;
+      const isFormData = typeof FormData !== 'undefined' && options.body instanceof FormData;
+      const headers: Record<string, string> = {
+        ...(isFormData ? {} : { 'Content-Type': 'application/json' }),
+        ...(options.headers as Record<string, string> | undefined),
+      };
+
+      if (requireAuth) {
+        const authHeaders = this.authHeaderProvider?.();
+        if (!authHeaders || !authHeaders.Authorization) {
+          return {
+            success: false,
+            error: 'AUTH_REQUIRED',
+          } as ApiResponse<T>;
+        }
+        Object.assign(headers, authHeaders);
+      }
+
       const response = await fetch(url, {
-        headers: {
-          'Content-Type': 'application/json',
-          ...options.headers,
-        },
         ...options,
+        headers,
       });
 
       const data = await response.json();
@@ -154,31 +177,47 @@ class ApiService {
   }
 
   async createArticle(article: CreateArticleRequest): Promise<ApiResponse<Article>> {
-    return this.request<Article>('/articles', {
-      method: 'POST',
-      body: JSON.stringify(article),
-    });
+    return this.request<Article>(
+      '/articles',
+      {
+        method: 'POST',
+        body: JSON.stringify(article),
+      },
+      true
+    );
   }
 
   async validateArticle(article: CreateArticleRequest): Promise<ApiResponse<{ message?: string }>> {
-    return this.request<{ message?: string }>('/articles/validate', {
-      method: 'POST',
-      body: JSON.stringify(article),
-    });
+    return this.request<{ message?: string }>(
+      '/articles/validate',
+      {
+        method: 'POST',
+        body: JSON.stringify(article),
+      },
+      true
+    );
   }
 
   async updateArticle(id: number, article: CreateArticleRequest): Promise<ApiResponse<Article>> {
-    return this.request<Article>(`/articles/${id}`, {
-      method: 'PUT',
-      body: JSON.stringify(article),
-    });
+    return this.request<Article>(
+      `/articles/${id}`,
+      {
+        method: 'PUT',
+        body: JSON.stringify(article),
+      },
+      true
+    );
   }
 
   async deleteArticle(id: number, authorAddress: string): Promise<ApiResponse<{ message: string }>> {
-    return this.request<{ message: string }>(`/articles/${id}`, {
-      method: 'DELETE',
-      body: JSON.stringify({ authorAddress }),
-    });
+    return this.request<{ message: string }>(
+      `/articles/${id}`,
+      {
+        method: 'DELETE',
+        body: JSON.stringify({ authorAddress }),
+      },
+      true
+    );
   }
 
   async recordPurchase(articleId: number): Promise<ApiResponse<{ message: string }>> {
@@ -189,7 +228,7 @@ class ApiService {
 
   // Author endpoints
   async getAuthor(address: string): Promise<ApiResponse<Author>> {
-    return this.request<Author>(`/authors/${address}`);
+    return this.request<Author>(`/authors/${address}`, undefined, true);
   }
 
   async getPublicAuthor(identifier: string): Promise<ApiResponse<Author>> {
@@ -197,27 +236,35 @@ class ApiService {
   }
 
   async getAuthorPurchaseStats(address: string): Promise<ApiResponse<AuthorPurchaseStatsResponse>> {
-    return this.request<AuthorPurchaseStatsResponse>(`/authors/${address}/stats`);
+    return this.request<AuthorPurchaseStatsResponse>(`/authors/${address}/stats`, undefined, true);
   }
 
   async addSecondaryPayoutMethod(
     address: string,
     payload: { network: SupportedAuthorNetwork; payoutAddress: string }
   ): Promise<ApiResponse<Author>> {
-    return this.request<Author>(`/authors/${address}/payout-methods`, {
-      method: 'POST',
-      body: JSON.stringify(payload),
-    });
+    return this.request<Author>(
+      `/authors/${address}/payout-methods`,
+      {
+        method: 'POST',
+        body: JSON.stringify(payload),
+      },
+      true
+    );
   }
 
   async removeSecondaryPayoutMethod(
     address: string,
     network: SupportedAuthorNetwork
   ): Promise<ApiResponse<Author>> {
-    return this.request<Author>(`/authors/${address}/payout-methods`, {
-      method: 'DELETE',
-      body: JSON.stringify({ network }),
-    });
+    return this.request<Author>(
+      `/authors/${address}/payout-methods`,
+      {
+        method: 'DELETE',
+        body: JSON.stringify({ network }),
+      },
+      true
+    );
   }
 
   // Health check
@@ -234,17 +281,25 @@ class ApiService {
 
   // Like/Unlike Article
   async likeArticle(articleId: number, userAddress: string): Promise<ApiResponse<{ message: string; liked: boolean }>> {
-    return this.request<{ message: string; liked: boolean }>(`/articles/${articleId}/like`, {
-      method: 'POST',
-      body: JSON.stringify({ userAddress }),
-    });
+    return this.request<{ message: string; liked: boolean }>(
+      `/articles/${articleId}/like`,
+      {
+        method: 'POST',
+        body: JSON.stringify({ userAddress }),
+      },
+      true
+    );
   }
 
   async unlikeArticle(articleId: number, userAddress: string): Promise<ApiResponse<{ message: string; liked: boolean }>> {
-    return this.request<{ message: string; liked: boolean }>(`/articles/${articleId}/like`, {
-      method: 'DELETE',
-      body: JSON.stringify({ userAddress }),
-    });
+    return this.request<{ message: string; liked: boolean }>(
+      `/articles/${articleId}/like`,
+      {
+        method: 'DELETE',
+        body: JSON.stringify({ userAddress }),
+      },
+      true
+    );
   }
 
   async checkUserLikedArticle(articleId: number, userAddress: string): Promise<ApiResponse<{ liked: boolean }>> {
@@ -256,22 +311,30 @@ class ApiService {
     draft: CreateDraftRequest,
     options: { signal?: AbortSignal } = {}
   ): Promise<ApiResponse<Draft>> {
-    return this.request<Draft>('/drafts', {
-      method: 'POST',
-      body: JSON.stringify(draft),
-      signal: options.signal,
-    });
+    return this.request<Draft>(
+      '/drafts',
+      {
+        method: 'POST',
+        body: JSON.stringify(draft),
+        signal: options.signal,
+      },
+      true
+    );
   }
 
   async getDrafts(authorAddress: string): Promise<ApiResponse<Draft[]>> {
-    return this.request<Draft[]>(`/drafts/${authorAddress}`);
+    return this.request<Draft[]>(`/drafts/${authorAddress}`, { method: 'GET' }, true);
   }
 
   async deleteDraft(draftId: number, authorAddress: string): Promise<ApiResponse<{ message: string }>> {
-    return this.request<{ message: string }>(`/drafts/${draftId}`, {
-      method: 'DELETE',
-      body: JSON.stringify({ authorAddress }),
-    });
+    return this.request<{ message: string }>(
+      `/drafts/${draftId}`,
+      {
+        method: 'DELETE',
+        body: JSON.stringify({ authorAddress }),
+      },
+      true
+    );
   }
 
 }

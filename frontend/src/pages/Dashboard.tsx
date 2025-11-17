@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { useWallet } from '../contexts/WalletContext';
 import ConnectPromptHero, { dashboardHighlights } from '../components/ConnectPromptHero';
 import AppKitConnectButton from '../components/AppKitConnectButton';
+import { useAuth } from '../contexts/AuthContext';
 import { Link, useNavigate } from 'react-router-dom';
 import {
   DollarSign,
@@ -69,9 +70,12 @@ const normalizeWalletForComparison = (value?: string | null): string | null => {
   return value;
 };
 
+const AUTH_REQUIRED_ERROR = 'AUTH_REQUIRED';
+
 
 function Dashboard() {
   const { isConnected, isConnecting, address, balance, disconnect } = useWallet();
+  const { login, isAuthenticated, isAuthenticating, error: authError } = useAuth();
   const navigate = useNavigate();
 
   // Available categories (must match backend validation schema)
@@ -153,7 +157,7 @@ function Dashboard() {
 
   // Fetch articles and author data on component mount and when address changes
   useEffect(() => {
-    if (isConnected && address) {
+    if (isConnected && address && isAuthenticated) {
       fetchArticles();
       fetchAuthor();
       fetchPurchaseStats();
@@ -163,10 +167,10 @@ function Dashboard() {
       setPurchases7d(0);
       setLoading(false);
     }
-  }, [isConnected, address]);
+  }, [isConnected, address, isAuthenticated]);
 
   const fetchArticles = async () => {
-    if (!address) return;
+    if (!address || !isAuthenticated) return;
     
     setLoading(true);
     setArticleError('');
@@ -203,7 +207,7 @@ function Dashboard() {
   };
 
   const fetchAuthor = async () => {
-    if (!address) return;
+    if (!address || !isAuthenticated) return;
     
     try {
       const response = await apiService.getAuthor(address);
@@ -211,6 +215,10 @@ function Dashboard() {
         setAuthor(response.data);
         setAuthorError('');
       } else {
+        if (response.error === AUTH_REQUIRED_ERROR) {
+          setAuthorError('Authenticate your wallet to view dashboard stats.');
+          return;
+        }
         const friendlyError = response.error === 'Failed to fetch'
           ? 'Failed to fetch author stats'
           : response.error;
@@ -226,12 +234,14 @@ function Dashboard() {
   };
 
   const fetchPurchaseStats = async () => {
-    if (!address) return;
+    if (!address || !isAuthenticated) return;
 
     try {
       const response = await apiService.getAuthorPurchaseStats(address);
       if (response.success && response.data) {
         setPurchases7d(response.data.purchases7d);
+      } else if (response.error === AUTH_REQUIRED_ERROR) {
+        setPurchases7d(0);
       }
     } catch (error) {
       console.error('Error fetching purchase stats:', error);
@@ -240,7 +250,10 @@ function Dashboard() {
 
 
   const loadDraftsForModal = async () => {
-    if (!address) return;
+    if (!address || !isAuthenticated) {
+      setDraftsError('Authenticate your wallet to view drafts.');
+      return;
+    }
 
     setDraftsLoading(true);
     setDraftsError('');
@@ -249,6 +262,9 @@ function Dashboard() {
       const response = await apiService.getDrafts(address);
       if (response.success && response.data) {
         setDrafts(response.data);
+      } else if (response.error === AUTH_REQUIRED_ERROR) {
+        setDrafts([]);
+        setDraftsError('Authenticate your wallet to view drafts.');
       } else {
         setDrafts([]);
         setDraftsError(response.error || 'Failed to load drafts');
@@ -685,6 +701,27 @@ function Dashboard() {
   return (
     <div className="dashboard">
       <div className="container">
+        {!isAuthenticated && isConnected && (
+          <div className="auth-banner">
+            <div className="auth-banner__content">
+              <p>
+                Authenticate this wallet to unlock your full dashboard—stats, drafts, and payout
+                controls stay hidden until you sign once per session.
+              </p>
+              <div className="auth-banner__actions">
+                <button
+                  className="primary-btn"
+                  onClick={login}
+                  disabled={isAuthenticating}
+                >
+                  {isAuthenticating ? 'Authenticating...' : 'Authenticate Wallet'}
+                </button>
+                {authError && <span className="auth-banner__error">{authError}</span>}
+              </div>
+            </div>
+          </div>
+        )}
+
         <div className="dashboard-header">
           <h1>
             <LayoutDashboard size={25} /> Writer Dashboard

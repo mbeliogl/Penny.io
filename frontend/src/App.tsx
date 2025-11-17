@@ -1,5 +1,6 @@
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import { WalletProvider } from './contexts/WalletContext';
+import { AuthProvider } from './contexts/AuthContext';
 import { useWalletConnectionManager } from './hooks/useWalletConnectionManager';
 import Header from './components/Header';
 import Footer from './components/Footer';
@@ -60,12 +61,14 @@ function AppContent() {
 function App() {
   return (
     <WalletProvider>
-      <Router>
-        <ScrollToTop />
-        <div className="App">
-          <AppContent />
-        </div>
-      </Router>
+      <AuthProvider>
+        <Router>
+          <ScrollToTop />
+          <div className="App">
+            <AppContent />
+          </div>
+        </Router>
+      </AuthProvider>
     </WalletProvider>
   );
 }
