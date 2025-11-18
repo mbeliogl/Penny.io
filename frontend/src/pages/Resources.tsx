@@ -16,7 +16,7 @@ function Resources() {
     reading: {
       title: "Reading Your First Article",
       icon: <BookOpen size={24} />,
-      description: "Learn how to browse, preview, and purchase articles on Penny.io",
+      description: "Learn how to browse, preview, and purchase articles on Readia.io",
       steps: [
         "Browse available articles",
         "Connect your wallet", 
@@ -68,7 +68,7 @@ function Resources() {
       steps: [
         "Choose a wallet",
         "Install and setup", 
-        "Connect to Penny.io"
+        "Connect to Readia.io"
       ],
       detailedSteps: [
         {
@@ -80,15 +80,15 @@ function Resources() {
           details: "Download the wallet app or browser extension from the official website. Create a new wallet and securely store your seed phrase (12-24 words) offline. Never share your seed phrase with anyone."
         },
         {
-          step: "Connect to Penny.io",
-          details: "On Penny.io, click 'Connect Wallet' and select your wallet type. Approve the connection in your wallet app. Switch to a supported network (Polygon, Base, Optimism, or Arbitrum) for lower transaction fees."
+          step: "Connect to Readia.io",
+          details: "On Readia.io, click 'Connect Wallet' and select your wallet type. Approve the connection in your wallet app. Switch to a supported network (Polygon, Base, Optimism, or Arbitrum) for lower transaction fees."
         }
       ]
     },
     x402: {
       title: "x402 Protocol Integration",
       icon: <Code size={24} />,
-      description: "Learn how Penny.io implements the x402 micropayment protocol for seamless content monetization.",
+      description: "Learn how Readia.io implements the x402 micropayment protocol for seamless content monetization.",
       steps: [
         "Understanding x402",
         "Payment flow setup",
@@ -119,7 +119,7 @@ function Resources() {
         <div className="resources-hero">
           <h1>Resources & Documentation</h1>
           <p className="hero-subtitle">
-            Everything you need to get started with Penny.io <br />
+            Everything you need to get started with Readia.io <br />
           </p>
         </div>
 
@@ -196,7 +196,7 @@ function Resources() {
           <div className="docs-grid">
             <div className="doc-item clickable" onClick={() => setSelectedGuide('x402')}>
               <h3>x402 Protocol Integration</h3>
-              <p>Learn how Penny.io implements the x402 micropayment protocol for seamless content monetization.</p>
+              <p>Learn how Readia.io implements the x402 micropayment protocol for seamless content monetization.</p>
               <div className="doc-tags">
                 <span className="doc-tag">Documentation</span>
                 <span className="doc-tag">Technical</span>
@@ -208,7 +208,7 @@ function Resources() {
             
             <div className="doc-item coming-soon">
               <h3>API Documentation</h3>
-              <p>Learn how to monetize your custom API by integrating with Penny.io</p>
+              <p>Learn how to monetize your custom API by integrating with Readia.io</p>
               <div className="doc-tags">
                 <span className="doc-tag">API</span>
                 <span className="doc-tag">Development</span>
@@ -299,7 +299,7 @@ function Resources() {
               <div className="download-content">
                 <div className="download-text">
                   <h3>Developer SDK</h3>
-                  <p>SDK for integrating Penny.io into your applications.</p>
+                  <p>SDK for integrating Readia.io into your applications.</p>
                 </div>
                 <div className="coming-soon-badge">
                   <span>Coming Soon</span>
@@ -333,7 +333,7 @@ function Resources() {
                 <h3>GitHub Repository</h3>
                 <p>Contribute to the project, report bugs, and view our open-source code.</p>
               </div>
-              <a href="https://github.com/mbeliogl/Penny.io" className="community-link" target='_blank' rel='noopener noreferrer'>
+              <a href="https://github.com/Max-the-dev/Readia.io" className="community-link" target='_blank' rel='noopener noreferrer'>
                 <ExternalLink size={16} />
                 View on GitHub
               </a>
@@ -354,7 +354,7 @@ function Resources() {
                 <Video size={48} />
                 <span>Coming Soon</span>
               </div>
-              <h3>Getting Started with Penny.io</h3>
+              <h3>Getting Started with Readia.io</h3>
               <p>5-minute walkthrough of the platform for new users.</p>
               <div className="coming-soon-badge">
                 <span>Coming Soon</span>

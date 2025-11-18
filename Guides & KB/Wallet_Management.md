@@ -1,4 +1,4 @@
-# Managing Payout Wallets on Penny.io
+# Managing Payout Wallets on Readia.io
 
 Keeping your wallets linked correctly ensures that payouts land where you expect and that your dashboard always reflects the right profile. This guide walks through the dual-wallet flow and what to expect when you add, replace, or remove a secondary payout method.
 
@@ -48,7 +48,7 @@ This safeguards your account so an obsolete wallet can’t keep accessing your p
 - Publish with your first wallet → everything is tied to that profile automatically.  
 - Before publishing from another wallet, link it as a secondary so both addresses point to the same author UUID.  
 - If you already published with two different wallets by accident, contact support—we’ll merge the profiles for you.  
-  - If you hit an “address already linked” error, use the CTA in the modal to reach out to support@penny.io for a manual merge.
+  - If you hit an “address already linked” error, use the CTA in the modal to reach out to support@readia.io for a manual merge.
 
 ---
 
@@ -61,4 +61,4 @@ This safeguards your account so an obsolete wallet can’t keep accessing your p
 
 ---
 
-Questions or issues? Reach out via support@penny.io.
+Questions or issues? Reach out via support@readia.io.

@@ -1,8 +1,8 @@
-# Penny.io - Architecture Summary (short)
+# Readia.io - Architecture Summary (short)
 
 _Version 1.0 – Prepared for GitHub publication and mirrored as an on-chain article._
 
-This document expands on the README by focusing on the implementation details that make Penny.io a wallet-native publishing platform. It is written for engineers, protocol reviewers, and investors who want to understand how the dApp works under the hood, not as marketing collateral.
+This document expands on the README by focusing on the implementation details that make Readia.io a wallet-native publishing platform. It is written for engineers, protocol reviewers, and investors who want to understand how the dApp works under the hood, not as marketing collateral.
 
 ## System Context
 
@@ -57,7 +57,7 @@ Key concepts:
 
 ---
 
-## x402 in Penny.io
+## x402 in Readia.io
 
 ### Requirement Payload
 
@@ -68,12 +68,12 @@ When the frontend requests `/api/articles/:id/purchase`, the backend returns:
   "scheme": "exact",
   "network": "base",
   "maxAmountRequired": "10000",   // micro USDC
-  "resource": "https://api.penny.io/api/articles/92/purchase?network=base",
+  "resource": "https://api.readia.io/api/articles/92/purchase?network=base",
   "payTo": "0xAuthorWallet...",
   "asset": "0xUSDC...",
   "extra": {
     "title": "Purchase: Test article 1",
-    "serviceName": "Penny.io Article Access",
+    "serviceName": "Readia.io Article Access",
     "gasLimit": "1000000",
     "pricing": { "currency": "USD Coin", "amount": "0.01" }
   }
@@ -291,7 +291,7 @@ CREATE TABLE payments (
 
 ## Performance & Benchmarks
 
-| Operation                      | Penny.io (x402) | Traditional credit card | On-chain transfer (L2) |
+| Operation                      | Readia.io (x402) | Traditional credit card | On-chain transfer (L2) |
 |--------------------------------|-----------------|-------------------------|------------------------|
 | Authorization to unlock        | **3–5 seconds** (single wallet popup) | 15–60 seconds (3DS flow) | 15–30 seconds          |
 | Settlement availability to author | Immediate (if using facilitator) | T+1 to T+3 days          | Immediate once minted   |
@@ -332,4 +332,4 @@ For a full API reference, see `backend/src/routes.ts` or the inline JSDoc commen
 ---
 
 _For more details, see `Architecture Summary_Full.md`
-_Questions or contributions? Open an issue or PR. For security disclosures, email support@penny.io
+_Questions or contributions? Open an issue or PR. For security disclosures, email support@readia.io

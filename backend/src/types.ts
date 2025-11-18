@@ -1,4 +1,4 @@
-// Backend types for Penny.io
+// Backend types for Readia.io
 
 export type SupportedAuthorNetwork = 'base' | 'base-sepolia' | 'solana' | 'solana-devnet';
 

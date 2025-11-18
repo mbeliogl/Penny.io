@@ -1,6 +1,6 @@
 <div align="center">
 
-# Penny.io – A New Way to Monetize Written Content
+# Readia.io – A New Way to Monetize Written Content
 
 Pay‑per‑article access, instant author payouts, and dual‑network wallet support powered by the x402 payment protocol.
 
@@ -10,7 +10,7 @@ Pay‑per‑article access, instant author payouts, and dual‑network wallet su
 
 ## Table of Contents
 
-1. [About Penny.io](#about-pennyio)  
+1. [About Readia.io](#about-readiaio)  
 2. [Key Features](#key-features)  
 3. [Architecture](#architecture)  
 4. [x402 Payment Flow](#x402-payment-flow)  
@@ -24,15 +24,15 @@ Pay‑per‑article access, instant author payouts, and dual‑network wallet su
 
 ---
 
-## About Penny.io
+## About Readia.io
 
-Penny.io is a fully blockchain-native publishing platform designed to solve one problem. We've all encountered it - not being able to read an article, get an answer to your math problem, or read a code snippet you so desperately need because you get smacked with a 'create an account or subscribe to continue reading' blocker.  
+Readia.io is a fully blockchain-native publishing platform designed to solve one problem. We've all encountered it - not being able to read an article, get an answer to your math problem, or read a code snippet you so desperately need because you get smacked with a 'create an account or subscribe to continue reading' blocker.  
 
 We get it. Platforms have hosting expenses. Writers give them a cut of their earnings in return for exposure. Readers have to maintain a subscription even when they rarely use the resource. 
 
-Penny flips the script (haha, yes pun is intended). Writes set article prices ranging from $0.01–$1.00. Readers unlock individual articles using the **x402 HTTP payment protocol**. Writers get paid in seconds (not weeks) and can manage payouts across **Base** and **Solana** with our proprietory dual-network support. Readers maintained perpetual access validated by the blockchain. 
+Readia flips the script (haha, yes pun is intended). Writes set article prices ranging from $0.01–$1.00. Readers unlock individual articles using the **x402 HTTP payment protocol**. Writers get paid in seconds (not weeks) and can manage payouts across **Base** and **Solana** with our proprietory dual-network support. Readers maintained perpetual access validated by the blockchain. 
 
-You read that right. Penny delivers:
+You read that right. Readia delivers:
   - No ads 
   - No subscriptions 
   - No platform fees 
@@ -43,7 +43,7 @@ Why it matters:
 
 - Traditional platforms force monthly subs or keep large revenue shares.
 - Micropayments were impractical before x402 due to transaction/gas fees and latency.
-- Penny.io combines a modern UX, a professional editor, analytics, blockchain security, and instant settlement with x402.
+- Readia.io combines a modern UX, a professional editor, analytics, blockchain security, and instant settlement with x402.
 
 ---
 
@@ -53,7 +53,7 @@ Why it matters:
 - 🔐 **x402 Micropayments** – Per‑article pricing with signature verification and instant settlement via Coinbase CDP x402 facilitator.  
 - 🌉 **Multichain Support** – Base & Solana USDC, including automatic ATA detection for Solana wallets.  
 - 🔁 **Dual‑Wallet Feature** – Authors can add a complementary network payout wallet, enabling them to receive payments on both chains.
-- 🎁 **Tipping & Donations** – Dedicated modals let readers tip writers or donate to Penny via x402 on either chain.  
+- 🎁 **Tipping & Donations** – Dedicated modals let readers tip writers or donate to Readia via x402 on either chain.  
 - 🧾 **Payment Status** – Payment data is stored directly on-chain which ensures perpetual access and accuracy. Dual wallet support means you never lose access to your account. 
 
 ### Author Experience
@@ -79,7 +79,7 @@ Why it matters:
 ## Architecture
 
 ```
-Penny_dev/
+Readia_dev/
 ├── frontend/    # React + TypeScript + Vite SPA
 │   ├── src/pages (Dashboard, Article, Explore, X402Test, etc.)
 │   ├── src/services (api, x402PaymentService, wallet helpers)
@@ -249,8 +249,8 @@ For a deeper dive (authorization vs settlement, gas math, code samples), see [`x
 ### Installation
 
 ```bash
-git clone https://github.com/<your-org>/Penny_dev.git
-cd Penny_dev
+git clone https://github.com/<your-org>/Readia_dev.git
+cd Readia_dev
 npm install          # installs root, backend, and frontend deps via workspaces
 ```
 
@@ -366,7 +366,7 @@ For x402 end-to-end verification, use the `/x402-test` page to simulate:
 ## Additional Resources
 
 - [x402-technical-documentation] - In depth x402 protocol / technical implementation doc.
-- [Writer's Toolkit] - Short guide on how to success as a writer on Penny.
+- [Writer's Toolkit] - Short guide on how to success as a writer on Readia.
 - [Wallet_Mgmt] - How to safely manage your platform-connected wallets. 
 
 ---

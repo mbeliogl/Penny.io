@@ -10,7 +10,7 @@ const networks: [AppKitNetwork, ...AppKitNetwork[]] = [base, baseSepolia, solana
 const projectId = import.meta.env.VITE_WALLETCONNECT_PROJECT_ID;
 
 const metadata = {
-  name: 'Penny.io',
+  name: 'Readia.io',
   description: 'Content Monetization Reimagined',
   url: window.location.origin,
   icons: ['https://penny.io/icon.png'],

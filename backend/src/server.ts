@@ -110,7 +110,7 @@ if (process.env.CDP_API_KEY_ID) {
 // Health check endpoint
 app.get('/api/health', (req: Request, res: Response) => {
   res.json({
-    message: 'Penny.io backend is running!',
+    message: 'Readia.io backend is running!',
     timestamp: new Date().toISOString(),
     version: '1.0.0',
     facilitator: facilitatorUrl,
@@ -150,7 +150,7 @@ app.use((req: Request, res: Response) => {
 });
 
 const server = app.listen(PORT, () => {
-  console.log(`🚀 Penny.io backend server running on port ${PORT}`);
+  console.log(`🚀 Readia.io backend server running on port ${PORT}`);
   console.log(`📚 API documentation available at http://localhost:${PORT}/api/health`);
 });
 

@@ -1,13 +1,14 @@
 import { Link } from 'react-router-dom';
 import { LayoutDashboard, PenTool, BookOpen } from 'lucide-react';
 import AppKitConnectButton from './AppKitConnectButton';
+import AuthStatusBadges from './AuthStatusBadges';
 
 function Header() {
   return (
     <header className="header">
       <div className="container">
         <Link to="/" className="logo">
-          <h1>Penny.io</h1>
+          <h1>Readia.io</h1>
         </Link>
         <nav className="nav">
           <Link to="/explore" className="link">
@@ -25,6 +26,7 @@ function Header() {
           <AppKitConnectButton />
         </nav>
       </div>
+      <AuthStatusBadges />
     </header>
   );
 }

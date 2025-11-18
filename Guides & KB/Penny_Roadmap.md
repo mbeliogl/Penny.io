@@ -1,4 +1,4 @@
-# Penny.io Roadmap
+# Readia.io Roadmap
 
 _A concise look at what’s coming next for the platform._
 
@@ -61,7 +61,7 @@ _A concise look at what’s coming next for the platform._
   Paid access endpoints—scraped datasets and API-powered insights—where revenue flows directly to the publisher’s wallet via x402.
 
 - **Third-Party Integrations**  
-  Shareable links and embed widgets so other platforms can surface Penny.io content; paired with author profile metadata.
+  Shareable links and embed widgets so other platforms can surface Readia.io content; paired with author profile metadata.
 
 - **Q&A Forum** 
   Dedicated module for users to search problem solutions, code snippets, and short explanations (homework, college assignmnets, etc...). Pay only for solutions you want to see - powered by x402. 

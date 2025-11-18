@@ -1,6 +1,6 @@
-# Penny.io - Architecture Summary
+# Readia.io - Architecture Summary
 
-## How Penny.io Enables Instant Micropayments on Base & Solana
+## How Readia.io Enables Instant Micropayments on Base & Solana
 
 ---
 
@@ -126,7 +126,7 @@ Key concepts:
 
 ## Payment Flow Diagram
 
-### Complete x402 Payment Flow (Penny.io Implementation)
+### Complete x402 Payment Flow (Readia.io Implementation)
 
 ```
 
@@ -395,7 +395,7 @@ function buildPaymentRequirement(
       version: '2',
       title: `Purchase: ${article.title}`,
       category: article.categories?.[0] || 'content',
-      serviceName: 'Penny.io Article Access',
+      serviceName: 'Readia.io Article Access',
       pricing: {
         currency: 'USD',
         amount: article.price.toString(),
@@ -664,7 +664,7 @@ The popup is quick, but it exists for your protection.
 
 ### 2. Facilitator Trust Model
 
-Penny.io uses Coinbase Developer Platform (CDP) as the payment facilitator:
+Readia.io uses Coinbase Developer Platform (CDP) as the payment facilitator:
 
 - [OK] Signature Verification - Validates EIP-712 signatures cryptographically
 - [OK] Balance Checking - Ensures user has sufficient USDC before authorization
@@ -749,7 +749,7 @@ const criticalLimiter = rateLimit({
         "version": "2",
         "title": "Purchase: Building Scalable Web3 Applications",
         "category": "Technology",
-        "serviceName": "Penny.io Article Access",
+        "serviceName": "Readia.io Article Access",
         "serviceDescription": "Unlock full access to the article",
         "pricing": {
           "currency": "USD",
@@ -783,7 +783,7 @@ const criticalLimiter = rateLimit({
 
 ### Using Coinbase Developer Platform
 
-Penny.io integrates with CDP for:
+Readia.io integrates with CDP for:
 
 1. Signature Verification - Validates EIP-712 authorization signatures
 2. Balance Checking - Ensures user has sufficient USDC
@@ -822,8 +822,8 @@ This is the future of content monetization.
 
 ## Learn More
 
-- Try Penny.io: https://penny.io
-- GitHub Repository: https://github.com/mbeliogl/Penny.io
+- Try Readia.io: https://readia.io
+- GitHub Repository: https://github.com/Max-the-dev/Readia.io
 - x402 Specification: https://x402.org
 - Coinbase Developer Platform: https://cdp.coinbase.com
 

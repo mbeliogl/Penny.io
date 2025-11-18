@@ -320,7 +320,7 @@ async function buildPaymentRequirement(
       title: `Purchase: ${article.title}`,
       category: article.categories?.[0] || 'content',
       tags: article.categories || ['article', 'content'],
-      serviceName: 'Penny.io Article Access',
+      serviceName: 'Readia.io Article Access',
       serviceDescription: `Unlock full access to "${article.title}" by ${article.authorAddress.slice(0, 6)}...${article.authorAddress.slice(-4)}`,
       gasLimit: '1000000',
       ...(feePayer ? { feePayer } : {}),
@@ -1302,7 +1302,7 @@ router.post('/articles/:id/purchase', criticalLimiter, async (req: Request, res:
 });
 
 // Donate endpoint 
-// POST /api/donate - Donate to Penny.io platform
+// POST /api/donate - Donate to Readia.io platform
 router.post('/donate', criticalLimiter, async (req: Request, res: Response) => {
   try {
     const { amount } = req.body;
@@ -1350,7 +1350,7 @@ router.post('/donate', criticalLimiter, async (req: Request, res: Response) => {
       network: networkPreference,
       maxAmountRequired: amountInMicroUSDC.toString(),
       resource: `${req.protocol}://${req.get('host')}/api/donate?network=${networkPreference}`,
-      description: `Donation to Penny.io platform - $${amount}`,
+      description: `Donation to Readia.io platform - $${amount}`,
       mimeType: 'application/json',
       payTo,
       maxTimeoutSeconds: 900,
@@ -1365,11 +1365,11 @@ router.post('/donate', criticalLimiter, async (req: Request, res: Response) => {
       extra: {
         name: networkPreference === 'base' ? 'USD Coin' : 'USDC',
         version: '2',
-        title: `Donate $${amount} to Penny.io`,
+        title: `Donate $${amount} to Readia.io`,
         category: 'donation',
         tags: ['donation', 'platform-support'],
-        serviceName: 'Penny.io Platform Donation',
-        serviceDescription: `Support Penny.io platform with a $${amount} donation`,
+        serviceName: 'Readia.io Platform Donation',
+        serviceDescription: `Support Readia.io platform with a $${amount} donation`,
         ...(feePayer ? { feePayer } : {}),
         pricing: {
           currency: 'USD',
@@ -1555,7 +1555,7 @@ router.post('/articles/:id/tip', criticalLimiter, async (req: Request, res: Resp
         title: `Tip $${amount} to author`,
         category: 'tip',
         tags: ['tip', 'author-support', 'article'],
-        serviceName: 'Penny.io Article Tip',
+        serviceName: 'Readia.io Article Tip',
         serviceDescription: `Tip the author of "${article.title}" with $${amount}`,
         ...(feePayer ? { feePayer } : {}),
         pricing: {

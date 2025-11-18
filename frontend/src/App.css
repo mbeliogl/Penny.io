@@ -20,6 +20,7 @@ wui-card[role="alertdialog"] {
   z-index: 100;
   backdrop-filter: blur(10px);
   background-color: rgba(255, 255, 255, 0.95);
+  position: relative;
 }
 
 .header .container {
@@ -85,6 +86,46 @@ wui-card[role="alertdialog"] {
   display: flex;
   align-items: center;
   gap: 0.5rem;
+}
+
+/* Auth Status Badges */
+.auth-status-badges {
+  position: absolute;
+  right: 30px;
+  top: 50%;
+  transform: translateY(-50%);
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.auth-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  border-radius: 6px;
+  transition: all 0.2s ease;
+  cursor: default;
+}
+
+.auth-badge--active {
+  background-color: rgba(16, 185, 129, 0.12);
+  color: #059669;
+}
+
+.auth-badge--active svg {
+  color: #10b981;
+}
+
+.auth-badge--inactive {
+  background-color: rgba(156, 163, 175, 0.1);
+  color: #9ca3af;
+}
+
+.auth-badge--inactive svg {
+  color: #9ca3af;
 }
 
 /* Unified wallet button - Option 3: Nested Layout */
@@ -3920,6 +3961,76 @@ main {
   color: #dc2626;
   font-size: 0.85rem;
   font-weight: 500;
+}
+
+/* Auth Prompt Toast - Fixed position overlay */
+.auth-toast-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.4);
+  backdrop-filter: blur(2px);
+  z-index: 9999;
+  display: flex;
+  align-items: flex-start;
+  justify-content: center;
+  padding-top: 100px;
+  animation: fadeIn 0.2s ease;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+.auth-toast {
+  background: rgba(249, 250, 251, 0.98);
+  border: 1px solid rgba(209, 213, 219, 0.8);
+  border-radius: 12px;
+  padding: 20px 24px;
+  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.15);
+  backdrop-filter: blur(12px);
+  max-width: 440px;
+  width: 90%;
+  animation: slideDown 0.3s ease;
+}
+
+@keyframes slideDown {
+  from {
+    opacity: 0;
+    transform: translateY(-20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.auth-toast__content {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  align-items: center;
+}
+
+.auth-toast__message {
+  margin: 0;
+  color: #374151;
+  font-size: 0.95rem;
+  line-height: 1.5;
+  text-align: center;
+  font-weight: 500;
+}
+
+.auth-toast .wallet-connect-button {
+  width: 100%;
+  justify-content: center;
 }
 
 @media (max-width: 768px) {
@@ -13433,4 +13544,148 @@ main {
   opacity: 0.85;
   transform: translate(-50%, -120%) scale(1.05);
   color: rgba(15, 23, 42, 0.4);
+}
+
+/* Auth Status Badges - Mobile Responsive */
+@media (max-width: 768px) {
+  .auth-status-badges {
+    right: 12px;
+    gap: 4px;
+  }
+
+  .auth-badge {
+    width: 28px;
+    height: 28px;
+  }
+
+  .auth-badge svg {
+    width: 14px;
+    height: 14px;
+  }
+}
+
+@media (max-width: 600px) {
+  .auth-status-badges {
+    right: 8px;
+    gap: 3px;
+  }
+
+  .auth-badge {
+    width: 26px;
+    height: 26px;
+  }
+}
+
+/* Session Expired Modal */
+.session-expired-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.6);
+  backdrop-filter: blur(4px);
+  z-index: 10000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+  animation: fadeIn 0.2s ease;
+}
+
+.session-expired-modal {
+  background: rgba(249, 250, 251, 0.98);
+  border: 1px solid rgba(209, 213, 219, 0.8);
+  border-radius: 16px;
+  padding: 32px;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.2);
+  backdrop-filter: blur(12px);
+  max-width: 440px;
+  width: 100%;
+  animation: modalSlideIn 0.3s ease;
+}
+
+@keyframes modalSlideIn {
+  from {
+    opacity: 0;
+    transform: scale(0.95) translateY(-20px);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1) translateY(0);
+  }
+}
+
+.session-expired-modal__title {
+  margin: 0 0 16px 0;
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: #1a1a1a;
+  text-align: center;
+}
+
+.session-expired-modal__message {
+  margin: 0 0 32px 0;
+  color: #6b7280;
+  font-size: 0.95rem;
+  line-height: 1.6;
+  text-align: center;
+}
+
+.session-expired-modal__actions {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+}
+
+.session-expired-modal__cancel {
+  flex: 1;
+  padding: 12px 24px;
+  background: transparent;
+  border: 1px solid rgba(209, 213, 219, 0.8);
+  border-radius: 8px;
+  color: #6b7280;
+  font-size: 0.9rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.session-expired-modal__cancel:hover:not(:disabled) {
+  background: rgba(243, 244, 246, 0.8);
+  border-color: rgba(156, 163, 175, 0.8);
+  color: #374151;
+}
+
+.session-expired-modal__cancel:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.session-expired-modal__actions .wallet-connect-button {
+  flex: 1;
+}
+
+@media (max-width: 600px) {
+  .session-expired-modal {
+    padding: 24px;
+  }
+
+  .session-expired-modal__title {
+    font-size: 1.25rem;
+  }
+
+  .session-expired-modal__message {
+    font-size: 0.9rem;
+    margin-bottom: 24px;
+  }
+
+  .session-expired-modal__actions {
+    flex-direction: column;
+  }
+
+  .session-expired-modal__cancel,
+  .session-expired-modal__actions .wallet-connect-button {
+    width: 100%;
+  }
 }

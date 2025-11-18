@@ -39,7 +39,7 @@ async function main() {
   const siweMessage = new SiweMessage({
     domain: nonceData.domain,
     address: wallet.address,
-    statement: 'Sign in to Penny.io',
+    statement: 'Sign in to Readia.io',
     uri: nonceData.uri,
     version: '1',
     chainId: 84532, // Base Sepolia; use 8453 for Base mainnet

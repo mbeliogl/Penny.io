@@ -377,7 +377,7 @@ function Footer() {
       <div className="container">
         <div className="footer-content">
           <div className="footer-section">
-            <h3>Penny.io</h3>
+            <h3>Readia.io</h3>
             <p>Content Monetization Reimagined</p>
             {/* Action Buttons */}
             <div className="footer-actions">
@@ -436,7 +436,7 @@ function Footer() {
           </div>
         </div>
         <div className="footer-bottom">
-          <p>&copy; 2025 Penny.io. All rights reserved.</p>
+          <p>&copy; 2025 Readia.io. All rights reserved.</p>
           <div className="footer-links">
             <Link to="/privacy">Privacy Policy</Link>
             <Link to="/terms">Terms of Service</Link>
@@ -460,7 +460,7 @@ function Footer() {
             <div className="donation-modal-header">
               <div className="donation-modal-title">
                 <HeartHandshake size={18} />
-                <h3 id="donation-modal-title">Support Penny.io</h3>
+                <h3 id="donation-modal-title">Support Readia.io</h3>
               </div>
               <button
                 type="button"
@@ -474,7 +474,7 @@ function Footer() {
             <div className="donation-modal-grid">
               <section className="donation-summary-column">
                 <div className="donation-impact-card">
-                  <h4>Thank you for using Penny.io</h4>
+                  <h4>Thank you for using Readia.io</h4>
                   <p>Donations cover hosting fees, improvements, and new features.</p>
                 </div>
 
@@ -562,7 +562,7 @@ function Footer() {
                     @devinggold
                   </a>
                   <a
-                    href="https://github.com/Max-the-dev/Penny.io"
+                    href="https://github.com/Max-the-dev/Readia.io"
                     target="_blank"
                     rel="noopener noreferrer"
                     className="donation-social-link"
@@ -699,27 +699,7 @@ function Footer() {
                         </div>
                       )}
                     </div>
-                    {donationResult?.success && (
-                      <div className="donation-share-actions">
-                        <button
-                          type="button"
-                          className="donation-share-link"
-                          onClick={handleCopyShareLink}
-                        >
-                          {shareLinkCopied ? 'Link copied' : 'Copy shareable donation link'}
-                        </button>
-                        {donationExplorerUrl && (
-                          <a
-                            href={donationExplorerUrl}
-                            target="_blank"
-                            rel="noreferrer"
-                            className="donation-share-link view-transaction"
-                          >
-                            View transaction
-                          </a>
-                        )}
-                      </div>
-                    )}
+                    
                   </>
                 )}
               </section>

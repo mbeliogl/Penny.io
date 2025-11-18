@@ -5,6 +5,7 @@ import { useWalletConnectionManager } from './hooks/useWalletConnectionManager';
 import Header from './components/Header';
 import Footer from './components/Footer';
 import ScrollToTop from './components/ScrollToTop';
+import SessionExpiredModal from './components/SessionExpiredModal';
 import Home from './pages/Home';
 import Write from './pages/Write';
 import Dashboard from './pages/Dashboard';
@@ -21,6 +22,7 @@ import Contact from './pages/Contact';
 import X402Test from './pages/X402Test';
 import Explore from './pages/Explore';
 import Whitepaper from './pages/Whitepaper';
+import SessionExpiredTest from './pages/SessionExpiredTest';
 import NotFound from './pages/NotFound';
 import './App.css'
 
@@ -50,10 +52,12 @@ function AppContent() {
           <Route path="/contact" element={<Contact />} />
           <Route path="/x402-test" element={<X402Test />} />
           <Route path="/explore" element={<Explore />} />
+          <Route path="/session-expired-test" element={<SessionExpiredTest />} />
           <Route path="*" element={<NotFound />} />
        </Routes>
       </main>
       <Footer />
+      <SessionExpiredModal />
     </>
   );
 }

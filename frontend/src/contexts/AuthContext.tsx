@@ -10,10 +10,12 @@ interface AuthContextValue {
   isAuthenticating: boolean;
   error: string | null;
   authenticatedAddress?: string;
+  sessionExpired: boolean;
   login: () => Promise<boolean>;
   logout: () => Promise<void>;
   getAuthHeaders: () => Record<string, string>;
   handleAuthError: () => void;
+  clearSessionExpired: () => void;
 }
 
 interface AuthProviderProps {
@@ -106,6 +108,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
     if (typeof window === 'undefined') return undefined;
     return localStorage.getItem(AUTHED_ADDRESS_KEY) || undefined;
   });
+  const [sessionExpired, setSessionExpired] = useState(false);
 
   const isAuthenticated = Boolean(token);
 
@@ -190,7 +193,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
         const siweMessage = new SiweMessage({
           domain,
           address,
-          statement: 'Sign in to Penny.io',
+          statement: 'Sign in to Readia.io',
           uri,
           version: '1',
           chainId: chainId || 84532,
@@ -214,7 +217,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
           throw new Error('Connected Solana wallet does not support message signing');
         }
 
-        message = `Sign in to Penny.io\nNonce: ${nonce}\nDomain: ${domain}`;
+        message = `Sign in to Readia.io\nNonce: ${nonce}\nDomain: ${domain}`;
         const encoded = new TextEncoder().encode(message);
         const signed = await provider.signMessage(encoded, 'utf8');
         const signatureBytes = signed instanceof Uint8Array ? signed : signed.signature;
@@ -292,6 +295,10 @@ export function AuthProvider({ children }: AuthProviderProps) {
     };
   }, [token]);
 
+ const clearSessionExpired = useCallback(() => {
+   setSessionExpired(false);
+ }, []);
+
  const value = useMemo<AuthContextValue>(
    () => ({
      token,
@@ -299,6 +306,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
      isAuthenticating,
      error,
      authenticatedAddress,
+     sessionExpired,
      login,
      logout,
      getAuthHeaders,
@@ -306,13 +314,15 @@ export function AuthProvider({ children }: AuthProviderProps) {
        apiService.setAuthHeaderProvider(null);
        setToken(null);
        setAuthenticatedAddress(undefined);
+       setSessionExpired(true);
        if (typeof window !== 'undefined') {
          localStorage.removeItem(TOKEN_STORAGE_KEY);
          localStorage.removeItem(AUTHED_ADDRESS_KEY);
        }
      },
+     clearSessionExpired,
    }),
-    [token, isAuthenticated, isAuthenticating, error, login, logout, getAuthHeaders, authenticatedAddress]
+    [token, isAuthenticated, isAuthenticating, error, login, logout, getAuthHeaders, authenticatedAddress, sessionExpired, clearSessionExpired]
  );
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

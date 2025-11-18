@@ -61,7 +61,7 @@ function Terms() {
                   <Users size={28} />
                 </div>
                 <h3>Platform Use</h3>
-                <p>Guidelines for using Penny.io as a reader or writer</p>
+                <p>Guidelines for using Readia.io as a reader or writer</p>
               </div>
               
               <div className="terms-content">
@@ -158,12 +158,12 @@ function Terms() {
           <div className="disclaimer-content">
             <div className="disclaimer-item">
               <h3>Decentralized Nature</h3>
-              <p>Penny.io operates as a decentralized platform. While we provide the interface and infrastructure, content transactions occur directly between users through blockchain networks. We do not act as an intermediary in financial transactions.</p>
+              <p>Readia.io operates as a decentralized platform. While we provide the interface and infrastructure, content transactions occur directly between users through blockchain networks. We do not act as an intermediary in financial transactions.</p>
             </div>
 
             <div className="disclaimer-item">
               <h3>Content Responsibility</h3>
-              <p>Writers are solely responsible for their content. We provide automated content filtering but do not manually review all submissions. Users should report inappropriate content by contacting support at support@penny.io</p>
+              <p>Writers are solely responsible for their content. We provide automated content filtering but do not manually review all submissions. Users should report inappropriate content by contacting support at support@readia.io</p>
             </div>
 
             <div className="disclaimer-item">
