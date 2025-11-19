@@ -81,15 +81,23 @@ function Article() {
   // Dynamic chain detection to build correct payload
   const { chain } = useAccount();
   const {caipNetworkId} = useAppKitNetwork();
-  const detectSolanaNetwork = (caip?: string): SupportedNetwork => {
-  if (!caip) return 'solana-devnet';
-  if (caip.startsWith('solana:5eykt4UsFv8P8NJdTREpY1vzqKqZKvdp')) return 'solana';
-  if (caip.startsWith('solana:EtWTRABZaYq6iMfeYKouRu166VU2xqa1')) return 'solana-devnet';
-  return 'solana-devnet';
+  const detectSolanaNetwork = (caip?: string, solanaSigner?: any): SupportedNetwork => {
+  // First try CAIP detection (when Solana is active network)
+  if (caip?.startsWith('solana:5eykt4UsFv8P8NJdTREpY1vzqKqZKvdp')) return 'solana';
+  if (caip?.startsWith('solana:EtWTRABZaYq6iMfeYKouRu166VU2xqa1')) return 'solana-devnet';
+
+  // If CAIP is not Solana (e.g., Base wallet is active), check if Solana signer exists
+  // If Solana wallet is connected behind the scenes, default to mainnet
+  if (solanaSigner?.address) {
+    return 'solana'; // Default to mainnet for production
+  }
+
+  // Final fallback: mainnet (changed from devnet for production safety)
+  return 'solana';
 };
   const resolvedSolanaNetwork = useMemo(
-    () => detectSolanaNetwork(caipNetworkId),
-    [caipNetworkId]
+    () => detectSolanaNetwork(caipNetworkId, solanaSigner),
+    [caipNetworkId, solanaSigner]
   );
   
 
