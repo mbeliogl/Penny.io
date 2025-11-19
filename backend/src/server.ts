@@ -53,10 +53,8 @@ const enforceHttps = ENABLE_HTTPS_REDIRECT === 'true';
 const hstsMaxAge = Number.parseInt(HSTS_MAX_AGE || '31536000', 10);
 
 app.enable('trust proxy');
-app.use(helmet({
-  crossOriginResourcePolicy: false,
-}));
 
+// CORS configuration - MUST come before helmet to handle OPTIONS preflight
 const corsOptions: CorsOptions = {
   origin(origin, callback) {
     if (!origin || allowedOrigins.length === 0 || allowedOrigins.includes(origin)) {
@@ -71,6 +69,11 @@ const corsOptions: CorsOptions = {
 };
 
 app.use(cors(corsOptions));
+
+// Helmet security headers - comes AFTER CORS to allow preflight
+app.use(helmet({
+  crossOriginResourcePolicy: false,
+}));
 app.use(express.json({ limit: jsonBodyLimit }));
 app.use(express.urlencoded({ extended: true, limit: formBodyLimit }));
 
