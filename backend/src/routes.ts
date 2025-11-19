@@ -37,6 +37,7 @@ import { requireAuth, requireOwnership, AuthenticatedRequest } from './auth';
 const router = express.Router();
 const db = new Database();
 const isProduction = process.env.NODE_ENV === 'production';
+const enableRateLimiting = process.env.ENABLE_RATE_LIMITING === 'true';
 
 // Use CDP facilitator - auto-detects CDP_API_KEY_ID and CDP_API_KEY_SECRET from env
 const { verify: verifyWithFacilitator, settle: settleWithFacilitator } = useFacilitator(facilitator);
@@ -117,7 +118,7 @@ const readLimiter = rateLimit({
   },
   standardHeaders: true, // Return rate limit info in `RateLimit-*` headers
   legacyHeaders: false,  // Disable `X-RateLimit-*` headers
-  skip: () => !isProduction // Disable limiter entirely outside production
+  skip: () => !enableRateLimiting // Controlled by ENABLE_RATE_LIMITING env var
 });
 
 /**
@@ -134,7 +135,7 @@ const writeLimiter = rateLimit({
   },
   standardHeaders: true,
   legacyHeaders: false,
-  skip: () => !isProduction,
+  skip: () => !enableRateLimiting,
 });
 
 /**
@@ -151,7 +152,7 @@ const criticalLimiter = rateLimit({
   },
   standardHeaders: true,
   legacyHeaders: false,
-  skip: () => !isProduction,
+  skip: () => !enableRateLimiting,
 });
 
 /**
@@ -168,7 +169,7 @@ const uploadLimiter = rateLimit({
   },
   standardHeaders: true,
   legacyHeaders: false,
-  skip: () => !isProduction,
+  skip: () => !enableRateLimiting,
 });
 
 // Configure multer for file uploads (memory storage for Supabase)
