@@ -822,21 +822,64 @@ class Database {
     return true;
   }
 
+  /**
+   * Verify if user paid for resource already to determine if paywall is displayed 
+   * Uses findAuthorUuidByWallet() to determineif either of user's wallets has alread purchased the resource
+   * Gracefully handle scenario when authorUuid does nto exist.
+   */
   async checkPaymentStatus(articleId: number, userAddress: string): Promise<boolean> {
     const normalizedUserAddress = normalizeFlexibleAddress(userAddress);
 
-    const { data, error } = await supabase
+    const authorUuid = await this.findAuthorUuidByWallet(normalizedUserAddress);
+
+    if (!authorUuid) {
+      // Should not happen in normal flow, but handle gracefully
+      // Check direct address as safety fallback
+      const { data, error } = await supabase
+        .from('payments')
+        .select('id')
+        .eq('article_id', 'articleId')
+        .eq('user_address', normalizedUserAddress)
+        .single()
+      
+      if (error && error.code !== 'PGRST116') {
+        throw error;
+      }
+
+      return !!data; 
+
+    }
+
+    // Get all wallets addresses for this author (user)
+    const { data: wallets, error: walletsError } = await supabase 
+      .from('author_wallets')
+      .select('address')
+      .eq('author_uuid', authorUuid)
+
+    if (walletsError) {
+      throw walletsError;
+    }
+
+    if (!wallets || wallets.length === 0) {
+      // No wallets found - should not happen but still handle
+      return false;
+    }
+
+    const walletAddresses = wallets.map(w => w.address);
+
+    // Check if ANY of author's wallets has paid for resource
+    const { data, error } = await supabase 
       .from('payments')
       .select('id')
       .eq('article_id', articleId)
-      .eq('user_address', normalizedUserAddress)
-      .single();
+      .eq('user_address', walletAddresses)
+      .limit(1);
 
-    if (error && error.code !== 'PGRST116') {
+    if (error) {
       throw error;
     }
 
-    return !!data;
+    return data && data.length > 0;
   }
 
   async getPaymentsByArticle(articleId: number): Promise<number> {

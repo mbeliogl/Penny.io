@@ -2121,6 +2121,61 @@ router.get('/payment-status/:articleId/:userAddress', readLimiter, async (req: R
   }
 });
 
+// Check if user can edit article (supports secondary wallets via UUID)
+router.get('/articles/:id/can-edit/:userAddress', readLimiter, async (req: Request, res: Response) => {
+  try {
+    const articleId = parseInt(req.params.id);
+    const { userAddress } = req.params;
+
+    if (isNaN(articleId)) {
+      const response: ApiResponse<never> = {
+        success: false,
+        error: 'Invalid article ID'
+      };
+      return res.status(400).json(response);
+    }
+
+    // Get the article
+    const article = await db.getArticleById(articleId);
+    if (!article) {
+      const response: ApiResponse<never> = {
+        success: false,
+        error: 'Article not found'
+      };
+      return res.status(404).json(response);
+    }
+
+    // Resolve canonical address (supports secondary wallets)
+    let canonicalAddress: string;
+    try {
+      ({ canonicalAddress } = await resolveCanonicalAuthorAddress(userAddress));
+    } catch {
+      const response: ApiResponse<{ canEdit: boolean }> = {
+        success: true,
+        data: { canEdit: false }
+      };
+      return res.json(response);
+    }
+
+    // Check if user owns the article
+    const canEdit = article.authorAddress === canonicalAddress;
+
+    const response: ApiResponse<{ canEdit: boolean }> = {
+      success: true,
+      data: { canEdit }
+    };
+    res.json(response);
+
+  } catch (error) {
+    console.error('Error checking edit permission:', error);
+    const response: ApiResponse<never> = {
+      success: false,
+      error: 'Failed to check edit permission'
+    };
+    res.status(500).json(response);
+  }
+});
+
 // Like/Unlike Routes
 
 // POST /api/articles/:id/like - Like an article
