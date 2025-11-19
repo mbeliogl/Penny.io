@@ -1,5 +1,5 @@
 // Simplified x402 payment service - let the protocol handle everything
-import { apiService } from './api';
+import { apiService, API_BASE_URL } from './api';
 
 class SimpleX402Service {
   /**
@@ -9,7 +9,7 @@ class SimpleX402Service {
   async purchaseArticle(articleId: number): Promise<{ success: boolean; error?: string }> {
     try {
       // Just make a normal POST request - x402-express will handle the rest
-      const response = await fetch(`http://localhost:3001/api/articles/${articleId}/purchase`, {
+      const response = await fetch(`${API_BASE_URL}/articles/${articleId}/purchase`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
