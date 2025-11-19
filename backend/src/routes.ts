@@ -93,8 +93,6 @@ function resolveNetworkPreference(req: Request): SupportedX402Network {
         ? raw[0]
         : undefined;
 
-  console.log('🔧 [BACKEND] Network from query:', raw, '| Candidate:', candidate);
-
   if (candidate && SUPPORTED_X402_NETWORKS.includes(candidate as SupportedX402Network)) {
     return candidate as SupportedX402Network;
   }
@@ -1281,7 +1279,7 @@ router.post('/articles/:id/purchase', criticalLimiter, async (req: Request, res:
     });
 
     console.log(`✅ Purchase successful: "${article.title}" (ID: ${article.id})`);
-    console.log(`   💰 Amount: $${article.price.toFixed(2)} | 🧾 From: ${payerAddress || 'unknown'} | ✉️ To: ${article.authorAddress}`);
+    console.log(`   💰 Amount: $${article.price.toFixed(2)} | 🧾 From: ${payerAddress || 'unknown'} | ✉️ To: ${paymentRequirement.payTo}`);
     if (txHash) {
       console.log(`   🔗 Transaction: ${txHash}`);
     }

@@ -156,7 +156,6 @@ class X402PaymentService {
       }
       const rpcUrl = this.getSolanaRpcUrl(requirementNetwork);
       const x402Config: X402Config | undefined = rpcUrl ? { svmConfig: { rpcUrl } } : undefined;
-      console.log('[x402] Solana RPC URL:', rpcUrl, 'network:', requirementNetwork);
 
       const encodedHeader = await createEncodedPaymentHeader(
         context.solanaSigner,

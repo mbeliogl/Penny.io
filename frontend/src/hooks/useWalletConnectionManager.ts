@@ -60,8 +60,6 @@ export function useWalletConnectionManager() {
     hasSubscribedRef.current = true;
 
     const unsubscribe = modal.subscribeAccount((state: any) => {
-      console.log('AppKit account state change:', state);
-
       // If address changed while connected, reload to sync state
       if (state.isConnected && state.address && prevAddress && prevAddress !== state.address) {
         console.log('Account switched detected:', prevAddress, '->', state.address);
