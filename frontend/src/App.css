@@ -3974,9 +3974,8 @@ main {
   backdrop-filter: blur(2px);
   z-index: 9999;
   display: flex;
-  align-items: flex-start;
+  align-items: center;
   justify-content: center;
-  padding-top: 100px;
   animation: fadeIn 0.2s ease;
 }
 
