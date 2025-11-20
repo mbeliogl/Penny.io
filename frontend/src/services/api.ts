@@ -181,10 +181,6 @@ class ApiService {
     return this.request<Article>(`/articles/${id}`);
   }
 
-  async getValidationArticles(): Promise<ApiResponse<Article[]>> {
-    return this.request<Article[]>('/x402/test-articles');
-  }
-
   async createArticle(article: CreateArticleRequest): Promise<ApiResponse<Article>> {
     return this.request<Article>(
       '/articles',

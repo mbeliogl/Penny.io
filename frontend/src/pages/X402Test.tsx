@@ -1,9 +1,8 @@
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useMemo, useState } from 'react';
 import { useChainId, useWalletClient } from 'wagmi';
 import { base, baseSepolia } from 'wagmi/chains';
 import { useAppKitNetwork, useAppKitProvider, useWalletInfo } from '@reown/appkit/react';
 import { x402PaymentService, type PaymentRequirement, type PaymentExecutionContext, type SupportedNetwork } from '../services/x402PaymentService';
-import api from '../services/api';
 import { useWallet } from '../contexts/WalletContext';
 import { createSolanaTransactionSigner } from '../utils/solanaSigner';
 import { useNetworkIcon } from '../hooks/useNetworkAssets';
@@ -26,10 +25,7 @@ const X402Test: React.FC = () => {
   );
 
   const [currentPaymentReq, setCurrentPaymentReq] = useState<PaymentRequirement | null>(null);
-  const [articles, setArticles] = useState<Array<{ id: number; title: string; price: number; network?: string }>>([]);
-  const [articlesLoading, setArticlesLoading] = useState(true);
-  const [articlesError, setArticlesError] = useState<string | null>(null);
-  const [selectedArticle, setSelectedArticle] = useState('');
+  const [selectedArticle, setSelectedArticle] = useState('92');
   const [lastTxHash, setLastTxHash] = useState<string | null>(null);
   const [testResults, setTestResults] = useState<{
     paymentReq?: string;
@@ -103,52 +99,14 @@ const X402Test: React.FC = () => {
         ? 'Switch to Base Mainnet or Base Sepolia inside your wallet.'
         : 'Connect a supported Base or Solana network.';
 
-  useEffect(() => {
-    let cancelled = false;
-    const loadArticles = async () => {
-      setArticlesLoading(true);
-      const response = await api.getValidationArticles();
-      if (cancelled) {
-        return;
-      }
-
-      if (response.success && response.data && response.data.length > 0) {
-        const normalized = response.data.map(article => ({
-          id: article.id,
-          title: article.title,
-          price: article.price,
-          network: article.authorPrimaryNetwork,
-        }));
-        setArticles(normalized);
-        setSelectedArticle(normalized[0].id.toString());
-        setArticlesError(null);
-      } else {
-        setArticles([]);
-        setSelectedArticle('');
-        setArticlesError(
-          response.error || 'No validation articles found. Run the populate script to recreate them.'
-        );
-      }
-      setArticlesLoading(false);
-    };
-
-    loadArticles();
-
-    return () => {
-      cancelled = true;
-    };
-  }, []);
+  const articles = [
+    { id: '92', title: 'Test article 1', price: '$0.01' },
+    { id: '93', title: 'Test article 2', price: '$0.01' },
+    { id: '94', title: 'Test article 3', price: '$0.01' },
+  ];
 
   const getPaymentRequirements = async () => {
     try {
-      if (!selectedArticle) {
-        setTestResults(prev => ({
-          ...prev,
-          paymentReq: '❌ No validation article available. Please rerun the seed script and reload this page.',
-        }));
-        return;
-      }
-
       setTestResults(prev => ({ ...prev, paymentReq: '⏳ Fetching payment requirements...' }));
 
       const response = await x402PaymentService.attemptPayment(
@@ -206,14 +164,6 @@ Ready to execute transaction!`;
   };
 
   const executePayment = async () => {
-    if (!selectedArticle) {
-      setTestResults(prev => ({
-        ...prev,
-        payment: '❌ No validation article available. Please reload once the seed script finishes.',
-      }));
-      return;
-    }
-
     if (!address || !currentPaymentReq) {
       alert('Please connect wallet and get payment requirements first');
       return;
@@ -477,27 +427,17 @@ Encoded Header:
                 value={selectedArticle}
                 onChange={(e) => setSelectedArticle(e.target.value)}
                 className="select-input"
-                disabled={articlesLoading || !articles.length}
               >
-                {articlesLoading && (
-                  <option value="">Loading validation articles...</option>
-                )}
-                {!articlesLoading && articles.length === 0 && (
-                  <option value="">No validation articles found</option>
-                )}
                 {articles.map(article => (
                   <option key={article.id} value={article.id}>
-                    {article.title} (${article.price.toFixed(2)})
+                    {article.title} ({article.price})
                   </option>
                 ))}
               </select>
-              {articlesError && (
-                <div className="result-box error">{articlesError}</div>
-              )}
             </div>
             <button
               onClick={getPaymentRequirements}
-              disabled={!isConnected || !isSupportedNetwork || !selectedArticle || articlesLoading}
+              disabled={!isConnected || !isSupportedNetwork}
               className="action-button primary"
             >
               Get Payment Requirements

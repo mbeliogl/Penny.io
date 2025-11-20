@@ -447,14 +447,12 @@ function estimateReadTime(content: string): string {
   return `${minutes} min read`;
 }
 
-const shouldBypassExploreFilter = (req: Request) => {
-  const referrer = req.get('referer') || '';
-  return referrer.includes('/x402-test');
-};
-
-const isValidationArticle = (article: Article): boolean => {
-  return Array.isArray(article.categories) && article.categories.includes('Validation');
-};
+ // Utility to hide test articles from /explore
+  const TEST_ARTICLE_BLOCKLIST = new Set([92, 93, 94]);
+  const shouldBypassExploreFilter = (req: Request) => {
+    const referrer = req.get('referer') || '';
+    return referrer.includes('/x402-test');
+  };
 
 // GET /api/articles - Get all articles or articles by author
 router.get('/articles', readLimiter, validate(getArticlesQuerySchema, 'query'), async (req: Request, res: Response) => {
@@ -484,7 +482,7 @@ router.get('/articles', readLimiter, validate(getArticlesQuerySchema, 'query'), 
 
     const hideTestArticles = !authorAddress && !shouldBypassExploreFilter(req);
     const sanitizedArticles = hideTestArticles
-      ? articles.filter(article => !isValidationArticle(article))
+      ? articles.filter(article => !TEST_ARTICLE_BLOCKLIST.has(article.id))
       : articles;
 
     const response: ApiResponse<Article[]> = {
@@ -528,28 +526,6 @@ router.get('/articles/:id', readLimiter, async (req: Request, res: Response) => 
     const response: ApiResponse<never> = {
       success: false,
       error: 'Failed to fetch article'
-    };
-    res.status(500).json(response);
-  }
-});
-
-// GET /api/x402/test-articles - Fetch fixed validation articles for harness
-router.get('/x402/test-articles', readLimiter, async (_req: Request, res: Response) => {
-  try {
-    const addresses = [PLATFORM_EVM_ADDRESS, PLATFORM_SOLANA_ADDRESS].filter(Boolean) as string[];
-    const articles = await db.getValidationArticles(addresses);
-
-    const response: ApiResponse<Article[]> = {
-      success: true,
-      data: articles,
-    };
-
-    res.json(response);
-  } catch (error) {
-    console.error('Error fetching x402 validation articles:', error);
-    const response: ApiResponse<never> = {
-      success: false,
-      error: 'Failed to fetch validation articles',
     };
     res.status(500).json(response);
   }

@@ -257,26 +257,6 @@ class Database {
     });
   }
 
-  async getValidationArticles(targetAddresses: string[]): Promise<Article[]> {
-    if (!targetAddresses.length) {
-      return [];
-    }
-
-    const normalizedAddresses = targetAddresses.map(address => normalizeFlexibleAddress(address));
-
-    const { data, error } = await supabase
-      .from('articles')
-      .select('*')
-      .in('author_address', normalizedAddresses)
-      .order('created_at', { ascending: false });
-
-    if (error) throw error;
-
-    return (data || [])
-      .map(row => this.parseArticleFromRow(row))
-      .filter(article => Array.isArray(article.categories) && article.categories.includes('Validation'));
-  }
-
   async getArticleById(id: number): Promise<Article | null> {
     const { data, error } = await supabase
       .from('articles')
