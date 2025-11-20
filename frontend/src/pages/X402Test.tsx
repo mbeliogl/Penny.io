@@ -26,14 +26,16 @@ const X402Test: React.FC = () => {
   );
 
   const articles = [
-    { id: '188', title: 'Test article 1', price: '$0.01' },
-    { id: '189', title: 'Test article 2', price: '$0.01' },
-    { id: '190', title: 'Test article 3', price: '$0.01' },
+    { id: '191', title: 'Test article 1', price: '$0.01' },
+    { id: '192', title: 'Test article 2', price: '$0.01' },
+    { id: '193', title: 'Test article 3', price: '$0.01' },
   ];
 
   const [currentPaymentReq, setCurrentPaymentReq] = useState<PaymentRequirement | null>(null);
   const [selectedArticle, setSelectedArticle] = useState(articles[0].id);
   const [lastTxHash, setLastTxHash] = useState<string | null>(null);
+  const [lastTxNetwork, setLastTxNetwork] = useState<SupportedNetwork | null>(null);
+  const [lastWalletAddress, setLastWalletAddress] = useState<string | null>(null);
   const [testResults, setTestResults] = useState<{
     paymentReq?: string;
     payment?: string;
@@ -205,10 +207,12 @@ Ready to execute transaction!`;
       if (purchaseResult.success) {
         // Extract transaction hash from backend response
         const txHash = purchaseResult.rawResponse?.data?.transactionHash;
-        
+
         // Store for verification section
         if (txHash) {
           setLastTxHash(txHash);
+          setLastTxNetwork(preferredNetwork); // Store payment network
+          setLastWalletAddress(address); // Store wallet address used for payment
         }
 
         const formattedHeader = formatEncodedHeader(purchaseResult.encodedHeader);
@@ -262,8 +266,17 @@ Encoded Header:
       if (result.success && result.data.hasPaid) {
         const articleTitle = articles.find(a => a.id === selectedArticle)?.title || 'Unknown';
         const articleUrl = `${window.location.origin}/article/${selectedArticle}`;
-        const explorerUrl = lastTxHash && explorerUrlBuilder
-          ? explorerUrlBuilder(lastTxHash)
+
+        // Get explorer builder from payment network, not current network
+        const paymentNetworkInfo = lastTxNetwork
+          ? Object.values(SUPPORTED_NETWORKS).find(n => n.supported === lastTxNetwork)
+          : null;
+
+        const paymentNetworkLabel = paymentNetworkInfo?.label || 'Unknown Network';
+        const paymentWalletAddress = lastWalletAddress || result.data.userAddress;
+
+        const explorerUrl = lastTxHash && paymentNetworkInfo?.explorerUrl
+          ? paymentNetworkInfo.explorerUrl(lastTxHash)
           : null;
 
         const successLines = [
@@ -272,6 +285,7 @@ Encoded Header:
           'Payment Status: PAID ✅',
           `Article: ${articleTitle}`,
           `Your Wallet: ${result.data.userAddress}`,
+          `You paid for this article on ${paymentNetworkLabel} using ${paymentWalletAddress}`,
           '',
           `🔗 Verify Access: ${articleUrl}`,
         ];
