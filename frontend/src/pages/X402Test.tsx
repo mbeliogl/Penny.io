@@ -7,6 +7,7 @@ import { useWallet } from '../contexts/WalletContext';
 import { createSolanaTransactionSigner } from '../utils/solanaSigner';
 import { useNetworkIcon } from '../hooks/useNetworkAssets';
 import { NETWORK_FALLBACK_ICONS } from '../constants/networks';
+import { API_BASE_URL } from '../services/api';
 
 const X402Test: React.FC = () => {
   const { address, isConnected } = useWallet();
@@ -24,8 +25,14 @@ const X402Test: React.FC = () => {
     caipNetwork?.caipNetworkId ? NETWORK_FALLBACK_ICONS[caipNetwork.caipNetworkId] : undefined
   );
 
+  const articles = [
+    { id: '185', title: 'Test article 1', price: '$0.01' },
+    { id: '186', title: 'Test article 2', price: '$0.01' },
+    { id: '187', title: 'Test article 3', price: '$0.01' },
+  ];
+
   const [currentPaymentReq, setCurrentPaymentReq] = useState<PaymentRequirement | null>(null);
-  const [selectedArticle, setSelectedArticle] = useState('92');
+  const [selectedArticle, setSelectedArticle] = useState(articles[0].id);
   const [lastTxHash, setLastTxHash] = useState<string | null>(null);
   const [testResults, setTestResults] = useState<{
     paymentReq?: string;
@@ -98,12 +105,6 @@ const X402Test: React.FC = () => {
       : isEvmNetwork
         ? 'Switch to Base Mainnet or Base Sepolia inside your wallet.'
         : 'Connect a supported Base or Solana network.';
-
-  const articles = [
-    { id: '185', title: 'Test article 1', price: '$0.01' },
-    { id: '186', title: 'Test article 2', price: '$0.01' },
-    { id: '187', title: 'Test article 3', price: '$0.01' },
-  ];
 
   const getPaymentRequirements = async () => {
     try {
@@ -255,7 +256,7 @@ Encoded Header:
 
   const verifyPayment = async () => {
     try {
-      const response = await fetch(`http://localhost:3001/api/payment-status/${selectedArticle}/${address}`);
+      const response = await fetch(`${API_BASE_URL}/payment-status/${selectedArticle}/${address}`);
       const result = await response.json();
 
       if (result.success && result.data.hasPaid) {
