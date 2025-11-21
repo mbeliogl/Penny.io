@@ -2064,6 +2064,7 @@ router.post('/upload', uploadLimiter, requireAuth, upload.single('file'), async 
 
     // TinyMCE expects this specific response format
     res.json({
+      success: true,
       location: publicUrlData.publicUrl
     });
   } catch (error) {

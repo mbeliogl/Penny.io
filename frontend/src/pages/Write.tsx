@@ -31,7 +31,7 @@ import { extractPlainText } from '../utils/htmlUtils';
 
 function Write() {
   const { isConnected, isConnecting, address } = useWallet();
-  const { login, isAuthenticated, isAuthenticating, error: authError, handleAuthError } = useAuth();
+  const { login, isAuthenticated, isAuthenticating, error: authError, handleAuthError, getAuthHeaders } = useAuth();
   const location = useLocation();
 
   // Category emojis for visual enhancement
@@ -1479,12 +1479,44 @@ function Write() {
                       'image', 'link', 'lists', 'code', 'table', 'media', 'codesample', 'autolink', 'wordcount', 'nonbreaking'
                     ],
                     toolbar: 'undo redo | blocks | bold italic underline | alignleft aligncenter alignright alignjustify | link image media table | code codesample | bullist numlist outdent indent | removeformat',
-                    
-                    // Image upload configuration
-                    images_upload_url: `${API_BASE_URL}/upload`,
-                    images_upload_credentials: false,
+
+                    // Image upload handler with authentication
                     automatic_uploads: true,
-                    
+                    images_upload_handler: async (blobInfo: any, progress: any) => {
+                      if (!isAuthenticated) {
+                        setSubmitError('Authenticate your wallet to upload images.');
+                        throw new Error('Authentication required');
+                      }
+
+                      const authHeaders = getAuthHeaders();
+                      if (!authHeaders.Authorization) {
+                        setSubmitError('Authenticate your wallet to upload images.');
+                        throw new Error('Authentication required');
+                      }
+
+                      const formData = new FormData();
+                      formData.append('file', blobInfo.blob(), blobInfo.filename());
+
+                      const response = await fetch(`${API_BASE_URL}/upload`, {
+                        method: 'POST',
+                        headers: authHeaders,
+                        body: formData,
+                      });
+
+                      if (response.status === 401) {
+                        handleAuthError();
+                        setSubmitError('❌ Session expired. Please authenticate again.');
+                        throw new Error('Unauthorized');
+                      }
+
+                      const result = await response.json();
+                      if (!response.ok || !result.success || !result.location) {
+                        throw new Error(result.error || 'Failed to upload image');
+                      }
+
+                      return result.location;
+                    },
+
                     // File picker for more control
                     file_picker_types: 'image',
                     file_picker_callback: (callback: any, value: any, meta: any) => {
@@ -1492,29 +1524,50 @@ function Write() {
                         const input = document.createElement('input');
                         input.setAttribute('type', 'file');
                         input.setAttribute('accept', 'image/*');
-                        
+
                         input.onchange = function() {
                           const file = (this as HTMLInputElement).files?.[0];
                           if (file) {
+                            if (!isAuthenticated) {
+                              setSubmitError('Authenticate your wallet to upload images.');
+                              return;
+                            }
+                            const authHeaders = getAuthHeaders();
+                            if (!authHeaders.Authorization) {
+                              setSubmitError('Authenticate your wallet to upload images.');
+                              return;
+                            }
                             const formData = new FormData();
                             formData.append('file', file);
-                            
+
                             fetch(`${API_BASE_URL}/upload`, {
                               method: 'POST',
+                              headers: authHeaders,
                               body: formData
                             })
-                            .then(response => response.json())
+                            .then(async response => {
+                              if (response.status === 401) {
+                                handleAuthError();
+                                setSubmitError('❌ Session expired. Please authenticate again.');
+                                throw new Error('Unauthorized');
+                              }
+                              return response.json();
+                            })
                             .then(result => {
-                              if (result.location) {
+                              if (result.success && result.location) {
                                 callback(result.location, { alt: file.name });
+                              } else {
+                                throw new Error(result.error || 'Upload failed');
                               }
                             })
                             .catch(error => {
                               console.error('Upload failed:', error);
+                              setSubmitError(`Failed to upload image: ${error.message}`);
+                              callback('', { alt: '' }); // Trigger failure callback
                             });
                           }
                         };
-                        
+
                         input.click();
                       }
                     },

@@ -606,11 +606,11 @@ function EditArticle() {
                       }
 
                       const result = await response.json();
-                      if (!response.ok || !result.success || !result.url) {
+                      if (!response.ok || !result.success || !result.location) {
                         throw new Error(result.error || 'Failed to upload image');
                       }
 
-                      return result.url;
+                      return result.location;
                     },
                     
                     // File picker for more control
@@ -636,7 +636,7 @@ function EditArticle() {
                             const formData = new FormData();
                             formData.append('file', file);
                             
-                            fetch('http://localhost:3001/api/upload', {
+                            fetch(`${API_BASE_URL}/upload`, {
                               method: 'POST',
                               headers: authHeaders,
                               body: formData
@@ -650,12 +650,16 @@ function EditArticle() {
                               return response.json();
                             })
                             .then(result => {
-                              if (result.success) {
-                                callback(result.url, { alt: file.name });
+                              if (result.success && result.location) {
+                                callback(result.location, { alt: file.name });
+                              } else {
+                                throw new Error(result.error || 'Upload failed');
                               }
                             })
                             .catch(error => {
                               console.error('Upload failed:', error);
+                              setSubmitError(`Failed to upload image: ${error.message}`);
+                              callback('', { alt: '' }); // Trigger failure callback
                             });
                           }
                         };
