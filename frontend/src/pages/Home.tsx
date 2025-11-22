@@ -14,7 +14,7 @@ function Home() {
     "Pay only for what you read",
     "No subscriptions",
     "No ads",
-    "No middlemen",
+    "No middlemen",e 
     "100% Free",
     "Sign up, publish, get paid"
   ];
@@ -92,7 +92,7 @@ function Home() {
               <span className="hero-powered-label">Powered by</span>
               <span className="hero-powered-brand">Coinbase x402</span>
             </div>
-            <h1>Content Monetization Reimagined</h1>
+            <h1>Publishing Reimagined</h1>
             <div className="typing-text-box">
               <span className="typing-text">
                 {displayText}

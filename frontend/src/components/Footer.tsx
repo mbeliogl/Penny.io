@@ -391,7 +391,7 @@ function Footer() {
         <div className="footer-content">
           <div className="footer-section">
             <h3>Readia.io</h3>
-            <p>Content Monetization Reimagined</p>
+            <p>Publishing Reimagined</p>
             {/* Action Buttons */}
             <div className="footer-actions">
               <Link to="/x402-test" className="x402-validation-button">
