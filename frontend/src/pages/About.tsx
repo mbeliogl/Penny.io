@@ -124,13 +124,13 @@ function About() {
             
               <div className='founder-info'>
                 <a
-                  href='https://x.com/devvinggold'
+                  href='https://x.com/Readia_io'
                   target='_blank'
                   rel='noopener noreferrer'
                   className='x-link'
                 >
                   <XLogo size={20} />
-                  @devinggold
+                  @Readia.io
                 </a>
               </div>
             

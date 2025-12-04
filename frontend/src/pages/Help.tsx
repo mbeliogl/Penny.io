@@ -104,7 +104,7 @@ function Help() {
                 <h3>Community</h3>
                 <p>Join our community for help from other users and updates.</p>
               </div>
-              <a href="https://x.com/i/communities/1986841883000156422" className="contact-link" target='_blank' rel='noopener noreferrer'>Join Community</a>
+              <a href="https://x.com/Readia_io" className="contact-link" target='_blank' rel='noopener noreferrer'>Follow Readia on X</a>
             </div>
             
             <div className="contact-item">

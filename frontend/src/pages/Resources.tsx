@@ -322,9 +322,9 @@ function Resources() {
                 <h3>X Community</h3>
                 <p>Join our X community to connect with other users, get help, and share feedback.</p>
               </div>
-              <a href="https://x.com/i/communities/1986841883000156422" className="community-link" target='_blank' rel='noopener noreferrer'>
+              <a href="https://x.com/Readia_io" className="community-link" target='_blank' rel='noopener noreferrer'>
                 <ExternalLink size={16} />
-                X Community
+                Follow Readia on X
               </a>
             </div>
             
