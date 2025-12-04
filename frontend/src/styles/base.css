@@ -1,0 +1,15 @@
+/* base.css */
+/* Auto-generated from App.css refactoring */
+
+/* Import theme variables for light/dark mode */
+
+@import './theme.css';
+
+.App {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  background-color: var(--bg-primary);
+  color: var(--text-primary);
+}

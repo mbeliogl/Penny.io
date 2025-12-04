@@ -1,0 +1,82 @@
+/* pages/static.css */
+/* Auto-generated from App.css refactoring */
+
+.about-page {
+  width: 100%;
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 0 20px;
+  min-height: calc(100vh - 64px);
+}
+
+.how-it-works-page {
+  width: 100%;
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 0 20px;
+  min-height: calc(100vh - 64px);
+}
+
+.pricing-page {
+  width: 100%;
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 0 20px;
+  min-height: calc(100vh - 64px);
+}
+
+.privacy-page {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 40px 20px 20px 20px;
+}
+
+.terms-page {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 40px 20px 20px 20px;
+}
+
+.contact-page {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 40px 20px 20px 20px;
+}
+
+.resources-page {
+  width: 100%;
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 0 20px;
+  min-height: calc(100vh - 64px);
+}
+
+.help-page {
+  width: 100%;
+  max-width: 1000px;
+  margin: 0 auto;
+  padding: 0 20px;
+  min-height: calc(100vh - 64px);
+}
+
+.whitepaper-section {
+  margin-bottom: 60px;
+}
+
+.whitepaper-content ol {
+  font-size: 1.125rem;
+  line-height: 1.8;
+  color: #374151;
+  margin: 20px 0;
+  padding-left: 32px;
+}
+
+.whitepaper-content code {
+  background: #f9fafb;
+  color: var(--text-primary);
+  padding: 2px 6px;
+  border-radius: 4px;
+  font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', 'Consolas', 'source-code-pro', monospace;
+  font-size: 0.9em;
+  border: 1px solid #e5e7eb;
+}

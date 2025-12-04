@@ -1,0 +1,63 @@
+/* pages/home.css */
+/* Auto-generated from App.css refactoring */
+
+.hero {
+  text-align: center;
+  padding: 80px 0 240px;
+  max-width: 680px;
+  margin: 0 auto;
+  width: 100%;
+  position: relative;
+  z-index: 1;
+}
+
+.typing-text-box {
+  font-size: 1.5rem;
+  font-weight: 600;
+  color: var(--text-primary);
+  min-height: 50px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  white-space: nowrap;
+  margin-top: 8px;
+}
+
+.hero-cta-buttons {
+  display: flex;
+  gap: 16px;
+  justify-content: center;
+  align-items: center;
+  flex-wrap: wrap;
+  margin-top: 16px;
+}
+
+.featured-articles {
+  background: white;
+  width: 100vw;
+  margin-left: calc(-50vw + 50%);
+  padding: 60px 20px 80px;
+  box-shadow: 0 -1px 3px rgba(0, 0, 0, 0.05);
+}
+
+.hero-canvas {
+  position: relative;
+  min-height: 540px;
+  padding: 48px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.hero-flow-step:hover {
+  border-color: #111827;
+  background: #f8fafc;
+  transform: translateY(-4px);
+  box-shadow: 0 18px 40px rgba(15, 23, 42, 0.08);
+}
+
+.hero-stat-card:focus-within {
+  transform: translateY(-4px);
+  border-color: #1f2937;
+  background: #f8fafc;
+}

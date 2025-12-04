@@ -1,0 +1,10 @@
+/* pages/dashboard.css */
+/* Auto-generated from App.css refactoring */
+
+.dashboard {
+  width: 100%;
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 0 20px;
+  min-height: calc(100vh - 64px);
+}

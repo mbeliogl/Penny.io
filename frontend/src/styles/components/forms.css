@@ -1,0 +1,28 @@
+/* components/forms.css */
+/* Auto-generated from App.css refactoring */
+
+.form-group select,
+
+.form-group textarea {
+  padding: 12px 16px;
+  border: 1px solid #d1d5db;
+  border-radius: 8px;
+  font-size: 1rem;
+  transition: border-color 0.2s ease;
+}
+
+.form-group select:focus,
+
+.form-group textarea:focus {
+  outline: none;
+  border-color: #0ea5e9;
+  box-shadow: 0 0 0 3px rgba(14, 165, 233, 0.1);
+}
+
+.search-section {
+  margin: 24px 0;
+  padding: 20px;
+  background: white;
+  border-radius: 8px;
+  border: 1px solid var(--border-light);
+}

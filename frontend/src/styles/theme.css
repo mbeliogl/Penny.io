@@ -1,0 +1,158 @@
+/* ==============================================
+   THEME VARIABLES - Light & Dark Mode Support
+   ============================================== */
+
+:root {
+  /* Background Colors */
+  --bg-primary: #ffffff;
+  --bg-secondary: #f8f9fa;
+  --bg-tertiary: #f0f0f0;
+  --bg-hover: rgba(26, 26, 26, 0.05);
+  --bg-active: rgba(26, 26, 26, 0.08);
+  --bg-modal: rgba(0, 0, 0, 0.3);
+  --bg-card: #ffffff;
+  --bg-input: #ffffff;
+
+  /* Text Colors */
+  --text-primary: #1a1a1a;
+  --text-secondary: #536471;
+  --text-tertiary: #6b7280;
+  --text-muted: #8b98a5;
+  --text-inverse: #ffffff;
+
+  /* Border Colors */
+  --border-light: #e1e8ed;
+  --border-medium: #cfd9de;
+  --border-dark: rgba(26, 26, 26, 0.08);
+  --border-hover: rgba(26, 26, 26, 0.12);
+
+  /* Accent Colors (brand, success, etc.) */
+  --accent-blue: #2563eb;
+  --accent-purple: #7c3aed;
+  --accent-green: #10b981;
+  --accent-green-dark: #059669;
+  --accent-gray: #9ca3af;
+
+  /* Component-specific */
+  --header-bg: rgba(255, 255, 255, 0.95);
+  --button-bg: #f8f9fa;
+  --button-text: #1a1a1a;
+  --button-border: rgba(26, 26, 26, 0.08);
+
+  /* High-contrast elements (invert in dark mode) */
+  --contrast-bg: #1a1a1a;
+  --contrast-bg-hover: #2a2a2a;
+  --contrast-text: #ffffff;
+  --contrast-inverse-bg: #ffffff;
+  --contrast-inverse-text: #1a1a1a;
+
+  /* Shadows & Effects */
+  --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.05);
+  --shadow-md: 0 4px 6px rgba(0, 0, 0, 0.1);
+  --shadow-lg: 0 10px 15px rgba(0, 0, 0, 0.1);
+
+  /* Gradients */
+  --gradient-text-light: linear-gradient(135deg, #1a1a1a 0%, #4a4a4a 100%);
+  --gradient-text-accent: linear-gradient(135deg, #2563eb 0%, #7c3aed 100%);
+  --gradient-shimmer: linear-gradient(90deg, transparent, rgba(26, 26, 26, 0.1), transparent);
+}
+
+/* Dark Theme Variables */
+[data-theme="dark"] {
+  /* Background Colors */
+  --bg-primary: #0f0f0f;
+  --bg-secondary: #1a1a1a;
+  --bg-tertiary: #242424;
+  --bg-hover: rgba(255, 255, 255, 0.08);
+  --bg-active: rgba(255, 255, 255, 0.12);
+  --bg-modal: rgba(0, 0, 0, 0.7);
+  --bg-card: #1a1a1a;
+  --bg-input: #242424;
+
+  /* Text Colors */
+  --text-primary: #ffffff;
+  --text-secondary: #b0b0b0;
+  --text-tertiary: #888888;
+  --text-muted: #666666;
+  --text-inverse: #1a1a1a;
+
+  /* Border Colors */
+  --border-light: #2a2a2a;
+  --border-medium: #333333;
+  --border-dark: rgba(255, 255, 255, 0.1);
+  --border-hover: rgba(255, 255, 255, 0.15);
+
+  /* Accent Colors (keep bright in dark mode) */
+  --accent-blue: #3b82f6;
+  --accent-purple: #8b5cf6;
+  --accent-green: #10b981;
+  --accent-green-dark: #059669;
+  --accent-gray: #9ca3af;
+
+  /* Component-specific */
+  --header-bg: rgba(15, 15, 15, 0.95);
+  --button-bg: #242424;
+  --button-text: #ffffff;
+  --button-border: rgba(255, 255, 255, 0.1);
+
+  /* High-contrast elements (inverted for dark mode) */
+  --contrast-bg: #e5e5e5;
+  --contrast-bg-hover: #f5f5f5;
+  --contrast-text: #0a0a0a;
+  --contrast-inverse-bg: #1a1a1a;
+  --contrast-inverse-text: #ffffff;
+
+  /* Shadows & Effects (darker in dark mode) */
+  --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.3);
+  --shadow-md: 0 4px 6px rgba(0, 0, 0, 0.4);
+  --shadow-lg: 0 10px 15px rgba(0, 0, 0, 0.5);
+
+  /* Gradients */
+  --gradient-text-light: linear-gradient(135deg, #ffffff 0%, #b0b0b0 100%);
+  --gradient-text-accent: linear-gradient(135deg, #3b82f6 0%, #8b5cf6 100%);
+  --gradient-shimmer: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.1), transparent);
+}
+
+/* Dark mode overrides for AppKit Modal */
+[data-theme="dark"] wui-card[role="alertdialog"] {
+  background: var(--bg-card) !important;
+}
+
+/* Smooth transitions for theme changes */
+* {
+  transition: background-color 0.2s ease, color 0.2s ease, border-color 0.2s ease;
+}
+
+/* Theme Toggle Button Styles */
+.theme-toggle {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  height: 40px;
+  border-radius: 8px;
+  background-color: var(--button-bg);
+  color: var(--text-primary);
+  border: 1px solid var(--border-dark);
+  cursor: pointer;
+  transition: all 0.2s ease;
+  padding: 0;
+}
+
+.theme-toggle:hover {
+  background-color: var(--bg-hover);
+  border-color: var(--border-hover);
+  transform: scale(1.05);
+}
+
+.theme-toggle:active {
+  transform: scale(0.95);
+}
+
+.theme-toggle svg {
+  transition: transform 0.3s ease;
+}
+
+.theme-toggle:hover svg {
+  transform: rotate(15deg);
+}

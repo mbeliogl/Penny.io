@@ -1,0 +1,27 @@
+/* components/navigation.css */
+/* Auto-generated from App.css refactoring */
+
+.nav-links-center {
+  position: absolute;
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+}
+
+.link:focus {
+  outline: 0;
+  width: 130px;
+  color: var(--text-primary);
+}
+
+.link:focus::before {
+  transform: translateX(0);
+}
+
+.link:focus .link-title {
+  transform: translateX(0);
+  opacity: 1;
+}

@@ -1,0 +1,15 @@
+/* components/badges.css */
+/* Auto-generated from App.css refactoring */
+
+.auth-container {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  justify-content: flex-end;
+}
+
+.auth-status-badges {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}

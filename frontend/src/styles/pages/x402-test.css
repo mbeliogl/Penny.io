@@ -1,0 +1,30 @@
+/* pages/x402-test.css */
+/* Auto-generated from App.css refactoring */
+
+.x402-validation-button {
+  background-color: transparent;
+  border: 1px solid #000;
+  border-radius: 0;
+  box-sizing: border-box;
+  color: #fff;
+  cursor: pointer;
+  display: inline-block;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  margin: 0;
+  outline: none;
+  overflow: visible;
+  padding: 1em 1.5em;
+  position: relative;
+  text-align: center;
+  text-decoration: none;
+  text-transform: none;
+  transition: all 0.3s ease-in-out;
+  user-select: none;
+  font-size: 12px;
+}
+
+.x402-validation-button:hover .bottom-key-2 {
+  right: 0;
+  width: 0;
+}

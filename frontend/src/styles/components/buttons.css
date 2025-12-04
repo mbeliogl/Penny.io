@@ -1,0 +1,52 @@
+/* components/buttons.css */
+/* Auto-generated from App.css refactoring */
+
+.scroll-to-top {
+  position: fixed;
+  bottom: 40px;
+  right: 40px;
+  width: 56px;
+  height: 56px;
+  background: #1a1a1a;
+  color: white;
+  border: none;
+  border-radius: 50%;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  transition: all 0.3s ease;
+  z-index: 50;
+  animation: fadeInUp 0.3s ease;
+}
+
+.btn-cssbuttons span span {
+  display: inline-flex;
+  vertical-align: middle;
+  transition: 0.3s cubic-bezier(0.215, 0.61, 0.355, 1);
+  position: relative;
+  z-index: 1;
+}
+
+.btn-cssbuttons:hover span span {
+  transform: translateY(-55px);
+}
+
+.btn-danger {
+  border-radius: 14px;
+  padding: 10px 20px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: transform 0.2s ease, box-shadow 0.2s ease, background 0.2s ease;
+}
+
+.btn-ghost:focus-visible {
+  transform: translateY(-1px);
+  box-shadow: 0 16px 32px rgba(15, 23, 42, 0.2);
+}
+
+.btn-danger:focus-visible {
+  transform: translateY(-1px);
+  box-shadow: 0 18px 36px rgba(220, 38, 38, 0.45);
+}

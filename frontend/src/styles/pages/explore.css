@@ -1,0 +1,88 @@
+/* pages/explore.css */
+/* Auto-generated from App.css refactoring */
+
+.article-list {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  margin-top: 40px;
+}
+
+.article-list .article-card .article-meta .price {
+  display: none;
+}
+
+.article-list .article-card .article-stats .article-stats-right {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.article-list .article-card .article-stats .price {
+  display: block;
+}
+
+.article-grid .article-card .article-stats .price {
+  display: none;
+}
+
+.load-more-trigger {
+  width: 100%;
+  margin: 20px 0;
+}
+
+.filter-select {
+  padding: 8px 12px;
+  border: 1px solid #ddd;
+  border-radius: 6px;
+  font-size: 14px;
+  background: white;
+  transition: border-color 0.2s ease;
+}
+
+.filter-select:focus {
+  outline: none;
+  border-color: var(--text-primary);
+  box-shadow: 0 0 0 2px rgba(26, 26, 26, 0.1);
+}
+
+.explore-cta-section {
+  position: relative;
+  background-color: #f8fafc;
+  width: 100vw;
+  margin-left: calc(-50vw + 50%);
+  padding: 60px 20px 80px;
+}
+
+.explore-page {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 40px 20px 20px 20px;
+  min-height: calc(100vh - 64px);
+}
+
+.explore-content {
+  display: flex;
+  gap: 32px;
+  margin-top: 32px;
+}
+
+.category-dropdown-container {
+  position: relative;
+  width: 100%;
+  max-width: 380px;
+  min-width: 0;
+  margin: 0 auto;
+  background: #f9fafb;
+  border: 1px solid #e2e8f0;
+  border-radius: 16px;
+  padding: 20px;
+}
+
+.explore-prompt {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 400px;
+  padding: 40px 20px;
+}

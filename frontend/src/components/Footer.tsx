@@ -564,7 +564,7 @@ function Footer() {
 
                 <div className="donation-social-links">
                   <a
-                    href="https://x.com/devvinggold"
+                    href="https://x.com/Readia_io"
                     target="_blank"
                     rel="noopener noreferrer"
                     className="donation-social-link"

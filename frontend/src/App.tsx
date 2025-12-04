@@ -3,6 +3,7 @@ import { useEffect } from 'react';
 import { WalletProvider } from './contexts/WalletContext';
 import { AuthProvider } from './contexts/AuthContext';
 import { AuthToastProvider } from './contexts/AuthToastContext';
+import { ThemeProvider } from './contexts/ThemeContext';
 import { useWalletConnectionManager } from './hooks/useWalletConnectionManager';
 import Header from './components/Header';
 import Footer from './components/Footer';
@@ -105,18 +106,20 @@ function AppContent() {
 
 function App() {
   return (
-    <WalletProvider>
-      <AuthProvider>
-        <AuthToastProvider>
-          <Router>
-            <ScrollToTop />
-            <div className="App">
-              <AppContent />
-            </div>
-          </Router>
-        </AuthToastProvider>
-      </AuthProvider>
-    </WalletProvider>
+    <ThemeProvider>
+      <WalletProvider>
+        <AuthProvider>
+          <AuthToastProvider>
+            <Router>
+              <ScrollToTop />
+              <div className="App">
+                <AppContent />
+              </div>
+            </Router>
+          </AuthToastProvider>
+        </AuthProvider>
+      </WalletProvider>
+    </ThemeProvider>
   );
 }
 

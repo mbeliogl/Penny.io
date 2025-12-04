@@ -1,0 +1,19 @@
+/* components/cards.css */
+/* Auto-generated from App.css refactoring */
+
+.article-card-link {
+  text-decoration: none;
+  color: inherit;
+  display: block;
+}
+
+.article-card .article-header {
+  position: absolute;
+  top: 16px;
+  right: 16px;
+  z-index: 10;
+  border: none;
+  background: none;
+  margin-bottom: 0;
+  padding-bottom: 0;
+}

@@ -1,0 +1,102 @@
+/* pages/write.css */
+/* Auto-generated from App.css refactoring */
+
+.write-new-btn .bottom-key-2 {
+  height: 2px;
+  width: 1.5625rem;
+  right: 1.875rem;
+  bottom: -2px;
+  position: absolute;
+  background: #e8e8e8;
+  transition: width 0.5s ease-out, right 0.3s ease-out;
+}
+
+.write-new-btn:hover .bottom-key-2 {
+  right: 0;
+  width: 0;
+}
+
+.write .write-container > .auth-banner {
+  max-width: calc(1200px - 88px); /* Subtract layout (20px×2) + form (24px×2) + panel (24px×2) padding */
+  margin-left: auto;
+  margin-right: auto;
+}
+
+.write {
+  min-height: calc(100vh - 64px);
+  background-color: #fafbfc;
+}
+
+.preview-modal {
+  background: white;
+  border-radius: 12px;
+  box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+  max-width: 700px;
+  width: 100%;
+  max-height: 90vh;
+  overflow-y: auto;
+}
+
+.tinymce-wrapper {
+  margin: 20px 0;
+  border-radius: 12px;
+  overflow: hidden;
+  border: 1px solid var(--border-light);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+  background: white;
+  position: relative;
+}
+
+.tinymce-wrapper .tox-edit-area__iframe {
+  overflow-y: auto !important;
+}
+
+.write-actions-bar {
+  position: sticky;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  background: white;
+  border-top: 1px solid #e1e8ed;
+  padding: 16px 24px;
+  margin: 0 -24px -24px -24px; /* Extend to form edges */
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  box-shadow: 0 -4px 12px rgba(0, 0, 0, 0.08);
+  z-index: 40;
+  backdrop-filter: blur(8px);
+  background-color: rgba(255, 255, 255, 0.98);
+}
+
+.editor-toolbar-center {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.editor-toolbar-center button {
+  border: 1px solid rgba(148, 163, 184, 0.4);
+  background: #fff;
+  color: #0f172a;
+  padding: 6px 12px;
+  border-radius: 10px;
+  font-weight: 600;
+  font-size: 0.85rem;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  cursor: pointer;
+  transition: background 0.2s ease, border-color 0.2s ease, color 0.2s ease;
+}
+
+.editor-toolbar-center button:hover {
+  background: #0f172a;
+  color: #f8fafc;
+  border-color: #0f172a;
+}
+
+.editor-section-body ol {
+  padding-left: 22px;
+  color: #374151;
+}

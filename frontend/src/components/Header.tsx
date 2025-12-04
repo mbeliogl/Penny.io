@@ -2,6 +2,7 @@ import { Link } from 'react-router-dom';
 import { LayoutDashboard, PenTool, BookOpen } from 'lucide-react';
 import AppKitConnectButton from './AppKitConnectButton';
 import AuthStatusBadges from './AuthStatusBadges';
+import ThemeToggle from './ThemeToggle';
 
 function Header() {
   return (
@@ -25,6 +26,7 @@ function Header() {
           </Link>
         </nav>
         <div className="auth-container">
+          <ThemeToggle />
           <AppKitConnectButton />
           <AuthStatusBadges />
         </div>

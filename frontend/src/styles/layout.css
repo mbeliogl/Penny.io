@@ -1,0 +1,41 @@
+/* layout.css */
+/* Auto-generated from App.css refactoring */
+
+.header {
+  background-color: var(--bg-primary);
+  border-bottom: 1px solid var(--border-light);
+  position: sticky;
+  top: 0;
+  z-index: 100;
+  backdrop-filter: blur(10px);
+  background-color: var(--header-bg);
+  position: relative;
+}
+
+main {
+  flex: 1;
+  width: 100%;
+}
+
+.hero-grid-section {
+  position: relative;
+  background-color: var(--bg-secondary);
+  width: 100vw;
+  margin-left: calc(-50vw + 50%);
+}
+
+.footer {
+  background-color: var(--bg-secondary);
+  border-top: 1px solid var(--border-light);
+  margin-top: auto;
+  padding: 48px 0 24px;
+}
+
+.footer-actions {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-top: 24px;
+  margin-bottom: 8px;
+  position: relative;
+}
