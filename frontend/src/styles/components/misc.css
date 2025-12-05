@@ -2400,6 +2400,7 @@ w3m-input:focus {
   gap: 12px;
   padding: 24px 24px;
   border-bottom: 1px solid var(--border-light);
+  border-left: 3px solid transparent;
   transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
   position: relative;
   align-items: center;
@@ -2408,9 +2409,8 @@ w3m-input:focus {
 
 .table-row:hover {
   background-color: var(--bg-secondary);
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
-  border-left: 3px solid var(--contrast-bg);
-  padding-left: 25px;
+  box-shadow: inset 3px 0 var(--contrast-bg), 0 2px 8px rgba(0, 0, 0, 0.04);
+  border-left-color: var(--contrast-bg);
 }
 
 
@@ -5039,6 +5039,25 @@ w3m-input:focus {
   cursor: not-allowed;
 }
 
+.edit-btn {
+  background: var(--bg-secondary);
+  color: var(--text-primary);
+  border: 1px solid var(--border-light);
+}
+
+
+.edit-btn svg {
+  color: var(--text-primary);
+}
+
+
+.edit-btn:hover:not(:disabled) {
+  background: var(--bg-hover);
+  border-color: var(--border-hover);
+  color: var(--text-primary);
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+}
+
 
 .draft-modal {
   background: var(--bg-primary);
@@ -5106,7 +5125,7 @@ w3m-input:focus {
 
 .secondary-btn {
   background: var(--bg-secondary);
-  color: var(--text-secondary);
+  color: var(--text-primary);
   border: 1px solid var(--border-light);
 }
 
@@ -5406,7 +5425,7 @@ w3m-input:focus {
 .confirm-message {
   font-size: 0.95rem;
   line-height: 1.5;
-  color: #4b5563;
+  color: var(--text-secondary);
   margin: 0;
 }
 
@@ -5416,7 +5435,7 @@ w3m-input:focus {
   justify-content: flex-end;
   gap: 12px;
   padding: 24px;
-  border-top: 1px solid #e1e8ed;
+  border-top: 1px solid var(--border-light);
 }
 
 
@@ -6128,9 +6147,9 @@ w3m-input:focus {
 
 
 .submit-success {
-  background: #d1fae5;
-  border: 1px solid #a7f3d0;
-  color: #065f46;
+  background: rgba(16, 185, 129, 0.12);
+  border: 1px solid rgba(16, 185, 129, 0.35);
+  color: var(--text-primary);
   padding: 24px;
   border-radius: 12px;
   margin: 24px 0;
@@ -6141,9 +6160,14 @@ w3m-input:focus {
   flex-wrap: wrap;
 }
 
+[data-theme="dark"] .submit-success {
+  background: rgba(16, 185, 129, 0.18);
+  border-color: rgba(16, 185, 129, 0.45);
+}
+
 
 .success-icon {
-  color: #10b981;
+  color: var(--accent-green);
   flex-shrink: 0;
   margin-top: 2px;
 }
@@ -6162,14 +6186,14 @@ w3m-input:focus {
   margin: 0 0 2px 0;
   font-size: 1.125rem;
   font-weight: 600;
-  color: #065f46;
+  color: var(--text-primary);
 }
 
 
 .success-content p {
   margin: 0 0 8px 0;
   line-height: 1.5;
-  color: #047857;
+  color: var(--text-secondary);
 }
 
 
@@ -6185,6 +6209,16 @@ w3m-input:focus {
 .success-actions .action-btn {
   font-size: 0.875rem;
   padding: 8px 16px;
+  background: var(--bg-secondary);
+  border: 1px solid var(--border-light);
+  color: var(--text-primary);
+}
+
+
+.success-actions .action-btn:hover:not(:disabled) {
+  background: var(--bg-hover);
+  border-color: var(--border-hover);
+  color: var(--text-primary);
 }
 
 
@@ -6211,8 +6245,8 @@ w3m-input:focus {
 
 
 .success-close-btn:hover {
-  background: rgba(0, 0, 0, 0.1);
-  color: #374151;
+  background: var(--bg-hover);
+  color: var(--text-primary);
 }
 
 
@@ -6249,10 +6283,10 @@ w3m-input:focus {
 
 
 .success-share-trigger .btn-cssbuttons {
-  --btn-color: var(--text-inverse);
-  color: #374151;
-  border: 1px solid #d1d5db;
-  background: var(--bg-primary);
+  --btn-color: var(--contrast-bg);
+  color: var(--contrast-text);
+  border: 1px solid var(--contrast-bg);
+  background: transparent;
   filter: drop-shadow(0 1px 2px rgba(15, 23, 42, 0.08));
   min-width: 140px;
   width: 140px;
@@ -6366,8 +6400,8 @@ w3m-input:focus {
   height: 32px;
   border-radius: 50%;
   border: none;
-  background: white;
-  color: #0f172a;
+  background: var(--bg-primary);
+  color: var(--text-primary);
   align-items: center;
   justify-content: center;
   cursor: pointer;
@@ -10691,8 +10725,8 @@ w3m-input:focus {
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  background-color: transparent;
-  border: none;
+  background-color: var(--bg-secondary);
+  border: 1px solid var(--border-light);
   border-radius: 8px;
   cursor: pointer;
   transition: all 0.2s;
@@ -10723,45 +10757,45 @@ w3m-input:focus {
 }
 
 
-.table-cell.actions .edit-btn:hover {
-  background-color: var(--text-primary);
+.table-cell.actions .action-btn:hover {
+  background-color: var(--bg-hover);
+  border-color: var(--border-hover);
 }
 
 
-.table-cell.actions .edit-btn:hover svg {
-  color: #fff;
+.table-cell.actions .edit-btn svg,
+.table-cell.actions .publish-action-btn svg,
+.table-cell.actions .delete-btn svg {
+  color: var(--text-primary);
 }
 
 
-.table-cell.actions .publish-action-btn:hover {
-  background-color: var(--text-primary);
-}
-
-
-.table-cell.actions .publish-action-btn:hover svg {
-  color: #fff;
+.table-cell.actions .delete-btn {
+  border-color: rgba(239, 68, 68, 0.6);
+  background-color: rgba(239, 68, 68, 0.1);
 }
 
 
 .table-cell.actions .delete-btn:hover {
-  background-color: rgb(237, 56, 56);
+  background-color: rgba(239, 68, 68, 0.15);
+  border-color: rgba(239, 68, 68, 0.8);
 }
 
 
-.table-cell.actions .delete-btn:hover svg {
-  color: #fff;
+.table-cell.actions .delete-btn svg {
+  color: #ef4444;
 }
 
 
 .table-cell.actions .publish-action-btn:disabled {
   cursor: not-allowed;
   opacity: 0.45;
-  background-color: transparent;
+  background-color: var(--bg-secondary);
 }
 
 
 .table-cell.actions .publish-action-btn:disabled svg {
-  color: #cbd5f5;
+  color: var(--text-tertiary);
 }
 
 
@@ -14277,8 +14311,7 @@ w3m-input:focus {
 .wallet-lab {
   min-height: 100vh;
   padding: clamp(40px, 6vw, 80px) 24px;
-  background: radial-gradient(circle at 10% 20%, rgba(148, 163, 184, 0.2), transparent 50%),
-    linear-gradient(145deg, #f1f5f9, #e2e8f0);
+  background: var(--bg-secondary);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -14287,11 +14320,11 @@ w3m-input:focus {
 
 .wallet-lab__surface {
   width: min(960px, 100%);
-  background: linear-gradient(135deg, #ffffff 0%, #f4f7fb 100%);
+  background: var(--bg-primary);
   border-radius: 32px;
-  border: 1px solid rgba(148, 163, 184, 0.35);
+  border: 1px solid var(--border-light);
   padding: clamp(32px, 5vw, 48px);
-  box-shadow: 0 40px 140px rgba(15, 23, 42, 0.16);
+  box-shadow: var(--shadow-lg);
 }
 
 
@@ -14307,7 +14340,7 @@ w3m-input:focus {
   border: none;
   background: transparent;
   font-size: 1.5rem;
-  color: #94a3b8;
+  color: var(--text-tertiary);
   cursor: pointer;
 }
 
@@ -14325,20 +14358,20 @@ w3m-input:focus {
   text-transform: uppercase;
   letter-spacing: 0.25em;
   font-size: 0.7rem;
-  color: #94a3b8;
+  color: var(--text-tertiary);
   margin-bottom: 14px;
 }
 
 
 .wallet-lab__header h1 {
   font-size: clamp(1.8rem, 3vw, 2.6rem);
-  color: #0f172a;
+  color: var(--text-primary);
   margin: 0 0 12px;
 }
 
 
 .wallet-lab__header p {
-  color: #475569;
+  color: var(--text-secondary);
   margin: 0;
 }
 
@@ -14373,23 +14406,23 @@ w3m-input:focus {
 .wallet-card {
   border-radius: 22px;
   padding: 22px;
-  border: 1px solid rgba(226, 232, 240, 0.9);
-  background: #fff;
-  box-shadow: 0 25px 70px rgba(15, 23, 42, 0.12);
+  border: 1px solid var(--border-light);
+  background: var(--bg-primary);
+  box-shadow: var(--shadow-md);
   position: relative;
 }
 
 
 .wallet-card h3 {
   margin: 8px 0;
-  color: #0f172a;
+  color: var(--text-primary);
 }
 
 
 .wallet-card__address {
   font-family: 'SFMono-Regular', Consolas, monospace;
   font-size: 0.95rem;
-  color: #475569;
+  color: var(--text-secondary);
   margin: 0;
   line-height: 1.4;
 }
@@ -14399,8 +14432,8 @@ w3m-input:focus {
   width: 42px;
   height: 42px;
   border-radius: 50%;
-  border: 1px solid rgba(148, 163, 184, 0.45);
-  background: #fff;
+  border: 1px solid var(--border-light);
+  background: var(--bg-secondary);
   display: inline-flex;
   align-items: center;
   justify-content: center;
@@ -14421,7 +14454,7 @@ w3m-input:focus {
   font-size: 0.72rem;
   text-transform: uppercase;
   letter-spacing: 0.08em;
-  color: #475569;
+  color: var(--text-secondary);
 }
 
 
@@ -14442,8 +14475,7 @@ w3m-input:focus {
   font-size: 0.78rem;
   text-transform: uppercase;
   letter-spacing: 0.08em;
-  color: #0f172a;
-  opacity: 0.6;
+  color: var(--text-tertiary);
 }
 
 
@@ -14465,7 +14497,7 @@ w3m-input:focus {
 .wallet-card__ghost {
   border: none;
   background: transparent;
-  color: #475569;
+  color: var(--text-primary);
   font-weight: 600;
   display: inline-flex;
   align-items: center;
@@ -14478,20 +14510,20 @@ w3m-input:focus {
   display: flex;
   align-items: center;
   gap: 10px;
-  color: #94a3b8;
+  color: var(--text-tertiary);
 }
 
 
 .wallet-lab__form {
   border-radius: 24px;
-  border: 1px solid rgba(148, 163, 184, 0.3);
-  background: linear-gradient(175deg, #f8fafc 0%, #ffffff 70%);
-  color: #0f172a;
+  border: 1px solid var(--border-light);
+  background: var(--bg-primary);
+  color: var(--text-primary);
   padding: 30px;
   display: flex;
   flex-direction: column;
   gap: 20px;
-  box-shadow: 0 30px 70px rgba(15, 23, 42, 0.12);
+  box-shadow: var(--shadow-md);
 }
 
 
@@ -14499,7 +14531,7 @@ w3m-input:focus {
   display: flex;
   align-items: flex-start;
   gap: 12px;
-  color: #0f172a;
+  color: var(--text-primary);
 }
 
 
@@ -14510,7 +14542,7 @@ w3m-input:focus {
 
 .wallet-lab__form-head p {
   margin: 0;
-  color: #64748b;
+  color: var(--text-secondary);
 }
 
 
@@ -14519,29 +14551,30 @@ w3m-input:focus {
   flex-direction: column;
   gap: 8px;
   font-size: 0.9rem;
-  color: #475569;
+  color: var(--text-secondary);
 }
 
 
 .wallet-lab__form input {
   border-radius: 14px;
-  border: 1px solid rgba(15, 23, 42, 0.12);
-  background: rgba(255, 255, 255, 0.95);
-  color: #0f172a;
+  border: 1px solid var(--border-light);
+  background: var(--bg-secondary);
+  color: var(--text-primary);
   padding: 12px 14px;
-  box-shadow: inset 0 1px 2px rgba(15, 23, 42, 0.08);
+  box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.08);
 }
 
 
 .wallet-lab__form input:focus {
   outline: none;
-  border-color: #2563eb;
-  box-shadow: 0 0 0 3px rgba(14, 165, 233, 0.2);
+  border-color: var(--border-hover);
+  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.25);
 }
 
 
 .wallet-lab__form input::placeholder {
-  color: rgba(100, 116, 139, 0.7);
+  color: var(--text-tertiary);
+  opacity: 0.8;
 }
 
 
@@ -14554,13 +14587,13 @@ w3m-input:focus {
 
 .wallet-lab__primary {
   border: none;
-  background: linear-gradient(135deg, #111827, #0f172a);
-  color: #f8fafc;
+  background: var(--contrast-bg);
+  color: var(--contrast-text);
   border-radius: 14px;
   padding: 12px 20px;
   font-weight: 600;
   cursor: pointer;
-  box-shadow: 0 12px 30px rgba(15, 23, 42, 0.35);
+  box-shadow: 0 12px 30px rgba(0, 0, 0, 0.25);
   transition: transform 0.2s ease, box-shadow 0.2s ease;
 }
 
@@ -14569,14 +14602,14 @@ w3m-input:focus {
 
 
 .wallet-lab__ghost {
-  border: 1px solid rgba(15, 23, 42, 0.25);
-  background: rgba(15, 23, 42, 0.02);
-  color: #0f172a;
+  border: 1px solid var(--border-light);
+  background: transparent;
+  color: var(--text-primary);
   border-radius: 14px;
   padding: 12px 20px;
   font-weight: 600;
   cursor: pointer;
-  box-shadow: 0 10px 24px rgba(15, 23, 42, 0.12);
+  box-shadow: 0 10px 24px rgba(0, 0, 0, 0.12);
   transition: transform 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease;
 }
 
@@ -14590,20 +14623,20 @@ w3m-input:focus {
   gap: 8px;
   padding: 8px 12px;
   border-radius: 12px;
-  background: rgba(22, 163, 74, 0.12);
-  color: #15803d;
+  background: rgba(16, 185, 129, 0.15);
+  color: var(--accent-green);
   font-weight: 600;
 }
 
 
 .wallet-lab__status--error {
   background: rgba(220, 38, 38, 0.12);
-  color: #b91c1c;
+  color: #f87171;
 }
 
 
 .wallet-lab__error {
-  color: #b91c1c;
+  color: #f87171;
   font-size: 0.85rem;
   margin: 0;
 }
@@ -14618,11 +14651,11 @@ w3m-input:focus {
 
 .payout-confirm {
   width: min(460px, 100%);
-  background: linear-gradient(160deg, #ffffff 0%, #f7fafc 100%);
-  border: 1px solid rgba(148, 163, 184, 0.4);
+  background: var(--bg-primary);
+  border: 1px solid var(--border-light);
   border-radius: 24px;
   padding: 32px;
-  box-shadow: 0 40px 120px rgba(15, 23, 42, 0.22);
+  box-shadow: var(--shadow-lg);
   text-align: left;
 }
 
