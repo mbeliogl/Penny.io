@@ -7,7 +7,7 @@
   right: 1.875rem;
   bottom: -2px;
   position: absolute;
-  background: #e8e8e8;
+  background: var(--border-medium);
   transition: width 0.5s ease-out, right 0.3s ease-out;
 }
 
@@ -24,11 +24,11 @@
 
 .write {
   min-height: calc(100vh - 64px);
-  background-color: #fafbfc;
+  background-color: var(--bg-secondary);
 }
 
 .preview-modal {
-  background: white;
+  background: var(--bg-primary);
   border-radius: 12px;
   box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
   max-width: 700px;
@@ -43,7 +43,7 @@
   overflow: hidden;
   border: 1px solid var(--border-light);
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
-  background: white;
+  background: var(--bg-primary);
   position: relative;
 }
 
@@ -56,8 +56,8 @@
   bottom: 0;
   left: 0;
   right: 0;
-  background: white;
-  border-top: 1px solid #e1e8ed;
+  background: var(--bg-primary);
+  border-top: 1px solid var(--border-light);
   padding: 16px 24px;
   margin: 0 -24px -24px -24px; /* Extend to form edges */
   display: flex;
@@ -66,7 +66,6 @@
   box-shadow: 0 -4px 12px rgba(0, 0, 0, 0.08);
   z-index: 40;
   backdrop-filter: blur(8px);
-  background-color: rgba(255, 255, 255, 0.98);
 }
 
 .editor-toolbar-center {
@@ -76,9 +75,9 @@
 }
 
 .editor-toolbar-center button {
-  border: 1px solid rgba(148, 163, 184, 0.4);
-  background: #fff;
-  color: #0f172a;
+  border: 1px solid var(--border-light);
+  background: var(--bg-primary);
+  color: var(--text-primary);
   padding: 6px 12px;
   border-radius: 10px;
   font-weight: 600;
@@ -91,7 +90,7 @@
 }
 
 .editor-toolbar-center button:hover {
-  background: #0f172a;
-  color: #f8fafc;
-  border-color: #0f172a;
+  background: var(--contrast-bg);
+  color: var(--contrast-text);
+  border-color: var(--contrast-bg);
 }
