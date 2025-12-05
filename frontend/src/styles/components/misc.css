@@ -2405,14 +2405,33 @@ w3m-input:focus {
   border-radius: 0;
   transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
   position: relative;
+  z-index: 0;
   align-items: center;
 }
 
 
+.table-row::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: 0;
+  right: -24px;
+  border-radius: inherit;
+  background-color: transparent;
+  transition: background-color 0.3s cubic-bezier(0.4, 0, 0.2, 1), box-shadow 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  z-index: -1;
+}
+
+
 .table-row:hover {
+  border-left-color: var(--contrast-bg);
+}
+
+
+.table-row:hover::after {
   background-color: var(--bg-secondary);
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
-  border-left-color: var(--contrast-bg);
 }
 
 
@@ -3514,8 +3533,8 @@ w3m-input:focus {
   align-items: center;
   gap: 6px;
   padding: 10px 16px;
-  background: #2a2a2a;
-  color: #ffffff;
+  background: var(--bg-secondary);
+  color: var(--text-primary);
   text-decoration: none;
   border-radius: 6px;
   font-weight: 500;
@@ -3527,7 +3546,7 @@ w3m-input:focus {
 
 
 .donation-social-link:hover {
-  background: #0a0a0a;
+  background: var(--bg-hover);
   transform: translateY(-1px);
 }
 
@@ -3552,7 +3571,7 @@ w3m-input:focus {
 
 
 .article-content {
-  background: white;
+  background: var(--bg-primary);
   padding: 40px 0;
 }
 
@@ -3609,13 +3628,14 @@ w3m-input:focus {
 
 
 .paywall-card {
-  background: linear-gradient(135deg, #fefefe 0%, #f4f7fb 100%);
-  border: 2px solid #e1e8ed;
+  background: var(--bg-primary);
+  border: 1px solid var(--border-light);
   border-radius: 24px;
   padding: 36px 40px;
   display: flex;
   flex-direction: column;
   gap: 28px;
+  box-shadow: var(--shadow-lg);
 }
 
 
@@ -3645,7 +3665,7 @@ w3m-input:focus {
   width: 60px;
   height: 60px;
   border-radius: 18px;
-  background: rgba(26, 26, 26, 0.08);
+  background: var(--bg-secondary);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -3663,7 +3683,7 @@ w3m-input:focus {
 
 .paywall-summary__content p {
   font-size: 1.1rem;
-  color: #4b5563;
+  color: var(--text-secondary);
   margin: 0;
 }
 
@@ -3684,7 +3704,7 @@ w3m-input:focus {
 
 .paywall-footer {
   padding-top: 18px;
-  border-top: 1px solid rgba(15, 23, 42, 0.08);
+  border-top: 1px solid var(--border-light);
   display: flex;
   flex-direction: column;
   gap: 8px;
@@ -3710,7 +3730,7 @@ w3m-input:focus {
 
 .paywall-accepts-line .network-label {
   font-weight: 600;
-  color: #4b5563;
+  color: var(--text-secondary);
   letter-spacing: 0.01em;
 }
 
@@ -3731,7 +3751,7 @@ w3m-input:focus {
 
 .paywall-divider {
   width: 1px;
-  background: linear-gradient(180deg, transparent, rgba(0, 0, 0, 0.08), transparent);
+  background: linear-gradient(180deg, transparent, var(--border-light), transparent);
 }
 
 
@@ -3747,14 +3767,14 @@ w3m-input:focus {
 
 .paywall-methods {
   flex: 1;
-  background: var(--bg-primary);
+  background: var(--bg-secondary);
   border-radius: 18px;
   border: 1px solid var(--border-light);
   padding: 24px;
   display: flex;
   flex-direction: column;
   gap: 16px;
-  box-shadow: 0 20px 60px rgba(15, 23, 42, 0.08);
+  box-shadow: var(--shadow-md);
 }
 
 
@@ -3767,7 +3787,7 @@ w3m-input:focus {
 
 .paywall-connect-panel p {
   font-size: 1rem;
-  color: #475569;
+  color: var(--text-secondary);
 }
 
 
@@ -3778,7 +3798,7 @@ w3m-input:focus {
   display: flex;
   flex-direction: column;
   gap: 10px;
-  color: #64748b;
+  color: var(--text-tertiary);
 }
 
 
@@ -4536,13 +4556,13 @@ w3m-input:focus {
 
 
 .tip-modal {
-  background: white;
+  background: var(--bg-primary);
   border-radius: 16px;
   width: 90%;
   max-width: 400px;
   max-height: 90vh;
   overflow-y: auto;
-  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+  box-shadow: var(--shadow-lg);
   animation: tipModalSlideIn 0.3s ease-out;
 }
 
@@ -4654,22 +4674,21 @@ w3m-input:focus {
 
 .tip-amount-chip {
   border-radius: 8px;
-  border: 1px solid #e2e8f0;
+  border: 1px solid var(--border-light);
   padding: 12px 0;
   font-weight: 600;
   text-align: center;
-  background: #f8fafc;
-  color: #0f172a;
+  background: var(--bg-secondary);
+  color: var(--text-primary);
   cursor: pointer;
   transition: transform 0.2s ease, border-color 0.2s ease, background 0.2s ease;
 }
 
 
 .tip-amount-chip.is-active {
-  background: #0f172a;
-  color: #fff;
-  border-color: #0f172a;
-  background-color: rgb(15, 15, 15);
+  background: var(--contrast-bg);
+  color: var(--contrast-text);
+  border-color: var(--contrast-bg);
 }
 
 
@@ -4697,21 +4716,24 @@ w3m-input:focus {
 .tip-amount-input {
   width: 100%;
   padding: 12px 16px;
-  border: 2px solid #e1e8ed;
+  border: 2px solid var(--border-light);
   border-radius: 8px;
   font-size: 1rem;
   transition: border-color 0.2s ease;
+  background: var(--bg-primary);
+  color: var(--text-primary);
 }
 
 
 .tip-amount-input:focus {
   outline: none;
+  border-color: var(--border-hover);
 }
 
 
 .tip-success {
-  background-color: #d4edda;
-  border: 1px solid #c3e6cb;
+  background-color: rgba(16, 185, 129, 0.15);
+  border: 1px solid rgba(16, 185, 129, 0.4);
   border-radius: 8px;
   padding: 16px;
   margin-top: 16px;
@@ -4720,7 +4742,7 @@ w3m-input:focus {
 
 
 .tip-success p {
-  color: #155724;
+  color: var(--accent-green);
   font-weight: 500;
   margin: 0;
 }
@@ -5564,7 +5586,7 @@ w3m-input:focus {
 .drafts-modal-empty p {
   margin: 0;
   font-weight: 600;
-  color: #111827;
+  color: var(--text-primary);
 }
 
 
