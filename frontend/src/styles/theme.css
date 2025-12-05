@@ -33,6 +33,28 @@
   --accent-green-dark: #059669;
   --accent-gray: #9ca3af;
 
+  /* Semantic Colors - Success/Error/Warning/Info */
+  --color-success: #10b981;
+  --color-success-dark: #059669;
+  --color-success-bg: rgba(16, 185, 129, 0.1);
+  --color-success-bg-medium: rgba(16, 185, 129, 0.15);
+  --color-success-border: rgba(16, 185, 129, 0.3);
+
+  --color-error: #ef4444;
+  --color-error-dark: #dc2626;
+  --color-error-darker: #991b1b;
+  --color-error-bg: rgba(239, 68, 68, 0.1);
+  --color-error-bg-medium: rgba(239, 68, 68, 0.15);
+  --color-error-border: rgba(239, 68, 68, 0.3);
+
+  --color-warning: #f59e0b;
+  --color-warning-dark: #d97706;
+  --color-warning-bg: rgba(245, 158, 11, 0.1);
+
+  --color-info: #0ea5e9;
+  --color-info-dark: #0284c7;
+  --color-info-bg: rgba(14, 165, 233, 0.05);
+
   /* Component-specific */
   --header-bg: rgba(255, 255, 255, 0.95);
   --button-bg: #f8f9fa;
@@ -88,6 +110,28 @@
   --accent-green: #10b981;
   --accent-green-dark: #059669;
   --accent-gray: #9ca3af;
+
+  /* Semantic Colors - Success/Error/Warning/Info (adjusted for dark mode) */
+  --color-success: #10b981;
+  --color-success-dark: #10b981;
+  --color-success-bg: rgba(16, 185, 129, 0.15);
+  --color-success-bg-medium: rgba(16, 185, 129, 0.2);
+  --color-success-border: rgba(16, 185, 129, 0.4);
+
+  --color-error: #ef4444;
+  --color-error-dark: #f87171;
+  --color-error-darker: #ef4444;
+  --color-error-bg: rgba(239, 68, 68, 0.15);
+  --color-error-bg-medium: rgba(239, 68, 68, 0.2);
+  --color-error-border: rgba(239, 68, 68, 0.4);
+
+  --color-warning: #f59e0b;
+  --color-warning-dark: #fbbf24;
+  --color-warning-bg: rgba(245, 158, 11, 0.15);
+
+  --color-info: #0ea5e9;
+  --color-info-dark: #38bdf8;
+  --color-info-bg: rgba(14, 165, 233, 0.1);
 
   /* Component-specific */
   --header-bg: rgba(15, 15, 15, 0.95);

@@ -6,7 +6,7 @@ function Pricing() {
       <div className="container">
         {/* Hero Section */}
         <div className="pricing-hero">
-          <h1>Simple, Transparent Pricing</h1>
+          <h1>Simple & Transparent Pricing</h1>
           <p className="hero-subtitle">
             No hidden fees, no surprises. <br />
           </p>
