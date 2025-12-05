@@ -265,3 +265,9 @@
     justify-content: center;
   }
 }
+
+@media (max-height: 760px) {
+  .scroll-indicator {
+    bottom: 16px;
+  }
+}

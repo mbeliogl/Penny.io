@@ -332,9 +332,8 @@ Encoded Header:
   };
 
   return (
-    <div className="circuit-wrapper">
-      <div className="circuit-background"></div>
-      <div className="container">
+    <div className="hero-grid-section x402-grid-section">
+      <div className="container x402-content">
         {/* Hero Section */}
         <div className="hero-section">
         <div className="hero-meta">
@@ -523,7 +522,14 @@ Encoded Header:
       </div>
 
       <style jsx>{`
-        .container {
+        .x402-grid-section {
+          min-height: 100vh;
+          display: flex;
+          justify-content: center;
+          position: relative;
+        }
+
+        .x402-content {
           max-width: 1000px;
           margin: 0 auto;
           padding: 40px 20px 80px;
@@ -911,7 +917,7 @@ Encoded Header:
 
         /* Responsive Design */
         @media (max-width: 768px) {
-          .container {
+          .x402-content {
             padding: 24px 16px 60px;
           }
 
@@ -954,106 +960,12 @@ Encoded Header:
           }
         }
 
-        /* Circuit Board Background */
-        .circuit-wrapper {
-          min-height: 100vh;
-          width: 100%;
-          position: relative;
-          background-color: var(--bg-primary);
-        }
-
-        .circuit-background {
-          position: absolute;
-          top: 0;
-          right: 0;
-          bottom: 0;
-          left: 0;
-          z-index: 0;
-          pointer-events: none;
-          opacity: 0.65;
-          background-image: repeating-linear-gradient(
-              0deg,
-              transparent,
-              transparent 19px,
-              rgba(15, 23, 42, 0.55) 19px,
-              rgba(15, 23, 42, 0.55) 20px,
-              transparent 20px,
-              transparent 39px,
-              rgba(15, 23, 42, 0.55) 39px,
-              rgba(15, 23, 42, 0.55) 40px
-            ),
-            repeating-linear-gradient(
-              90deg,
-              transparent,
-              transparent 19px,
-              rgba(15, 23, 42, 0.55) 19px,
-              rgba(15, 23, 42, 0.55) 20px,
-              transparent 20px,
-              transparent 39px,
-              rgba(15, 23, 42, 0.55) 39px,
-              rgba(15, 23, 42, 0.55) 40px
-            ),
-            radial-gradient(
-              circle at 20px 20px,
-              rgba(15, 23, 42, 0.7) 2px,
-              transparent 2px
-            ),
-            radial-gradient(
-              circle at 40px 40px,
-              rgba(15, 23, 42, 0.7) 2px,
-              transparent 2px
-            );
-          background-size:
-            40px 40px,
-            40px 40px,
-            40px 40px,
-            40px 40px;
-          mix-blend-mode: multiply;
-        }
-
         :global([data-theme='dark']) .select-input {
           background-image: url("data:image/svg+xml,%3Csvg width='12' height='8' viewBox='0 0 12 8' fill='none' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M1 1.5L6 6.5L11 1.5' stroke='%23f5f5f5' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
         }
 
         :global([data-theme='dark']) .info-card.warning {
           border-color: rgba(245, 158, 11, 0.4);
-        }
-
-        :global([data-theme='dark']) .circuit-background {
-          opacity: 0.9;
-          background-image: repeating-linear-gradient(
-              0deg,
-              transparent,
-              transparent 19px,
-              rgba(255, 255, 255, 0.8) 19px,
-              rgba(255, 255, 255, 0.8) 20px,
-              transparent 20px,
-              transparent 39px,
-              rgba(255, 255, 255, 0.8) 39px,
-              rgba(255, 255, 255, 0.8) 40px
-            ),
-            repeating-linear-gradient(
-              90deg,
-              transparent,
-              transparent 19px,
-              rgba(255, 255, 255, 0.8) 19px,
-              rgba(255, 255, 255, 0.8) 20px,
-              transparent 20px,
-              transparent 39px,
-              rgba(255, 255, 255, 0.8) 39px,
-              rgba(255, 255, 255, 0.8) 40px
-            ),
-            radial-gradient(
-              circle at 20px 20px,
-              rgba(255, 255, 255, 1) 2px,
-              transparent 2px
-            ),
-            radial-gradient(
-              circle at 40px 40px,
-              rgba(255, 255, 255, 1) 2px,
-              transparent 2px
-            );
-          mix-blend-mode: screen;
         }
       `}</style>
       </div>

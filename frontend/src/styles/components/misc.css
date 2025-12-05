@@ -3303,7 +3303,12 @@ w3m-input:focus {
 
 .donation-custom-field:focus-within {
   border-color: var(--text-primary);
-  box-shadow: 0 0 0 3px rgba(0, 0, 0, 0.1);
+  box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.15);
+}
+
+
+[data-theme="dark"] .donation-custom-field:focus-within {
+  box-shadow: 0 0 0 3px rgba(148, 163, 184, 0.3);
 }
 
 
@@ -3349,8 +3354,18 @@ w3m-input:focus {
 }
 
 
+[data-theme="dark"] .donation-custom-field input {
+  color: var(--text-primary);
+}
+
+
 .donation-custom-field input::placeholder {
-  color: #cbd5f5;
+  color: var(--text-tertiary);
+}
+
+
+[data-theme="dark"] .donation-custom-field input::placeholder {
+  color: rgba(255, 255, 255, 0.5);
 }
 
 
@@ -5332,9 +5347,18 @@ w3m-input:focus {
 
 
 .like-button-preview {
-  background: var(--bg-secondary);
+  background: var(--bg-primary);
   border-color: var(--border-light);
-  color: var(--text-tertiary);
+  color: var(--text-secondary);
+  box-shadow: var(--shadow-sm);
+}
+
+
+[data-theme="dark"] .like-button-preview {
+  background: rgba(255, 255, 255, 0.08);
+  border-color: rgba(255, 255, 255, 0.2);
+  color: var(--text-primary);
+  box-shadow: none;
 }
 
 
@@ -12397,8 +12421,9 @@ w3m-input:focus {
   padding: 8px 12px;
   border: 1px solid var(--border-light);
   border-radius: 20px;
-  background: var(--bg-card);
-  color: var(--text-tertiary);
+  background: var(--bg-secondary);
+  color: var(--text-secondary);
+  box-shadow: var(--shadow-sm);
   font-size: 0.875rem;
   font-weight: 500;
   cursor: pointer;
@@ -12408,9 +12433,9 @@ w3m-input:focus {
 
 
 .like-button:hover:not(.like-button-disabled):not(.like-button-loading) {
-  border-color: #ff6b6b;
-  color: #ff6b6b;
-  background-color: var(--color-error-bg);
+  border-color: var(--border-hover);
+  color: var(--text-primary);
+  background-color: var(--bg-primary);
   transform: translateY(-1px);
 }
 
@@ -12465,14 +12490,16 @@ w3m-input:focus {
 
 [data-theme="dark"] .like-button {
   background: rgba(255, 255, 255, 0.08);
-  border-color: rgba(255, 255, 255, 0.18);
-  color: var(--contrast-text);
+  border-color: rgba(255, 255, 255, 0.2);
+  color: var(--text-primary);
+  box-shadow: none;
 }
 
 
 [data-theme="dark"] .like-button:hover:not(.like-button-disabled):not(.like-button-loading) {
-  background: rgba(255, 255, 255, 0.12);
-  border-color: rgba(255, 255, 255, 0.25);
+  background: rgba(255, 255, 255, 0.15);
+  border-color: rgba(255, 255, 255, 0.3);
+  color: var(--text-primary);
 }
 
 
@@ -12539,16 +12566,34 @@ w3m-input:focus {
   font-size: 0.75rem;
   font-weight: 600;
   border-radius: 12px;
-  background: rgba(255, 255, 255, 0.95);
+  background: var(--bg-secondary);
+  border: 1px solid var(--border-light);
+  color: var(--text-secondary);
   backdrop-filter: blur(4px);
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
 }
 
 
 .article-like-button:hover:not(.like-button-disabled):not(.like-button-loading) {
-  background: rgba(255, 245, 245, 0.98);
+  background: var(--bg-primary);
+  color: var(--text-primary);
+  border-color: var(--border-hover);
   transform: translateY(-1px);
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.12);
+}
+
+
+[data-theme="dark"] .article-like-button {
+  background: rgba(255, 255, 255, 0.08);
+  border-color: rgba(255, 255, 255, 0.2);
+  color: var(--text-primary);
+  box-shadow: none;
+}
+
+
+[data-theme="dark"] .article-like-button:hover:not(.like-button-disabled):not(.like-button-loading) {
+  background: rgba(255, 255, 255, 0.15);
+  border-color: rgba(255, 255, 255, 0.3);
 }
 
 
